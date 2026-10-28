@@ -1,0 +1,19 @@
+---
+import TheLayout from '../layouts/TheLayout.astro';
+import TheStage from '../components/TheStage.astro';
+import type { Destination } from '../data/destinations';
+
+interface Props {
+  destination: Destination;
+}
+
+const { destination } = Astro.props;
+---
+
+<TheLayout {...destination}>
+  <TheStage
+    heading={`${destination.name} · ${destination.monument}`}
+    intro={destination.intro}
+    state={destination.id}
+  />
+</TheLayout>

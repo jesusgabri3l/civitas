@@ -1,0 +1,24 @@
+---
+import TheOverlay from '../overlay/TheOverlay.vue';
+import type { StageState } from '../state/stageStore';
+
+interface Props {
+  heading: string;
+  intro: string;
+  state: StageState;
+}
+
+const { heading, intro, state } = Astro.props;
+---
+
+<main id="main" class="the-stage" data-initial-state={state}>
+  <h1 class="the-stage__title">{heading}</h1>
+  <p class="the-stage__intro">{intro}</p>
+  <TheOverlay client:load initialState={state} />
+  <nav class="the-stage__nav" aria-label="Destinos">
+    <a href="/">Globo</a>
+    <a href="/atenas">Atenas</a>
+    <a href="/roma">Roma</a>
+    <a href="/paris">París</a>
+  </nav>
+</main>

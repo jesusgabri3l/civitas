@@ -1,0 +1,9 @@
+---
+import TheLayout from '../layouts/TheLayout.astro';
+import TheStage from '../components/TheStage.astro';
+import { home } from '../data/destinations';
+---
+
+<TheLayout {...home}>
+  <TheStage heading="WorldHub" intro={home.intro} state="globe" />
+</TheLayout>

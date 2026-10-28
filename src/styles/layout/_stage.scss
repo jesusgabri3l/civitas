@@ -1,0 +1,40 @@
+@use '../abstracts/variables' as *;
+
+.the-stage {
+  display: grid;
+  min-height: 100svh;
+  place-content: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  text-align: center;
+
+  &__intro {
+    margin: 0;
+    opacity: 0.8;
+  }
+
+  &__nav {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1.25rem;
+  }
+
+  &__nav a {
+    padding: 0.5rem 0.25rem;
+    border-bottom: 1px solid transparent;
+
+    &:hover,
+    &:focus-visible {
+      border-bottom-color: $color-accent;
+    }
+  }
+}
+
+.the-overlay {
+  position: fixed;
+  right: 1rem;
+  bottom: 1rem;
+  font-size: 0.75rem;
+  opacity: 0.5;
+}
