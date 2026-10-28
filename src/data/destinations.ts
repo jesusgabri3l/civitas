@@ -1,4 +1,4 @@
-export type DestinationId = 'atenas' | 'roma' | 'paris';
+export type DestinationId = 'athens' | 'rome' | 'paris';
 
 export interface PageMeta {
   path: string;
@@ -16,42 +16,42 @@ export interface Destination extends PageMeta {
 
 export const home: PageMeta & { intro: string } = {
   path: '/',
-  title: 'WorldHub — monumentos del mundo en 3D',
+  title: 'WorldHub — the world’s monuments in 3D',
   description:
-    'Gira el globo y entra a Atenas, Roma y París: monumentos en 3D con luz, atmósfera e historia.',
+    'Spin the globe and step into Athens, Rome and Paris: monuments in 3D with light, atmosphere and history.',
   ogImage: '/og/home.svg',
-  intro: 'Un globo, tres monumentos. Elige un destino para entrar.',
+  intro: 'One globe, three monuments. Pick a destination to step inside.',
 };
 
 export const destinations: Destination[] = [
   {
-    id: 'atenas',
-    path: '/atenas',
-    name: 'Atenas',
-    monument: 'Partenón',
-    title: 'Atenas y el Partenón en 3D — WorldHub',
-    description: 'El Partenón en hora dorada: luz, polvo y datos de la Acrópolis de Atenas en 3D.',
-    ogImage: '/og/atenas.svg',
-    intro: 'Atenas, hora dorada sobre la Acrópolis.',
+    id: 'athens',
+    path: '/athens',
+    name: 'Athens',
+    monument: 'Parthenon',
+    title: 'Athens and the Parthenon in 3D — WorldHub',
+    description: 'The Parthenon at golden hour: light, dust and the story of the Acropolis of Athens, in 3D.',
+    ogImage: '/og/athens.svg',
+    intro: 'Athens, golden hour over the Acropolis.',
   },
   {
-    id: 'roma',
-    path: '/roma',
-    name: 'Roma',
-    monument: 'Coliseo',
-    title: 'Roma y el Coliseo en 3D — WorldHub',
-    description: 'El Coliseo al amanecer, con neblina fría y su cuarto nivel, en 3D.',
-    ogImage: '/og/roma.svg',
-    intro: 'Roma, amanecer frío sobre el Coliseo.',
+    id: 'rome',
+    path: '/rome',
+    name: 'Rome',
+    monument: 'Colosseum',
+    title: 'Rome and the Colosseum in 3D — WorldHub',
+    description: 'The Colosseum at cold dawn, wrapped in mist, with its fourth tier restored, in 3D.',
+    ogImage: '/og/rome.svg',
+    intro: 'Rome, a cold dawn over the Colosseum.',
   },
   {
     id: 'paris',
     path: '/paris',
-    name: 'París',
-    monument: 'Torre Eiffel',
-    title: 'París y la Torre Eiffel en 3D — WorldHub',
-    description: 'La Torre Eiffel de noche con luces ámbar y su centelleo, en 3D.',
+    name: 'Paris',
+    monument: 'Eiffel Tower',
+    title: 'Paris and the Eiffel Tower in 3D — WorldHub',
+    description: 'The Eiffel Tower by night, lit in amber, with its famous sparkle, in 3D.',
     ogImage: '/og/paris.svg',
-    intro: 'París, noche ámbar con la Torre Eiffel.',
+    intro: 'Paris, an amber night around the Eiffel Tower.',
   },
 ];

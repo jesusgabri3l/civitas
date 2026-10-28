@@ -1,16 +1,36 @@
 @use '../abstracts/variables' as *;
 
 .the-stage {
-  display: grid;
+  position: relative;
   min-height: 100svh;
-  place-content: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  text-align: center;
+
+  &__canvas {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  &__content {
+    position: relative;
+    display: grid;
+    min-height: 100svh;
+    place-content: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    text-align: center;
+    pointer-events: none;
+  }
+
+  &__title,
+  &__intro {
+    text-shadow: 0 1px 12px rgba($color-sky, 0.6);
+  }
 
   &__intro {
     margin: 0;
-    opacity: 0.8;
+    opacity: 0.9;
   }
 
   &__nav {
@@ -18,11 +38,13 @@
     justify-content: center;
     flex-wrap: wrap;
     gap: 1.25rem;
+    pointer-events: auto;
   }
 
   &__nav a {
     padding: 0.5rem 0.25rem;
     border-bottom: 1px solid transparent;
+    text-shadow: 0 1px 8px rgba($color-sky, 0.7);
 
     &:hover,
     &:focus-visible {
@@ -36,5 +58,5 @@
   right: 1rem;
   bottom: 1rem;
   font-size: 0.75rem;
-  opacity: 0.5;
+  opacity: 0.6;
 }

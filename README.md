@@ -10,9 +10,11 @@ Astro 5 (estático) · TypeScript · Three · GSAP · Sass (7-1) · nanostores �
 
 - `npm run dev` — servidor local
 - `npm run check` — `astro check`
-- `npm run build` — genera `dist/` (4 rutas: `/`, `/atenas`, `/roma`, `/paris`)
+- `npm run build` — genera `dist/` (4 rutas: `/`, `/athens`, `/rome`, `/paris`)
 - `npm run preview` — sirve `dist/`
+- `npm test` — vitest (store/router, StageManager, calidad)
+- `npm run smoke` — smoke headless con Playwright (requiere `npm run build` antes)
 
 ## Estado
 
-Fase 0 (setup). Sin despliegue ni repo remoto todavía.
+Fase 1 (núcleo: StageManager, router/store, pipeline plaster, tiers) con stages dummy. Sin despliegue ni repo remoto todavía.

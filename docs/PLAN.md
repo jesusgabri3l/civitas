@@ -6,11 +6,13 @@ Hub de monumentos 3D en una sola página: globo -> Atenas / Roma / París.
 
 - Astro 5 estático + TypeScript, Three r170+, GSAP, Sass (7-1), nanostores.
 - Una isla Vue para el overlay (card, panel, slider). Motor 3D en TS imperativo, sin R3F.
-- Rutas estáticas `/`, `/atenas`, `/roma`, `/paris` montan la misma app: cambia meta/OG, estado inicial y texto prerenderizado.
+- Rutas estáticas `/`, `/athens`, `/rome`, `/paris` montan la misma app: cambia meta/OG, estado inicial y texto prerenderizado.
 - Navegación interna con pushState/popstate, sin View Transitions.
 - Panel informativo vía `#info`. Slider de París: "1889 <-> hoy".
 - Hosting objetivo: Cloudflare Pages.
 - Referencia (solo lectura): `../mediterranean-environment-lab` (model/*, PlasterLook, ScreenLook, shaderChunks, LookPipeline, shared/utils, lab/utils/sun.ts), se porta después de la fase 0.
+
+- **Idioma**: todo el contenido del sitio (datos históricos, 'Did you know', sitios de interés, postal, slider) se escribe en inglés. `<html lang="en">`, `og:locale` en_US, metas, aria-labels, alt y mensajes de carga/error también.
 
 ## Fases y criterio de "hecho"
 
