@@ -6,7 +6,8 @@ function setup(inertia = true) {
   const canvas = document.createElement('canvas');
   let yaw = 0;
   let grabs = 0;
-  const zooms: number[] = [];
+  const wheels: number[] = [];
+  const pinches: number[] = [];
   const controls = new GlobeControls({
     canvas,
     invalidate: () => {},
@@ -17,8 +18,11 @@ function setup(inertia = true) {
     onGrab: () => {
       grabs += 1;
     },
-    onZoom: (factor) => {
-      zooms.push(factor);
+    onWheel: (delta) => {
+      wheels.push(delta);
+    },
+    onPinch: (ratio) => {
+      pinches.push(ratio);
     },
     inertia: () => inertia,
   });
@@ -29,7 +33,7 @@ function setup(inertia = true) {
     Object.defineProperty(event, 'timeStamp', { value: timeStamp });
     canvas.dispatchEvent(event);
   };
-  return { canvas, controls, fire, yaw: () => yaw, grabs: () => grabs, zooms };
+  return { canvas, controls, fire, yaw: () => yaw, grabs: () => grabs, wheels, pinches };
 }
 
 describe('GlobeControls', () => {
@@ -83,8 +87,8 @@ describe('GlobeControls', () => {
     expect(yaw()).toBe(0);
   });
 
-  it('zooms with the wheel (in on negative deltas) and stops the page from scrolling', () => {
-    const { zooms } = setup();
+  it('reports the wheel delta (capped) and stops the page from scrolling', () => {
+    const { wheels } = setup();
     const wheel = (deltaY: number) => {
       const event = new Event('wheel', { cancelable: true }) as Event & Record<string, unknown>;
       Object.assign(event, { deltaY, deltaMode: 0 });
@@ -93,18 +97,18 @@ describe('GlobeControls', () => {
     };
     expect(wheel(-100)).toBe(true);
     expect(wheel(100)).toBe(true);
-    expect(zooms[0]).toBeLessThan(1);
-    expect(zooms[1]).toBeGreaterThan(1);
+    expect(wheel(5000)).toBe(true);
+    expect(wheels).toEqual([-100, 100, 120]);
   });
 
-  it('pinches: fingers apart zoom in, fingers together zoom out, and the pinch does not coast', () => {
-    const { controls, fire, zooms, yaw } = setup();
+  it('pinches: reports the finger distance ratio (apart > 1) and the pinch does not coast', () => {
+    const { controls, fire, pinches, yaw } = setup();
     fire('pointerdown', 100, 0, 1, 'touch');
     fire('pointerdown', 200, 1, 2, 'touch'); // 100px apart
     fire('pointermove', 300, 16, 2, 'touch'); // 200px apart
-    expect(zooms.at(-1)).toBeCloseTo(0.5, 6);
+    expect(pinches.at(-1)).toBeCloseTo(2, 6);
     fire('pointermove', 250, 32, 2, 'touch'); // 150px apart
-    expect(zooms.at(-1)).toBeCloseTo(200 / 150, 6);
+    expect(pinches.at(-1)).toBeCloseTo(150 / 200, 6);
     expect(yaw()).toBe(0);
     fire('pointerup', 250, 40, 2, 'touch');
     fire('pointermove', 400, 50, 1, 'touch'); // the remaining finger does not turn into a drag
@@ -114,9 +118,9 @@ describe('GlobeControls', () => {
   });
 
   it('stops listening to the wheel once detached', () => {
-    const { controls, zooms } = setup();
+    const { controls, wheels } = setup();
     controls.detach();
     window.dispatchEvent(Object.assign(new Event('wheel', { cancelable: true }), { deltaY: -100 }));
-    expect(zooms).toHaveLength(0);
+    expect(wheels).toHaveLength(0);
   });
 });

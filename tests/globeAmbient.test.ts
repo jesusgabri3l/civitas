@@ -60,7 +60,8 @@ describe('starfield', () => {
     const light = new StarField(0.4);
     expect(full.layers.map((layer) => layer.name)).toEqual(['stars-dust', 'stars-stars', 'stars-bright']);
     expect(STAR_LAYERS).toHaveLength(3);
-    expect(full.pointCount).toBe(STAR_LAYERS.reduce((total, layer) => total + layer.count, 0));
+    // The slab is wider and taller than the base frustum, so each layer holds at least its base count.
+    expect(full.pointCount).toBeGreaterThanOrEqual(STAR_LAYERS.reduce((total, layer) => total + layer.count, 0));
     expect(light.pointCount).toBeLessThan(full.pointCount * 0.5);
     expect(starCount(100, 0)).toBe(4);
     expect(starCount(100, 5)).toBe(100);

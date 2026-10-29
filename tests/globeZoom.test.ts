@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { zoomFactorFromWheel } from '../src/engine/stages/globe/GlobeControls';
 import { clampDistance, fitDistance, settledDistance, zoomLimits } from '../src/engine/stages/globe/geo';
 import { ZoomModel } from '../src/engine/stages/globe/ZoomModel';
 
@@ -16,20 +15,6 @@ describe('zoom limits', () => {
       expect(clampDistance(1000, aspect)).toBe(max);
       expect(clampDistance(settledDistance(aspect), aspect)).toBe(settledDistance(aspect));
     }
-  });
-});
-
-describe('zoomFactorFromWheel', () => {
-  it('zooms in on negative deltas and out on positive ones', () => {
-    expect(zoomFactorFromWheel(-100)).toBeLessThan(1);
-    expect(zoomFactorFromWheel(100)).toBeGreaterThan(1);
-    expect(zoomFactorFromWheel(0)).toBe(1);
-  });
-
-  it('caps a huge delta and reads line-mode wheels', () => {
-    expect(zoomFactorFromWheel(5000)).toBe(zoomFactorFromWheel(120));
-    expect(zoomFactorFromWheel(-5000)).toBe(zoomFactorFromWheel(-120));
-    expect(zoomFactorFromWheel(3, 1)).toBeCloseTo(zoomFactorFromWheel(48), 10);
   });
 });
 

@@ -132,7 +132,7 @@ async function globeChecks(page) {
   check((await stageStatus(page, 'rome')) === 'idle', 'city stages are not loaded before any interest');
 
   // "Atlas de noche" layout: brand, live coordinates and a usage hint; no visible city list or nav.
-  check((await page.locator('.the-overlay-brand').innerText()).trim() === 'WorldHub', 'brand shows WorldHub');
+  check((await page.locator('.the-overlay-brand').innerText()).trim() === 'Civitas', 'brand shows Civitas');
   check(/^\d+\.\d°[NS] \d+\.\d°[EW]$/.test(await coordinatesOf(page)), 'coordinates readout is formatted like 43.0°N 13.0°E', await coordinatesOf(page));
   check((await page.locator('[data-hint]').textContent()).trim() === 'Drag · Scroll to zoom', 'hint reads "Drag · Scroll to zoom" on desktop');
   check(await isVisuallyHidden(page.locator('.the-overlay-cities')), 'city list is visually hidden');
