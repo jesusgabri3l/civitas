@@ -45,6 +45,11 @@ export async function startWorldHub(canvas: HTMLCanvasElement) {
     });
   });
 
+  if (new URLSearchParams(location.search).has('scrub')) {
+    const { mountTripScrubber } = await import('./debug/tripScrubber');
+    mountTripScrubber(engine);
+  }
+
   // Small read-only handle for tests and debugging.
   Object.assign(window, {
     __worldhub: {

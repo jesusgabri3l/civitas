@@ -10,6 +10,7 @@ import {
   type Vector3,
 } from 'three';
 import { destinations, type DestinationId } from '../../data/destinations';
+import { stageSky } from '../../data/stageSky';
 import {
   $openTooltip,
   $touchNudge,
@@ -24,12 +25,13 @@ import {
 } from '../../state/globeStore';
 import { SKY_LAYER } from '../render/LookPipeline';
 import { DEFAULT_PLASTER } from '../render/PlasterLook';
-import type { Stage, StageHost } from '../stage/Stage';
+import type { Stage, StageHost, TransitionAnchor } from '../stage/Stage';
 import { disposeObject } from '../utils/disposal';
 import { ArcLayer } from './globe/arcs';
 import { createOceanLabels } from './globe/OceanLabels';
 import { AUTO_ROTATE, autoRotationSpeed, nextShootingStarDelay } from './globe/ambient';
 import { GlobeControls } from './globe/GlobeControls';
+import { HotspotMarkers } from './globe/HotspotMarkers';
 import {
   DEG,
   EUROPE,
@@ -53,7 +55,6 @@ import {
   createGlowMaterial,
   createLimbMaterial,
 } from './globe/materials';
-import { PALETTE } from './globe/palette';
 import { ShootingStar } from './globe/ShootingStar';
 import { StarField } from './globe/StarField';
 import { ZoomModel } from './globe/ZoomModel';
@@ -71,6 +72,8 @@ const RAISE_SECONDS = 0.5;
 const PINCH_RAISE_PER_LOG = 1.3;
 /** Seconds of the short turn that centers a clicked city. */
 const FOCUS_SECONDS = 0.55;
+/** Dive into a clicked city: camera distance reached (globe radii). The `near` plane (0.1) clips the surface below ~1.12. */
+const DIVE_DISTANCE = 1.15;
 /** Touch nudge: how far the globe swings (radians), how long it takes, and how long it waits after the cities appear. */
 const NUDGE_ANGLE = 10 * (Math.PI / 180);
 const NUDGE_SECONDS = 1.5;
@@ -81,6 +84,10 @@ const WHEEL_RAISE_PER_PIXEL = 0.0012;
 const ZOOM_SCALE_MIN = 0.85;
 const ZOOM_SCALE_MAX = 1.7;
 const ZOOM_SCALE_DAMPING = 10;
+/** Seconds the in-scene city dots take to fade in or out as a trip starts or ends (the HTML ones do the opposite). */
+const MARKER_FADE_SECONDS = 0.1;
+/** How much bigger the in-scene dots get at the closest point of the dive. */
+const MARKER_DIVE_GROWTH = 0.5;
 const easeOutCubic = (t: number) => 1 - (1 - t) ** 3;
 const easeInOut = (t: number) => t * t * (3 - 2 * t);
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -99,6 +106,7 @@ export function createStage(host: StageHost): Stage {
   const stars = new StarField(host.ambient().starDensity);
   const shootingStar = new ShootingStar();
   const arcs = new ArcLayer();
+  const markers = new HotspotMarkers();
   const limb = new Mesh(new SphereGeometry(HALO_RADIUS, 48, 32), createLimbMaterial());
   limb.layers.set(SKY_LAYER);
   const glow = new Mesh(new PlaneGeometry(HALO_EXTENT * 2, HALO_EXTENT * 2), createGlowMaterial());
@@ -123,6 +131,12 @@ export function createStage(host: StageHost): Stage {
   /** Drag and zoom wake up once the intro is over and the cities have appeared. */
   let interactive = false;
   let zoomScale = 1;
+  /** 0 = normal framing, 1 = camera diving into the focused city. Driven by the engine's transition hooks. */
+  let diveAmount = 0;
+  /** 0..1 how visible the in-scene city dots are: on while the camera is diving, fading in and out in 0.1 s. */
+  let markerOpacity = 0;
+  /** The first activation plays the intro; coming back from a city does not repeat it. */
+  let introPlayed = false;
   let zoomScaleTarget = 1;
   /** Seconds into the touch nudge (negative while it waits); null when none is pending. */
   let nudgeElapsed: number | null = null;
@@ -133,6 +147,8 @@ export function createStage(host: StageHost): Stage {
     fromTilt: number;
     toTilt: number;
     elapsed: number;
+    /** Second of the turn at which the promise resolves (a bit before the turn ends when the caller wants an overlap). */
+    resolveAt: number;
     done: () => void;
   } | null = null;
   /** Ambient animation (twinkle, auto-rotation, shooting stars) is off for reduced motion. */
@@ -150,8 +166,9 @@ export function createStage(host: StageHost): Stage {
     // Layouts that cannot lift (portrait, split) zoom by scale instead: the globe grows or shrinks around its spot.
     return currentLayout().raisable ? base : 1 + (base - 1) / zoomScale;
   };
-  /** At rest the view looks south of the target, so the cities ride in the visible cap; it fades out as the globe rises. */
-  const restTiltOffset = () => (currentLayout().raisable ? REST_TILT_DEGREES * DEG * (1 - raisedAmount()) : 0);
+  /** At rest the view looks south of the target, so the cities ride in the visible cap; it fades out as the globe rises or dives, so the camera ends pointing at the city. */
+  const restTiltOffset = () =>
+    currentLayout().raisable ? REST_TILT_DEGREES * DEG * (1 - raisedAmount()) * (1 - diveAmount) : 0;
 
   const controls = new GlobeControls({
     canvas: host.canvas,
@@ -159,7 +176,7 @@ export function createStage(host: StageHost): Stage {
     radiansPerPixel: () =>
       radiansPerPixel(zoom.distance, aspect, Math.min(host.canvas.clientWidth, host.canvas.clientHeight)),
     onRotate: (deltaYaw, deltaPitch) => {
-      if (focusTurn) return;
+      if (focusTurn || diveAmount > 0) return;
       yaw += deltaYaw;
       tilt = Math.min(MAX_TILT, Math.max(MIN_TILT, tilt + deltaPitch));
     },
@@ -170,7 +187,7 @@ export function createStage(host: StageHost): Stage {
       markInteracted();
     },
     onWheel: (deltaPixels) => {
-      if (focusTurn) return;
+      if (focusTurn || diveAmount > 0) return;
       if (currentLayout().raisable) {
         // The wheel slides between the two framings: resting (big, cropped) and whole globe.
         raiseTarget = Math.min(1, Math.max(0, raiseTarget + deltaPixels * WHEEL_RAISE_PER_PIXEL));
@@ -180,6 +197,7 @@ export function createStage(host: StageHost): Stage {
       markInteracted();
     },
     onPinch: (ratio) => {
+      if (diveAmount > 0) return;
       if (currentLayout().raisable) {
         // Same range as the wheel: fingers apart zoom in (towards rest), together zoom out (towards the whole globe).
         raiseTarget = Math.min(1, Math.max(0, raiseTarget - Math.log(ratio) * PINCH_RAISE_PER_LOG));
@@ -194,8 +212,11 @@ export function createStage(host: StageHost): Stage {
     camera.aspect = aspect;
     camera.position.set(0, 0, zoom.distance);
     camera.lookAt(0, 0, 0);
-    // Slide the picture so the globe's center lands on its layout spot, instead of the middle of the screen.
-    const { centerX, centerY } = currentLayout();
+    // Slide the picture so the globe's center lands on its layout spot, instead of the middle of the screen. While diving
+    // it glides back to the middle: the city faces the camera there, so the zoom ends on it.
+    const layout = currentLayout();
+    const centerX = layout.centerX + (0.5 - layout.centerX) * diveAmount;
+    const centerY = layout.centerY + (0.5 - layout.centerY) * diveAmount;
     const fullWidth = aspect * 1000;
     camera.setViewOffset(fullWidth, 1000, -(centerX - 0.5) * fullWidth, -(centerY - 0.5) * 1000, fullWidth, 1000);
     camera.updateProjectionMatrix();
@@ -238,6 +259,14 @@ export function createStage(host: StageHost): Stage {
   const introDistance = () => Math.max(fitDistance(aspect), restDistance() * 1.25);
 
   function restartIntro() {
+    if (introPlayed) {
+      // Back from a city: no intro. The engine drives the way out of the dive through `setEntry`.
+      spinElapsed = SPIN_SECONDS;
+      dollyElapsed = DOLLY_SECONDS;
+      return;
+    }
+    introPlayed = true;
+    diveAmount = 0;
     const instant = prefersReducedMotion();
     spinElapsed = instant ? SPIN_SECONDS : 0;
     dollyElapsed = instant ? DOLLY_SECONDS : 0;
@@ -290,7 +319,7 @@ export function createStage(host: StageHost): Stage {
     (limb.material as ShaderMaterial).uniforms.uTime.value = ambientTime;
 
     const introDone = spinElapsed >= SPIN_SECONDS && dollyElapsed >= DOLLY_SECONDS;
-    if (introDone && !controls.isDragging && !focusTurn && !$openTooltip.get()) {
+    if (introDone && diveAmount === 0 && !controls.isDragging && !focusTurn && !$openTooltip.get()) {
       yaw += autoRotationSpeed(idleSeconds, AUTO_ROTATE) * deltaSeconds;
     }
 
@@ -307,7 +336,7 @@ export function createStage(host: StageHost): Stage {
   }
 
   /** Turns the globe along the shortest way until the city sits in the middle. Resolves when it gets there. */
-  function turnTo(city: DestinationId): Promise<void> {
+  function turnTo(city: DestinationId, leadSeconds = 0): Promise<void> {
     const target = destinations.find(({ id }) => id === city);
     if (!target || prefersReducedMotion()) return Promise.resolve();
     focusTurn?.done();
@@ -322,6 +351,7 @@ export function createStage(host: StageHost): Stage {
         fromTilt: tilt,
         toTilt: Math.min(MAX_TILT, Math.max(MIN_TILT, toTilt)),
         elapsed: 0,
+        resolveAt: FOCUS_SECONDS - leadSeconds,
         done: resolve,
       };
     });
@@ -331,12 +361,12 @@ export function createStage(host: StageHost): Stage {
     id: 'globe',
     scene,
     camera,
-    skyColor: PALETTE.ink,
+    skyColor: stageSky.globe.skyColor,
     look: { ...DEFAULT_PLASTER, aoStrength: 0, grain: 0, warmth: 0, vignette: 0.22, filmic: 0 },
 
     async load() {
-      scene.background = new Color(PALETTE.ink);
-      globe.add(new Mesh(new SphereGeometry(1, 96, 64), createGlobeMaterial()), ...createGlobeLines(), arcs.group);
+      scene.background = new Color(stageSky.globe.skyColor);
+      globe.add(new Mesh(new SphereGeometry(1, 96, 64), createGlobeMaterial()), ...createGlobeLines(), arcs.group, markers.group);
       globe.add(await createOceanLabels());
       scene.add(globe, glow, limb, ...stars.layers, shootingStar.mesh);
       applyRotation();
@@ -353,6 +383,7 @@ export function createStage(host: StageHost): Stage {
       shootingCountdown = nextShootingStarDelay();
       stars.setPixelRatio(host.pixelRatio());
       arcs.setPixelRatio(host.pixelRatio());
+      markers.setPixelRatio(host.pixelRatio());
       arcs.restart(!ambientAllowed);
       publishLayout();
       viewportHeight = host.canvas.clientHeight || window.innerHeight;
@@ -401,11 +432,8 @@ export function createStage(host: StageHost): Stage {
         yaw = focusTurn.fromYaw + (focusTurn.toYaw - focusTurn.fromYaw) * progress;
         tilt = focusTurn.fromTilt + (focusTurn.toTilt - focusTurn.fromTilt) * progress;
         animating = true;
-        if (focusTurn.elapsed >= FOCUS_SECONDS) {
-          const { done } = focusTurn;
-          focusTurn = null;
-          done();
-        }
+        if (focusTurn.elapsed >= focusTurn.resolveAt) focusTurn.done();
+        if (focusTurn.elapsed >= FOCUS_SECONDS) focusTurn = null;
       }
 
       if (zoomScale !== zoomScaleTarget) {
@@ -423,7 +451,7 @@ export function createStage(host: StageHost): Stage {
         zoom.snapTo(from + (settled - from) * progress);
         animating ||= dollyElapsed < DOLLY_SECONDS;
       } else {
-        zoom.snapTo(settled);
+        zoom.snapTo(settled + (DIVE_DISTANCE - settled) * diveAmount);
       }
 
       enableInteractionWhenIntroEnds();
@@ -441,6 +469,16 @@ export function createStage(host: StageHost): Stage {
       if (controls.update(deltaSeconds)) animating = true;
       if (updateAmbient(deltaSeconds)) animating = true;
 
+      const markerTarget = diveAmount > 0 ? 1 : 0;
+      if (markerOpacity !== markerTarget) {
+        const step = deltaSeconds / MARKER_FADE_SECONDS;
+        markerOpacity = markerTarget > markerOpacity ? Math.min(1, markerOpacity + step) : Math.max(0, markerOpacity - step);
+        animating = true;
+      }
+      markers.setOpacity(markerOpacity);
+      markers.setScale(1 + MARKER_DIVE_GROWTH * diveAmount);
+      markers.setTime(ambientTime);
+
       const zoomAmount = (settled - zoom.distance) / settled;
       stars.setStretch(zoomAmount);
       (limb.material as ShaderMaterial).uniforms.uZoom.value = Math.max(-0.5, Math.min(0.5, zoomAmount));
@@ -451,11 +489,55 @@ export function createStage(host: StageHost): Stage {
       return animating;
     },
 
+    transitionAnchor(target): TransitionAnchor {
+      const point = target ? hotspotPoints.get(target) : undefined;
+      if (!point) {
+        const { centerX, centerY } = currentLayout();
+        return { centerX, centerY };
+      }
+      const { x, y } = projectToScreen(point, rotationMatrix(tilt - restTiltOffset(), yaw + nudgeAngle), camera);
+      return { centerX: x, centerY: y };
+    },
+
+    restFor(target) {
+      const city = destinations.find(({ id }) => id === target);
+      if (!city) return;
+      // As if the globe had already turned to the city and settled: no intro, no pending turn, nothing left to animate.
+      const { yaw: toYaw, tilt: toTilt } = orientationFor(city.coordinates);
+      focusTurn?.done();
+      focusTurn = null;
+      controls.stopCoasting();
+      nudgeElapsed = null;
+      nudgeAngle = 0;
+      introPlayed = true;
+      spinElapsed = SPIN_SECONDS;
+      dollyElapsed = DOLLY_SECONDS;
+      raisedLinear = raiseTarget = 0;
+      zoomScale = zoomScaleTarget = 1;
+      yaw = toYaw;
+      tilt = Math.min(MAX_TILT, Math.max(MIN_TILT, toTilt));
+      markerOpacity = 1;
+      zoom.snapTo(restDistance());
+    },
+
+    setExit(p, target) {
+      diveAmount = p;
+      markers.setTarget(target);
+      if (p > 0) controls.stopCoasting();
+      host.invalidate();
+    },
+
+    setEntry(p) {
+      diveAmount = 1 - p;
+      host.invalidate();
+    },
+
     resize(nextAspect) {
       aspect = nextAspect;
       viewportHeight = host.canvas.clientHeight || window.innerHeight;
       if (dollyElapsed >= DOLLY_SECONDS) zoom.snapTo(restDistance());
       stars.setPixelRatio(host.pixelRatio());
+      markers.setPixelRatio(host.pixelRatio());
       publishLayout();
       placeCamera();
       publishHotspots();

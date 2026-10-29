@@ -12,7 +12,7 @@ export interface Stage {
   readonly scene: Scene;
   readonly camera: PerspectiveCamera;
   readonly look: PlasterSettings;
-  /** Color the screen fades to while this stage is entered or left. */
+  /** Color of the sky (see `data/stageSky.ts`). */
   readonly skyColor: number;
 
   load(): Promise<void>;
@@ -21,10 +21,26 @@ export interface Stage {
   /** Advances animation. Returns true while it still needs frames (render on demand otherwise). */
   update(deltaSeconds: number): boolean;
   resize(aspect: number): void;
+  /**
+   * Optional transition hooks (the engine drives them with one progress for the whole crossing).
+   * Where the focus of the crossing sits on screen, in viewport fractions from the top left.
+   */
+  transitionAnchor?(target?: StageId): TransitionAnchor;
+  /** Puts the stage, with no animation, in the pose a trip with `target` starts from (leaving a city for the globe, deep link included). */
+  restFor?(target: StageId): void;
+  /** This stage is being left: `p` 0 = at rest, 1 = fully gone. */
+  setExit?(p: number, target: StageId): void;
+  /** This stage is being entered: `p` 0 = just arrived, away from rest, 1 = settled at rest. */
+  setEntry?(p: number, source: StageId): void;
   /** Frees GPU memory. Keeps JS state: waking is a warm() away. */
   sleep(): void;
   /** Frees everything. The stage must be loaded again to be used. */
   dispose(): void;
+}
+
+export interface TransitionAnchor {
+  centerX: number;
+  centerY: number;
 }
 
 export interface StageModule {

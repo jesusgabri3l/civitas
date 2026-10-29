@@ -155,6 +155,17 @@ $subtitle-letter-step: calc(#{$subtitle-typing-time} / var(--subtitle-letter-cou
   }
 }
 
+// Coming back to the hub: the text is already written, no typing and no caret.
+.the-overlay-headline--typed {
+  .the-overlay-headline__letter,
+  .the-overlay-headline__letter::after,
+  .the-overlay-headline__subtitle-letter,
+  .the-overlay-headline__subtitle-letter::after,
+  .the-overlay-headline__subtitle-letter--last::after {
+    animation: none;
+  }
+}
+
 // Stacked layout: text on top, centered on the page, globe below. Always with $layout 'stacked'; with 'split' only on narrow
 // screens (keep the ratio in sync with STACKED_MAX_ASPECT in geo.ts).
 @mixin stacked-headline {

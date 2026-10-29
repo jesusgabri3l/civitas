@@ -1,4 +1,4 @@
-import { Color, WebGLRenderer } from 'three';
+import { Vector2, WebGLRenderer } from 'three';
 import type { StageId } from '../state/appStore';
 import { PerformanceMonitor, QualityGovernor } from './quality/PerformanceMonitor';
 import {
@@ -11,18 +11,34 @@ import {
   type QualitySettings,
   type QualityTier,
 } from './quality/qualityTier';
-import { LookPipeline, type FadeState } from './render/LookPipeline';
+import type { SnapshotSlot } from './render/FrameSnapshots';
+import { LookPipeline, type TransitionFrame } from './render/LookPipeline';
 import type { Stage, StageHost } from './stage/Stage';
 import { StageManager } from './stage/StageManager';
 import { stageLoaders } from './stages';
+import { sampleFor, secondsFor, swapAtFor, type TransitionMode, type TransitionSample } from './transition/timeline';
 
-const FADE_SECONDS = 0.26;
-const FADE_COLOR = 0x0b0b0e;
+/**
+ * One trip between two stages. `progress` runs 0..1 from `from` to `to`; `direction` says where it is heading now, so
+ * turning back mid-way is only flipping it. Leaving a city for the globe is the globe -> city trip played backwards:
+ * it starts at progress 1 with direction -1.
+ */
+interface TransitionTween {
+  from: StageId;
+  to: StageId;
+  mode: TransitionMode;
+  progress: number;
+  direction: 1 | -1;
+  /** The first frame of a trip only draws (and captures) the stage it leaves: the swap needs a frame to snapshot. */
+  primed: boolean;
+  /** Leaving a city from rest: the snapshot of the globe at the swap pose is still to be made (first frame of the trip). */
+  cold: boolean;
+  /** A request for a third stage: the trip returns to the globe (or the nearest end) and then starts that one. */
+  queued: StageId | null;
+}
 
-interface FadeTween {
-  from: number;
-  to: number;
-  startedAt: number | null;
+interface Waiter {
+  target: StageId;
   resolve: (completed: boolean) => void;
 }
 
@@ -51,14 +67,38 @@ export class Engine {
   private readonly ambientIdleSeconds: number | undefined;
   private readonly tierLocked: boolean;
   private quality: QualitySettings;
-  private readonly fade: FadeState = { amount: 0, color: new Color(FADE_COLOR) };
-  private tween: FadeTween | null = null;
+  private readonly transition: TransitionFrame = {
+    capture: null,
+    overlay: null,
+    opacity: 0,
+    scale: 1,
+    center: new Vector2(0.5, 0.5),
+    reveal: 0,
+  };
+  /** Frame settings for the one-off render of the globe that becomes the snapshot of a cold exit. */
+  private readonly coldFrame: TransitionFrame = {
+    capture: 0,
+    overlay: null,
+    opacity: 0,
+    scale: 1,
+    center: new Vector2(0.5, 0.5),
+    reveal: 0,
+  };
+  /** Snapshot of the stage the trip left, drawn over the arriving one; null while the leaving stage is still on screen. */
+  private snapshotSlot: SnapshotSlot | null = null;
+  /** Slot the newest frame of the stage on screen is copied into. */
+  private captureSlot: SnapshotSlot = 0;
+  private readonly snapshotAnchor = new Vector2(0.5, 0.5);
+  private tween: TransitionTween | null = null;
+  /** Debug scrubber (`?scrub`): 0 freezes the trip, 1 is real speed. */
+  private tripTimeScale = 1;
+  /** Debug scrubber: progress to jump to on the next frame, through the same swap and hold rules. */
+  private scrubTo: number | null = null;
+  private waiter: Waiter | null = null;
   private frameRequest = 0;
   private lastFrameAt = 0;
   private contextLost = false;
   private disposed = false;
-  private token = 0;
-  private chain: Promise<unknown> = Promise.resolve();
   private readonly resizeObserver: ResizeObserver;
   private readonly cleanups: Array<() => void> = [];
 
@@ -86,6 +126,7 @@ export class Engine {
       compile: (stage) => this.renderer.compileAsync(stage.scene, stage.camera).then(() => {}),
     };
     this.manager = new StageManager(stageLoaders, host, this.quality.maxWarmStages);
+    this.manager.pin('globe'); // the hub is always one click (or Back) away: it never sleeps
 
     this.resizeObserver = new ResizeObserver(() => this.applySize());
     this.resizeObserver.observe(canvas);
@@ -113,12 +154,17 @@ export class Engine {
     this.showStage(stage);
   }
 
-  /** Swaps to a stage with a fade. Resolves false if a newer request superseded this one. Latest request wins. */
+  /**
+   * Goes to a stage. From the globe into a city (and back) the camera crosses the halo; otherwise it is a plain fade.
+   * Resolves false if a newer request superseded this one. A request made mid-way turns the trip around from where it is.
+   */
   goTo(target: StageId): Promise<boolean> {
-    const token = ++this.token;
-    const run = () => this.runSwap(target, token);
-    const result = this.chain.then(run, run);
-    this.chain = result.catch(() => {});
+    if (this.disposed) return Promise.resolve(false);
+    this.waiter?.resolve(false);
+    const result = new Promise<boolean>((resolve) => {
+      this.waiter = { target, resolve };
+    });
+    this.steerTo(target);
     return result;
   }
 
@@ -135,7 +181,8 @@ export class Engine {
   dispose() {
     this.disposed = true;
     cancelAnimationFrame(this.frameRequest);
-    this.tween?.resolve(false);
+    this.waiter?.resolve(false);
+    this.waiter = null;
     this.cleanups.forEach((cleanup) => cleanup());
     this.resizeObserver.disconnect();
     this.manager.disposeAll();
@@ -143,25 +190,76 @@ export class Engine {
     this.renderer.dispose();
   }
 
-  private async runSwap(target: StageId, token: number): Promise<boolean> {
-    if (this.disposed || token !== this.token) return false;
-    if (this.manager.active?.id === target && this.fade.amount === 0) return true;
+  private steerTo(target: StageId) {
+    const tween = this.tween;
+    if (!tween) {
+      const shown = this.manager.active?.id;
+      if (!shown || shown === target) return this.settleWaiter(shown);
+      return this.beginTrip(shown, target);
+    }
+    tween.queued = null;
+    if (target === tween.from) tween.direction = -1;
+    else if (target === tween.to) tween.direction = 1;
+    else {
+      // A third stage waits for the trip to get back to the globe (or the nearest end).
+      tween.queued = target;
+      tween.direction = tween.mode === 'fade' ? (tween.progress < 0.5 ? -1 : 1) : -1;
+    }
+    this.preloadFor(tween.direction === 1 ? tween.to : tween.from);
+    this.invalidate();
+  }
 
-    const preparing = this.manager.preload(target);
-    preparing.catch(() => {});
-    await this.fadeTo(1);
+  private beginTrip(shown: StageId, target: StageId) {
+    this.preloadFor(target);
+    if (document.hidden) return void this.jumpTo(target);
+
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const touchesGlobe = shown === 'globe' || target === 'globe';
+    if (reduced || !touchesGlobe) {
+      this.tween = { from: shown, to: target, mode: 'fade', progress: 0, direction: 1, primed: false, cold: false, queued: null };
+    } else if (shown === 'globe') {
+      this.tween = { from: shown, to: target, mode: 'enter', progress: 0, direction: 1, primed: false, cold: false, queued: null };
+    } else {
+      // City -> globe: the entry trip backwards, from its end.
+      this.tween = { from: target, to: shown, mode: 'enter', progress: 1, direction: -1, primed: false, cold: true, queued: null };
+    }
+    this.captureSlot = 0;
+    this.snapshotSlot = null;
+    this.invalidate();
+  }
+
+  /** Hidden tabs do not render: swap without animation. */
+  private async jumpTo(target: StageId) {
     try {
-      await preparing;
+      this.showStage(await this.manager.activate(target));
     } catch (error) {
       console.error(`Could not load the "${target}" scene.`, error);
-      await this.fadeTo(0);
-      return false;
     }
-    if (token !== this.token) return false;
+    this.settleWaiter(this.manager.active?.id);
+  }
 
-    this.showStage(await this.manager.activate(target));
-    await this.fadeTo(0);
-    return token === this.token;
+  private preloadFor(id: StageId) {
+    if (this.manager.isReady(id)) return;
+    this.manager.preload(id).catch((error) => this.onPreloadFailed(id, error));
+  }
+
+  private onPreloadFailed(id: StageId, error: unknown) {
+    console.error(`Could not load the "${id}" scene.`, error);
+    const tween = this.tween;
+    if (!tween || (id !== tween.from && id !== tween.to)) return;
+    // Head back to the end that did load.
+    tween.queued = null;
+    tween.direction = id === tween.to ? -1 : 1;
+    if (tween.direction === 1) tween.cold = false;
+    this.invalidate();
+  }
+
+  /** Answers the pending request: true if the stage it wanted is the one on screen. */
+  private settleWaiter(shown: StageId | undefined) {
+    const waiter = this.waiter;
+    if (!waiter) return;
+    this.waiter = null;
+    waiter.resolve(shown === waiter.target);
   }
 
   private showStage(stage: Stage) {
@@ -173,32 +271,158 @@ export class Engine {
     return Math.max(this.canvas.clientWidth, 1) / Math.max(this.canvas.clientHeight, 1);
   }
 
-  private fadeTo(value: number): Promise<boolean> {
-    this.tween?.resolve(false);
-    this.tween = null;
-    const instant = document.hidden || window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (instant || this.fade.amount === value) {
-      this.fade.amount = value;
-      this.invalidate();
-      return Promise.resolve(true);
-    }
-    return new Promise((resolve) => {
-      this.tween = { from: this.fade.amount, to: value, startedAt: null, resolve };
-      this.invalidate();
-    });
+  /** Stage that should be on screen at this progress. */
+  private stageAt(tween: TransitionTween, progress: number): StageId {
+    return progress < swapAtFor(tween.mode) ? tween.from : tween.to;
   }
 
-  /** Returns true while the fade still needs frames. */
-  private advanceFade(now: number): boolean {
+  /** Debug scrubber: trip speed (0 freezes it). */
+  setTripTimeScale(scale: number) {
+    this.tripTimeScale = Math.max(0, scale);
+    this.invalidate();
+  }
+
+  /** Debug scrubber: puts the current trip at `progress` (0 = from, 1 = to). */
+  scrubTrip(progress: number) {
+    if (!this.tween) return;
+    this.scrubTo = progress;
+    this.invalidate();
+  }
+
+  /** Debug scrubber: where the current trip is, and what each layer of the transition is doing there. */
+  tripState() {
+    const tween = this.tween;
+    if (!tween) return null;
+    return {
+      from: tween.from,
+      to: tween.to,
+      mode: tween.mode,
+      progress: tween.progress,
+      sample: sampleFor(tween.mode, tween.progress),
+      anchor: { x: this.snapshotAnchor.x, y: this.snapshotAnchor.y },
+    };
+  }
+
+  /** Moves the trip forward one frame. Returns true while it still needs frames. */
+  private advanceTrip(delta: number): boolean {
     const tween = this.tween;
     if (!tween) return false;
-    tween.startedAt ??= now;
-    const progress = Math.min((now - tween.startedAt) / (FADE_SECONDS * 1000), 1);
-    this.fade.amount = tween.from + (tween.to - tween.from) * progress;
-    if (progress < 1) return true;
+
+    if (tween.cold && tween.direction === 1) tween.cold = false; // turned back into the city before leaving it
+    if (tween.cold && !this.captureGlobeForExit(tween)) return true; // the globe is still loading
+
+    const step = tween.primed ? (tween.direction * delta * this.tripTimeScale) / secondsFor(tween.mode) : 0;
+    tween.primed = true;
+    let next = Math.min(1, Math.max(0, this.scrubTo ?? tween.progress + step));
+    this.scrubTo = null;
+
+    const wanted = this.stageAt(tween, next);
+    if (wanted !== this.manager.active?.id) {
+      const stage = this.manager.activateIfReady(wanted);
+      if (!stage) {
+        // Not loaded yet: hold at the swap point, still showing the last frame of the leaving stage, until it is.
+        const swapAt = swapAtFor(tween.mode);
+        next = tween.direction === 1 ? Math.min(next, swapAt - 1e-6) : Math.max(next, swapAt);
+        this.preloadFor(wanted);
+      } else {
+        this.keepSnapshotFor(tween, wanted);
+        stage.resize(this.aspect());
+        this.monitor.reset();
+      }
+    }
+    tween.progress = next;
+
+    const sample = sampleFor(tween.mode, next);
+    this.driveStages(tween, sample);
+    this.paintTransition(tween.mode, sample);
+
+    // Frozen by the scrubber: keep the trip open at any progress, and only redraw when it moves.
+    if (this.tripTimeScale === 0) return false;
+    const arrived = tween.direction === 1 ? next >= 1 : next <= 0;
+    if (!arrived) return true;
+    this.endTrip(tween);
+    return this.tween !== null;
+  }
+
+  /**
+   * Cold exit, first frame: turns the globe at once toward the city (it may never have turned: deep link), puts it in the pose
+   * the entry has at the swap, renders it and keeps that frame as the snapshot. The city is rendered over it by the same
+   * frame, so the trip can run the entry backwards. Returns false while the globe is not loaded.
+   */
+  private captureGlobeForExit(tween: TransitionTween): boolean {
+    const globe = this.manager.get('globe');
+    if (!globe || !this.manager.isReady('globe')) {
+      this.preloadFor('globe');
+      return false;
+    }
+    globe.resize(this.aspect());
+    globe.restFor?.(tween.to);
+    globe.setExit?.(sampleFor(tween.mode, swapAtFor(tween.mode)).zoom, tween.to);
+    globe.update(0);
+    this.coldFrame.capture = this.captureSlot;
+    this.pipeline.render(globe.scene, globe.camera, globe.look, this.coldFrame);
+
+    const anchor = globe.transitionAnchor?.(tween.to);
+    this.snapshotAnchor.set(anchor?.centerX ?? 0.5, anchor?.centerY ?? 0.5);
+    this.snapshotSlot = this.captureSlot;
+    this.captureSlot = this.snapshotSlot === 0 ? 1 : 0;
+    tween.cold = false;
+    return true;
+  }
+
+  /**
+   * Stages just swapped. Reaching the destination keeps the last frame of the one that left (the newest capture) to draw over
+   * it; going back to the start frees that slot. The anchor is where the snapshot scales from: the city on the globe when
+   * entering, the middle of the screen otherwise.
+   */
+  private keepSnapshotFor(tween: TransitionTween, shown: StageId) {
+    if (shown !== tween.to) {
+      this.captureSlot = this.snapshotSlot ?? 0;
+      this.snapshotSlot = null;
+      return;
+    }
+    this.snapshotSlot = this.captureSlot;
+    this.captureSlot = this.snapshotSlot === 0 ? 1 : 0;
+    const anchor = tween.mode === 'enter' ? this.manager.get('globe')?.transitionAnchor?.(tween.to) : undefined;
+    this.snapshotAnchor.set(anchor?.centerX ?? 0.5, anchor?.centerY ?? 0.5);
+  }
+
+  /** Tells the stage on screen how far it is from rest, as the leaving or the arriving one. */
+  private driveStages(tween: TransitionTween, sample: TransitionSample) {
+    const stage = this.manager.active;
+    if (!stage) return;
+    const other = stage.id === tween.from ? tween.to : tween.from;
+    // How far this stage is from its rest: the globe by the camera dive, a city by how new it is.
+    const away = tween.mode === 'fade' ? 0 : stage.id === 'globe' ? sample.zoom : sample.cityAway;
+    if (stage.id === tween.from) stage.setExit?.(away, other);
+    else stage.setEntry?.(1 - away, other);
+  }
+
+  private paintTransition(mode: TransitionMode, sample: TransitionSample) {
+    const { transition } = this;
+    transition.capture = this.captureSlot;
+    transition.overlay = this.snapshotSlot;
+    // Entering (or leaving, the same backwards) the snapshot stays opaque and a window shows the city; a fade dissolves it.
+    transition.opacity = mode === 'enter' ? 1 : 1 - sample.mix;
+    transition.reveal = sample.reveal;
+    transition.scale = sample.snapScale;
+    transition.center.copy(this.snapshotAnchor);
+  }
+
+  /** The trip reached one of its ends: settle the stage there, drop the snapshot, and answer or start the queued one. */
+  private endTrip(tween: TransitionTween) {
     this.tween = null;
-    tween.resolve(true);
-    return false;
+    const shown = tween.direction === 1 ? tween.to : tween.from;
+    const other = shown === tween.to ? tween.from : tween.to;
+    // Whatever way it ended, the stage on screen is at rest.
+    const stage = this.manager.active;
+    stage?.setExit?.(0, other);
+    stage?.setEntry?.(1, other);
+    this.snapshotSlot = null;
+    Object.assign(this.transition, { capture: null, overlay: null, opacity: 0, scale: 1, reveal: 0 });
+
+    if (tween.queued && tween.queued !== shown) return this.beginTrip(shown, tween.queued);
+    this.settleWaiter(shown);
   }
 
   private readonly frame = (now: number) => {
@@ -208,20 +432,23 @@ export class Engine {
 
     const delta = this.lastFrameAt ? Math.min((now - this.lastFrameAt) / 1000, 0.1) : 1 / 60;
     this.lastFrameAt = now;
-    const stageAnimating = stage.update(delta);
-    const fadeAnimating = this.advanceFade(now);
+    const tripAnimating = this.advanceTrip(delta);
+    // The trip may have swapped stages: render the one on screen now.
+    const shown = this.manager.active ?? stage;
+    const stageAnimating = shown.update(delta);
 
-    this.pipeline.render(stage.scene, stage.camera, stage.look, this.fade);
+    this.pipeline.render(shown.scene, shown.camera, shown.look, this.transition);
     this.framesRendered += 1;
     this.watchPerformance(now);
 
-    if (stageAnimating || fadeAnimating) this.invalidate();
+    if (stageAnimating || tripAnimating) this.invalidate();
     else this.lastFrameAt = 0;
   };
 
   private watchPerformance(now: number) {
     const snapshot = this.monitor.recordFrame(now);
-    if (!snapshot || this.tierLocked || this.quality.tier === 'low') return;
+    // Swapping stages hitches on purpose (uploads, compiles): the governor must not read it as a slow device.
+    if (!snapshot || this.tween || this.tierLocked || this.quality.tier === 'low') return;
     if (this.governor.shouldDowngrade(snapshot)) this.applyQuality(lowerTier(this.quality.tier));
   }
 

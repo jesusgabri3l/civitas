@@ -56,6 +56,16 @@ $hit-area: 3.5rem;
   // Below the tooltip card (z-index 4); the card has no pointer events with a mouse, so it never blocks a neighbor.
   z-index: 3;
   pointer-events: none;
+  transition: opacity 0.1s linear;
+
+  // A trip is running: the dots inside the globe scene take over.
+  &--travelling {
+    opacity: 0;
+  }
+
+  &--travelling &__item {
+    pointer-events: none;
+  }
 
   &__item {
     position: absolute;

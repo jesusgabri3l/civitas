@@ -1,5 +1,17 @@
+<script lang="ts">
+/** In-memory, per page load: the typing plays once; coming back to the hub shows the text already written. */
+let headlineAlreadyTyped = false;
+</script>
+
 <script setup lang="ts">
+import { onMounted } from 'vue';
 import { headlineLines, headlineSubtitle } from '../data/headline';
+
+const alreadyTyped = headlineAlreadyTyped;
+// Only on the client (onMounted never runs during SSR), so the prerendered HTML always types.
+onMounted(() => {
+  headlineAlreadyTyped = true;
+});
 
 /** Typewriter timing is all CSS: every letter knows its place in the whole headline. */
 const letterCount = headlineLines.join('').replace(/\s/g, '').length;
@@ -17,7 +29,7 @@ const lastSubtitleIndex = subtitleLetterCount - 1;
 </script>
 
 <template>
-  <div class="the-overlay-headline" data-headline :style="{ '--letter-count': letterCount, '--subtitle-letter-count': subtitleLetterCount }">
+  <div class="the-overlay-headline" :class="{ 'the-overlay-headline--typed': alreadyTyped }" data-headline :style="{ '--letter-count': letterCount, '--subtitle-letter-count': subtitleLetterCount }">
     <p class="the-overlay-headline__title" :aria-label="headlineLines.join(' ')">
       <span v-for="(words, lineIndex) in lines" :key="lineIndex" class="the-overlay-headline__line" aria-hidden="true">
         <span v-for="(word, wordIndex) in words" :key="wordIndex" class="the-overlay-headline__word">

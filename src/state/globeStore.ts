@@ -76,16 +76,25 @@ export function markInteracted() {
   if (!$hasInteracted.get()) $hasInteracted.set(true);
 }
 
-/** The globe stage registers how to turn to a city; resolves when the turn ends. */
-let focusHandler: ((city: DestinationId) => Promise<void>) | null = null;
+/** The globe stage registers how to turn to a city; resolves when the turn ends (or `leadSeconds` before it does). */
+let focusHandler: ((city: DestinationId, leadSeconds: number) => Promise<void>) | null = null;
 
-export function setFocusHandler(handler: ((city: DestinationId) => Promise<void>) | null) {
+export function setFocusHandler(handler: ((city: DestinationId, leadSeconds: number) => Promise<void>) | null) {
   focusHandler = handler;
 }
 
 /** Turns the globe until the city is centered. Resolves at once when there is no globe to turn. */
-export async function focusCity(city: DestinationId): Promise<void> {
-  await focusHandler?.(city);
+export async function focusCity(city: DestinationId, leadSeconds = 0): Promise<void> {
+  await focusHandler?.(city, leadSeconds);
+}
+
+/** The transition starts this long before the turn ends, so the two motions overlap. */
+const TURN_OVERLAP_SECONDS = 0.2;
+
+/** Click on a city: starts loading its stage and turns the globe to it. The camera dive belongs to the engine's swap. */
+export async function diveIntoCity(city: DestinationId): Promise<void> {
+  requestPreload(city);
+  await focusCity(city, TURN_OVERLAP_SECONDS);
 }
 
 /** A one-time interaction hint on touch devices (the globe nudges, the "Drag" pill pulses). */

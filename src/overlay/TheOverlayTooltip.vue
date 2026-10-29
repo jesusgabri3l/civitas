@@ -2,7 +2,7 @@
 import { useStore } from '@nanostores/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { destinations } from '../data/destinations';
-import { $hotspots, $openTooltip, focusCity, hideTooltip } from '../state/globeStore';
+import { $hotspots, $openTooltip, diveIntoCity, hideTooltip } from '../state/globeStore';
 import { navigate } from '../state/router';
 import { isTooltipShown, placementFor } from './tooltip';
 
@@ -21,7 +21,7 @@ async function visit() {
   const city = destination.value?.id;
   if (!city) return;
   hideTooltip();
-  await focusCity(city);
+  await diveIntoCity(city);
   navigate(city);
 }
 

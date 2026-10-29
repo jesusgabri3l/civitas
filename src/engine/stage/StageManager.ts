@@ -16,6 +16,8 @@ export class StageManager {
   /** Inactive warm stages, least recently used first. */
   private warmOrder: StageId[] = [];
   private activeId: StageId | null = null;
+  /** Stages that never go to sleep (the hub the user always comes back to). */
+  private readonly pinned = new Set<StageId>();
 
   constructor(
     private readonly loaders: StageLoaders,
@@ -25,6 +27,21 @@ export class StageManager {
 
   get active(): Stage | null {
     return this.activeId ? (this.entries.get(this.activeId)?.stage ?? null) : null;
+  }
+
+  /** The stage if it is loaded (any state), without touching its lifecycle. */
+  get(id: StageId): Stage | null {
+    return this.entries.get(id)?.stage ?? null;
+  }
+
+  /** Keeps a stage out of the warm limit: it stays warm once it is. */
+  pin(id: StageId) {
+    this.pinned.add(id);
+  }
+
+  isReady(id: StageId): boolean {
+    const status = this.statusOf(id);
+    return status === 'warm' || status === 'active';
   }
 
   statusOf(id: StageId): StageStatus {
@@ -55,7 +72,20 @@ export class StageManager {
   /** Makes a stage the active one. The previous active becomes warm (or sleeps if over the limit). */
   async activate(id: StageId): Promise<Stage> {
     const stage = await this.preload(id);
-    if (this.activeId === id) return stage;
+    this.makeActive(id, stage);
+    return stage;
+  }
+
+  /** Same as `activate`, but synchronous: only works on a stage that is already warm (returns null otherwise). */
+  activateIfReady(id: StageId): Stage | null {
+    const stage = this.get(id);
+    if (!stage || !this.isReady(id)) return null;
+    this.makeActive(id, stage);
+    return stage;
+  }
+
+  private makeActive(id: StageId, stage: Stage) {
+    if (this.activeId === id) return;
 
     const previousId = this.activeId;
     if (previousId) {
@@ -69,12 +99,11 @@ export class StageManager {
     this.activeId = id;
     stage.activate();
     this.enforceWarmLimit();
-    return stage;
   }
 
   sleep(id: StageId) {
     const entry = this.entries.get(id);
-    if (!entry?.stage || id === this.activeId) return;
+    if (!entry?.stage || id === this.activeId || this.pinned.has(id)) return;
     if (entry.status !== 'warm' && entry.status !== 'loaded') return;
     entry.stage.sleep();
     entry.status = 'asleep';
@@ -129,8 +158,9 @@ export class StageManager {
   }
 
   private enforceWarmLimit(keep?: StageId) {
-    while (this.warmOrder.length > this.maxWarmStages) {
-      const oldest = this.warmOrder.find((warmId) => warmId !== keep);
+    const sleepable = () => this.warmOrder.filter((warmId) => !this.pinned.has(warmId));
+    while (sleepable().length > this.maxWarmStages) {
+      const oldest = sleepable().find((warmId) => warmId !== keep);
       if (!oldest) return;
       this.sleep(oldest);
     }

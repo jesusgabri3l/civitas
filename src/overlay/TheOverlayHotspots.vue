@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue';
-import { ref, watch } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { destinations, type DestinationId } from '../data/destinations';
+import { $appState } from '../state/appStore';
 import { navigate } from '../state/router';
 import {
   $ambientActive,
   $hotspots,
   $openTooltip,
-  focusCity,
+  diveIntoCity,
   hideTooltip,
   scheduleHideTooltip,
   showTooltip,
@@ -21,6 +22,9 @@ const ENTERING_MS = 2400;
 const hotspots = useStore($hotspots);
 const openTooltip = useStore($openTooltip);
 const ambientActive = useStore($ambientActive);
+const appState = useStore($appState);
+// During a trip the globe scene draws its own dots (they zoom with the camera): these fade out and come back at the end.
+const travelling = computed(() => appState.value.kind === 'transitioning');
 
 const entering = ref(false);
 let enteringStarted = false;
@@ -65,14 +69,14 @@ async function onClick(event: MouseEvent, id: DestinationId) {
     return;
   }
   hideTooltip();
-  await focusCity(id); // a short turn that centers the city first
+  await diveIntoCity(id); // a short turn that centers the city first
   navigate(id);
 }
 </script>
 
 <template>
   <!-- Pointer enhancement: keyboard and screen reader users get the city list instead. -->
-  <div class="the-overlay-hotspots" :class="{ 'the-overlay-hotspots--paused': !ambientActive, 'the-overlay-hotspots--entering': entering }" aria-hidden="true">
+  <div class="the-overlay-hotspots" :class="{ 'the-overlay-hotspots--paused': !ambientActive, 'the-overlay-hotspots--entering': entering, 'the-overlay-hotspots--travelling': travelling }" aria-hidden="true">
     <button
       v-for="hotspot in hotspots"
       v-show="hotspot.visible"

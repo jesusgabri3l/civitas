@@ -48,13 +48,14 @@ function applyLocation({ stage, info }: RouteLocation) {
   beginTransition(stage, info);
 }
 
-/** Pushes a history entry and updates the state. No page reload. */
-export function navigate(stage: StageId, info = false) {
+/** Pushes a history entry and updates the state. No page reload. Returns false when the URL was already this one. */
+export function navigate(stage: StageId, info = false): boolean {
   const url = urlFor(stage, info);
-  if (url === location.pathname + location.hash) return;
+  if (url === location.pathname + location.hash) return false;
   history.pushState(null, '', url);
   infoPushedByUs = info;
   applyLocation({ stage, info });
+  return true;
 }
 
 export const openInfo = (city: DestinationId) => navigate(city, true);

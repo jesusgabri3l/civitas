@@ -13,13 +13,13 @@ import {
   type BufferGeometry,
 } from 'three';
 import type { StageId } from '../../state/appStore';
+import { stageSky } from '../../data/stageSky';
 import { DEFAULT_PLASTER } from '../render/PlasterLook';
 import type { Stage } from '../stage/Stage';
 import { disposeObject } from '../utils/disposal';
 
 export interface DummyStageConfig {
   id: StageId;
-  skyColor: number;
   color: number;
   shape: () => BufferGeometry;
 }
@@ -33,7 +33,8 @@ export const shapes = {
 const INTRO_SECONDS = 1.2;
 
 /** Placeholder stage: one colored shape over a ground plane, with a short intro spin to exercise render on demand. */
-export function createDummyStage({ id, skyColor, color, shape }: DummyStageConfig): Stage {
+export function createDummyStage({ id, color, shape }: DummyStageConfig): Stage {
+  const { skyColor } = stageSky[id];
   const scene = new Scene();
   const camera = new PerspectiveCamera(45, 1, 0.1, 60);
   camera.position.set(0, 2.2, 6);

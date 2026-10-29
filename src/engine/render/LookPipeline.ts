@@ -16,6 +16,7 @@ import {
 } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import type { QualitySettings } from '../quality/qualityTier';
+import { FrameSnapshots, type SnapshotSlot } from './FrameSnapshots';
 import { PlasterLook, type PlasterSettings } from './PlasterLook';
 
 /** Layer of the sky dome: hidden from the G-buffer pass. */
@@ -48,9 +49,20 @@ const GBUFFER_FRAGMENT = /* glsl */ `
 
 const GBUFFER_CLEAR = new Color(0.5, 0.5, 1.0);
 
-export interface FadeState {
-  amount: number;
-  color: Color;
+/** What the pipeline does with snapshots of the final frame while stages change. */
+export interface TransitionFrame {
+  /** Slot to copy this frame into once drawn (null skips the copy). */
+  capture: SnapshotSlot | null;
+  /** Slot drawn over this frame (null draws none). */
+  overlay: SnapshotSlot | null;
+  /** 0..1 opacity of the overlay. */
+  opacity: number;
+  /** Scale of the overlay around `center`. */
+  scale: number;
+  /** Anchor of the scale, as viewport fractions (0..1 from the top left). */
+  center: Vector2;
+  /** 0..1 size of the rounded window that opens from `center` (0 = none). */
+  reveal: number;
 }
 
 /**
@@ -59,6 +71,7 @@ export interface FadeState {
  */
 export class LookPipeline {
   private readonly look = new PlasterLook();
+  private readonly snapshots: FrameSnapshots;
   private readonly quad = new FullScreenQuad();
   private readonly gbufferMaterial = new ShaderMaterial({
     vertexShader: GBUFFER_VERTEX,
@@ -76,6 +89,7 @@ export class LookPipeline {
     private readonly renderer: WebGLRenderer,
     private quality: QualitySettings,
   ) {
+    this.snapshots = new FrameSnapshots(renderer);
     this.supportsFloatTarget = renderer.extensions.has('EXT_color_buffer_float');
     this.supportsHalfFloatTarget = this.supportsFloatTarget || renderer.extensions.has('EXT_color_buffer_half_float');
     this.look.useDepthTexture(!quality.useGBuffer);
@@ -94,6 +108,7 @@ export class LookPipeline {
     const width = Math.max(2, Math.round(buffer.x * renderScale));
     const height = Math.max(2, Math.round(buffer.y * renderScale));
 
+    this.snapshots.resize(buffer.x, buffer.y);
     this.sceneTarget?.dispose();
     this.sceneTarget = new WebGLRenderTarget(width, height, {
       type: this.supportsHalfFloatTarget ? HalfFloatType : undefined,
@@ -116,7 +131,7 @@ export class LookPipeline {
     }
   }
 
-  render(scene: Scene, camera: PerspectiveCamera, settings: PlasterSettings, fade: FadeState) {
+  render(scene: Scene, camera: PerspectiveCamera, settings: PlasterSettings, transition: TransitionFrame) {
     if (!this.sceneTarget) this.resize();
     const sceneTarget = this.sceneTarget as WebGLRenderTarget;
     const renderer = this.renderer;
@@ -156,18 +171,20 @@ export class LookPipeline {
       near: camera.near,
       far: camera.far,
       settings,
-      fadeAmount: fade.amount,
-      fadeColor: fade.color,
     });
 
     renderer.setRenderTarget(null);
     this.quad.material = this.look.material;
     this.quad.render(renderer);
+
+    if (transition.capture !== null) this.snapshots.capture(transition.capture);
+    if (transition.overlay !== null) this.snapshots.draw(transition.overlay, transition.opacity, transition.scale, transition.center, transition.reveal);
   }
 
   dispose() {
     this.sceneTarget?.dispose();
     this.gbufferTarget?.dispose();
+    this.snapshots.dispose();
     this.quad.dispose();
     this.gbufferMaterial.dispose();
     this.look.dispose();

@@ -1,4 +1,4 @@
-import { Color, ShaderMaterial, Vector2, type Texture } from 'three';
+import { ShaderMaterial, Vector2, type Texture } from 'three';
 import { COMMON_FRAGMENT, SCREEN_VERTEX } from './shaderChunks';
 
 /** Per-scene look settings: every stage hands its own to the pipeline. */
@@ -33,8 +33,6 @@ export interface LookFrame {
   near: number;
   far: number;
   settings: PlasterSettings;
-  fadeAmount: number;
-  fadeColor: Color;
 }
 
 const FRAGMENT = /* glsl */ `
@@ -51,8 +49,6 @@ const FRAGMENT = /* glsl */ `
   uniform float uWarmth;
   uniform float uVignette;
   uniform float uFilmic;
-  uniform float uFade;
-  uniform vec3 uFadeColor;
 
   // Linear distance in meters. Reads the G-buffer, or the depth texture of the color pass on the low preset.
   float sceneDepth(vec2 uv) {
@@ -104,7 +100,7 @@ const FRAGMENT = /* glsl */ `
     vec2 centered = (vUv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
     color *= 1.0 - uVignette * dot(centered, centered);
     color += (hash12(px + 17.0) - 0.5) * uGrain;
-    color = mix(max(color, 0.0), uFadeColor, uFade);
+    color = max(color, 0.0);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
     // Output dither, after the sRGB encode and whatever the grain setting: long dark gradients (vignette, glows) would band in 8 bits.
@@ -136,8 +132,6 @@ export class PlasterLook {
         uWarmth: { value: 0.6 },
         uVignette: { value: 0.15 },
         uFilmic: { value: 1 },
-        uFade: { value: 0 },
-        uFadeColor: { value: new Color() },
       },
       depthTest: false,
       depthWrite: false,
@@ -169,8 +163,6 @@ export class PlasterLook {
     uniforms.uWarmth.value = frame.settings.warmth;
     uniforms.uVignette.value = frame.settings.vignette;
     uniforms.uFilmic.value = frame.settings.filmic;
-    uniforms.uFade.value = frame.fadeAmount;
-    (uniforms.uFadeColor.value as Color).copy(frame.fadeColor);
   }
 
   dispose() {
