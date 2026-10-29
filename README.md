@@ -1,4 +1,4 @@
-# WorldHub
+# Civitas
 
 Hub de monumentos 3D: un globo que lleva a Atenas, Roma y París. Plan completo en [docs/PLAN.md](docs/PLAN.md).
 
@@ -17,4 +17,4 @@ Astro 5 (estático) · TypeScript · Three · GSAP · Sass (7-1) · nanostores �
 
 ## Estado
 
-Fase 1 (núcleo: StageManager, router/store, pipeline plaster, tiers) con stages dummy. Sin despliegue ni repo remoto todavía.
+Fase 1 (núcleo: StageManager, router/store, pipeline plaster, tiers) con stages dummy. Fase 2 (globo) con la dirección "Atlas de noche". Sin despliegue ni repo remoto todavía.

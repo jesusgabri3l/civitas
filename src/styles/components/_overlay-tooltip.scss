@@ -1,0 +1,152 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+$line: 22px; // each axis of the leader line: about 31px long
+$card-gap: 4px;
+
+// A leader line and a small dark card anchored to the hotspot. The modifiers flip it by screen quadrant:
+// --left/--right is the side of the card, --up/--down the direction of the line.
+.the-overlay-tooltip {
+  position: fixed;
+  // Above the hotspots and their labels (z-index 3): the card is never covered by a neighbor's name.
+  z-index: 4;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+
+  // The svg is drawn going up and to the right from its bottom-left corner, which sits on the point.
+  &__line {
+    position: absolute;
+    left: 0;
+    top: -$line;
+    width: $line;
+    height: $line;
+    overflow: visible;
+    transform-origin: 0 100%;
+    filter: drop-shadow(0 0 1.5px rgba($color-ink, 0.9));
+
+    line {
+      stroke: $color-text;
+      stroke-width: 1;
+      stroke-dasharray: 1;
+      stroke-dashoffset: 0;
+      transition: stroke-dashoffset $duration-tooltip $ease-out;
+    }
+  }
+
+  &--left &__line {
+    transform: scaleX(-1);
+  }
+
+  &--down &__line {
+    transform: scaleY(-1);
+  }
+
+  &--left#{&}--down &__line {
+    transform: scale(-1, -1);
+  }
+
+  &__label {
+    position: absolute;
+    display: grid;
+    gap: 0.15rem;
+    width: max-content;
+    max-width: 14rem;
+    padding: 0.55rem 0.75rem 0.6rem;
+    border: 1px solid rgba($color-text, 0.28);
+    border-radius: 2px;
+    background: rgba($color-ink, 0.84);
+    color: $color-text;
+    backdrop-filter: blur(6px);
+    transition: opacity $duration-tooltip $ease-out, transform $duration-tooltip $ease-out;
+  }
+
+  // The card hangs from the end of the line, on the side the line points to.
+  &--right &__label {
+    left: $line + $card-gap;
+    text-align: left;
+  }
+
+  &--left &__label {
+    right: $line + $card-gap;
+    text-align: right;
+  }
+
+  &--up &__label {
+    bottom: $line - 10px;
+  }
+
+  &--down &__label {
+    top: $line - 10px;
+  }
+
+  &__name {
+    font-family: $font-display;
+    font-size: 1.0625rem;
+    font-style: italic;
+    line-height: 1.2;
+  }
+
+  &__monument {
+    @include label-mono;
+    color: $color-text-muted;
+  }
+
+  &__visit {
+    @include label-mono;
+    justify-self: start;
+    margin-top: 0.3rem;
+    color: $color-amber;
+  }
+
+  &--left &__visit {
+    justify-self: end;
+  }
+
+  // Enter: the line draws itself, then the card rises 6px and fades in. Leave: a quick fade.
+  &-enter-from &__line line {
+    stroke-dashoffset: 1;
+  }
+
+  &-enter-from &__label {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  &-enter-active &__label {
+    transition-delay: 80ms;
+  }
+
+  &-leave-active {
+    transition: opacity 0.15s ease;
+  }
+
+  &-leave-to {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .the-overlay-tooltip {
+    &__line line,
+    &__label {
+      transition: none;
+    }
+
+    &-enter-from &__label {
+      transform: none;
+    }
+
+    &-enter-active &__label {
+      transition-delay: 0s;
+    }
+  }
+}
+
+// Touch: the card is tappable (it navigates); with a mouse it stays a pure readout.
+@media (pointer: coarse) {
+  .the-overlay-tooltip__label {
+    cursor: pointer;
+    pointer-events: auto;
+  }
+}

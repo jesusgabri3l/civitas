@@ -1,4 +1,8 @@
 ---
+import '@fontsource/fraunces/latin-400-italic.css';
+import '@fontsource/jetbrains-mono/latin-400.css';
+import frauncesItalic from '@fontsource/fraunces/files/fraunces-latin-400-italic.woff2?url';
+import jetbrainsMono from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2?url';
 import '../styles/main.scss';
 
 interface Props {
@@ -22,9 +26,11 @@ const ogUrl = new URL(ogImage, Astro.site).href;
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="theme-color" content="#0b1220" />
+    <meta name="theme-color" content="#0b0b0e" />
+    <link rel="preload" href={frauncesItalic} as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href={jetbrainsMono} as="font" type="font/woff2" crossorigin />
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="WorldHub" />
+    <meta property="og:site_name" content="Civitas" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />

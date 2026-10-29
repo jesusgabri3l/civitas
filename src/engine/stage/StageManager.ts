@@ -112,7 +112,7 @@ export class StageManager {
     if (!entry.stage) {
       entry.status = 'loading';
       const { createStage } = await this.loaders[id]();
-      const stage = createStage();
+      const stage = createStage(this.host);
       await stage.load();
       entry.stage = stage;
     }

@@ -126,7 +126,7 @@ export class LookPipeline {
     renderer.setRenderTarget(sceneTarget);
     renderer.render(scene, camera);
 
-    if (this.gbufferTarget) {
+    if (this.gbufferTarget && settings.aoStrength > 0) {
       // Shape pass: no sky dome, and shadows are not recomputed.
       renderer.getClearColor(this.clearColor);
       const clearAlpha = renderer.getClearAlpha();

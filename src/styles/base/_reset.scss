@@ -13,18 +13,20 @@ body {
 }
 
 body {
-  background: $color-sky;
+  background: $color-ink;
   color: $color-text;
-  font-family: $font-body;
+  font-family: $font-mono;
+  -webkit-font-smoothing: antialiased;
 }
 
 .skip-link {
   position: absolute;
   left: 1rem;
   top: -4rem;
+  z-index: 10;
   padding: 0.5rem 1rem;
   background: $color-text;
-  color: $color-sky;
+  color: $color-ink;
 
   &:focus {
     top: 1rem;

@@ -9,6 +9,8 @@ export interface PlasterSettings {
   grain: number;
   warmth: number;
   vignette: number;
+  /** 0..1: how much of the filmic tone curve is applied (0 keeps flat, palette-true colors). */
+  filmic: number;
 }
 
 export const DEFAULT_PLASTER: PlasterSettings = {
@@ -18,6 +20,7 @@ export const DEFAULT_PLASTER: PlasterSettings = {
   grain: 0.03,
   warmth: 0.6,
   vignette: 0.15,
+  filmic: 1,
 };
 
 export interface LookFrame {
@@ -47,6 +50,7 @@ const FRAGMENT = /* glsl */ `
   uniform float uGrain;
   uniform float uWarmth;
   uniform float uVignette;
+  uniform float uFilmic;
   uniform float uFade;
   uniform vec3 uFadeColor;
 
@@ -85,14 +89,17 @@ const FRAGMENT = /* glsl */ `
   void main() {
     vec2 px = vUv * uResolution;
     vec3 color = texture2D(tColor, vUv).rgb;
-    float depth = sceneDepth(vUv);
 
-    if (depth < 50000.0) {
-      float occlusion = ambientOcclusion(px, vUv, depth);
-      color *= 1.0 - clamp(occlusion * uAoStrength * 1.5, 0.0, 0.85);
+    // Stages that turn AO off (strength 0) skip both the depth read and the 12 samples.
+    if (uAoStrength > 0.0) {
+      float depth = sceneDepth(vUv);
+      if (depth < 50000.0) {
+        float occlusion = ambientOcclusion(px, vUv, depth);
+        color *= 1.0 - clamp(occlusion * uAoStrength * 1.5, 0.0, 0.85);
+      }
     }
 
-    color = filmic(color * uExposure);
+    color = mix(color * uExposure, filmic(color * uExposure), uFilmic);
     color *= mix(vec3(1.0), vec3(1.035, 0.99, 0.925), uWarmth);
     vec2 centered = (vUv - 0.5) * vec2(uResolution.x / uResolution.y, 1.0);
     color *= 1.0 - uVignette * dot(centered, centered);
@@ -100,6 +107,8 @@ const FRAGMENT = /* glsl */ `
     color = mix(max(color, 0.0), uFadeColor, uFade);
     gl_FragColor = vec4(color, 1.0);
     #include <colorspace_fragment>
+    // Output dither, after the sRGB encode and whatever the grain setting: long dark gradients (vignette, glows) would band in 8 bits.
+    gl_FragColor.rgb += (hash12(px + 53.0) + hash12(px + 91.0) - 1.0) / 255.0;
   }
 `;
 
@@ -126,6 +135,7 @@ export class PlasterLook {
         uGrain: { value: 0.03 },
         uWarmth: { value: 0.6 },
         uVignette: { value: 0.15 },
+        uFilmic: { value: 1 },
         uFade: { value: 0 },
         uFadeColor: { value: new Color() },
       },
@@ -158,6 +168,7 @@ export class PlasterLook {
     uniforms.uGrain.value = frame.settings.grain;
     uniforms.uWarmth.value = frame.settings.warmth;
     uniforms.uVignette.value = frame.settings.vignette;
+    uniforms.uFilmic.value = frame.settings.filmic;
     uniforms.uFade.value = frame.fadeAmount;
     (uniforms.uFadeColor.value as Color).copy(frame.fadeColor);
   }

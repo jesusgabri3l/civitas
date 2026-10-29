@@ -46,6 +46,24 @@ export function settingsForTier(tier: QualityTier, mobile: boolean): QualitySett
   return { tier, maxPixelRatio, renderScale: 1, msaaSamples: 4, useGBuffer: true, maxWarmStages };
 }
 
+/** How much ambient (non-interactive) animation a device can afford. */
+export interface AmbientPolicy {
+  /** 0..1 multiplier of the star counts. */
+  starDensity: number;
+  shootingStars: boolean;
+  /** Seconds without interaction before ambient animation pauses (the engine then stops rendering). */
+  idleSeconds: number;
+}
+
+export const MOBILE_IDLE_SECONDS = 20;
+export const DESKTOP_IDLE_SECONDS = 60;
+
+export function ambientPolicyFor(tier: QualityTier, mobile: boolean): AmbientPolicy {
+  if (tier === 'low') return { starDensity: 0.35, shootingStars: false, idleSeconds: MOBILE_IDLE_SECONDS };
+  if (mobile) return { starDensity: 0.45, shootingStars: false, idleSeconds: MOBILE_IDLE_SECONDS };
+  return { starDensity: tier === 'medium' ? 0.8 : 1, shootingStars: true, idleSeconds: DESKTOP_IDLE_SECONDS };
+}
+
 export function lowerTier(tier: QualityTier): QualityTier {
   return tier === 'high' ? 'medium' : 'low';
 }

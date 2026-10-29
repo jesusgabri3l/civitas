@@ -1,4 +1,4 @@
-import { BufferGeometry, InstancedMesh, Material, Mesh, Texture, type Object3D } from 'three';
+import { BufferGeometry, InstancedMesh, Line, Material, Mesh, Points, ShaderMaterial, Texture, type Object3D } from 'three';
 
 const textureKeys = [
   'map', 'normalMap', 'aoMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'emissiveMap', 'envMap', 'bumpMap',
@@ -13,6 +13,14 @@ export function disposeMaterial(material: Material, disposedTextures: Set<Textur
       texture.dispose();
     }
   }
+  if (material instanceof ShaderMaterial) {
+    for (const { value } of Object.values(material.uniforms)) {
+      if (value instanceof Texture && !disposedTextures.has(value)) {
+        disposedTextures.add(value);
+        value.dispose();
+      }
+    }
+  }
   material.dispose();
 }
 
@@ -21,7 +29,7 @@ export function disposeObject(root: Object3D) {
   const geometries = new Set<BufferGeometry>();
   const materials = new Set<Material>();
   root.traverse((object) => {
-    if (object instanceof Mesh) {
+    if (object instanceof Mesh || object instanceof Line || object instanceof Points) {
       geometries.add(object.geometry);
       const list = Array.isArray(object.material) ? object.material : [object.material];
       list.forEach((material) => materials.add(material));

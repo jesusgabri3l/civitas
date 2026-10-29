@@ -1,4 +1,5 @@
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
 
 .the-stage {
   position: relative;
@@ -12,51 +13,56 @@
     display: block;
   }
 
+  // The content layer adds no chrome of its own: the overlay components position themselves.
   &__content {
     position: relative;
-    display: grid;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     min-height: 100svh;
-    place-content: center;
-    gap: 1rem;
-    padding: 1.5rem;
+    gap: 0.5rem;
+    padding: 5rem $gutter $gutter;
     text-align: center;
     pointer-events: none;
   }
 
   &__title,
   &__intro {
-    text-shadow: 0 1px 12px rgba($color-sky, 0.6);
+    @include text-halo;
   }
 
   &__intro {
     margin: 0;
-    opacity: 0.9;
+    color: $color-text-muted;
+    font-size: 0.8125rem;
   }
 
-  &__nav {
+  // Out of sight; a keyboard user who tabs into it gets a small bar at the bottom.
+  &__nav:not(:focus-within) {
+    @include visually-hidden;
+  }
+
+  &__nav:focus-within {
+    position: fixed;
+    bottom: $gutter;
+    left: 50%;
     display: flex;
-    justify-content: center;
-    flex-wrap: wrap;
     gap: 1.25rem;
+    transform: translateX(-50%);
     pointer-events: auto;
   }
 
   &__nav a {
+    @include label-mono;
+    @include text-halo;
     padding: 0.5rem 0.25rem;
     border-bottom: 1px solid transparent;
-    text-shadow: 0 1px 8px rgba($color-sky, 0.7);
+    text-decoration: none;
 
     &:hover,
     &:focus-visible {
-      border-bottom-color: $color-accent;
+      border-bottom-color: $color-amber;
+      outline: none;
     }
   }
-}
-
-.the-overlay {
-  position: fixed;
-  right: 1rem;
-  bottom: 1rem;
-  font-size: 0.75rem;
-  opacity: 0.6;
 }

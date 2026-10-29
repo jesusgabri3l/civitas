@@ -1,0 +1,79 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+// The overlay itself adds no box: every piece is fixed to the viewport.
+.the-overlay {
+  display: contents;
+}
+
+$brand-touch-pad: 0.75rem;
+$brand-line: 1.12 * 0.5; // half of the headline's line-height: its first line is centered this far below its top
+
+.the-overlay-brand {
+  position: fixed;
+  // The padding is only touch area: the box is pulled back by the same amount, so the text sits exactly on the inset.
+  top: max(#{$overlay-inset}, env(safe-area-inset-top));
+  left: calc(max(#{$overlay-inset}, env(safe-area-inset-left)) - #{$brand-touch-pad});
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0;
+  height: $touch-target;
+  line-height: $touch-target; // the text sits at the middle of the touch box
+  margin: 0;
+  padding: 0 $brand-touch-pad;
+  color: $color-text;
+  font-family: $font-display;
+  font-size: 1.5rem;
+  font-style: italic;
+  text-decoration: none;
+  pointer-events: auto;
+  @include text-halo;
+
+  &__globe {
+    width: 0.9rem;
+    height: 0.9rem;
+    margin-left: 0.08rem;
+    align-self: baseline;
+    fill: none;
+    stroke: $color-amber;
+    stroke-width: 1.1;
+    stroke-linecap: round;
+  }
+
+  &:focus-visible {
+    outline: 1px solid $color-amber;
+    outline-offset: 2px;
+  }
+}
+
+// Wide stacked layout: the brand shares a line with the first line of the headline.
+@mixin brand-on-headline-line {
+  .the-overlay-brand {
+    top: calc(#{$stacked-headline-top} + #{$brand-line} * #{$stacked-headline-font} - #{$touch-target} / 2);
+  }
+}
+
+// Narrow screens: the brand is centered above the headline.
+@mixin brand-centered {
+  .the-overlay-brand {
+    top: max(1rem, env(safe-area-inset-top));
+    right: 0;
+    left: 0;
+    width: fit-content;
+    margin: 0 auto;
+  }
+}
+
+@if $layout == 'stacked' {
+  @media (min-aspect-ratio: 6/5) {
+    @include brand-on-headline-line;
+  }
+
+  @media (max-aspect-ratio: 6/5) {
+    @include brand-centered;
+  }
+} @else {
+  @media (max-aspect-ratio: 6/5) {
+    @include brand-centered;
+  }
+}

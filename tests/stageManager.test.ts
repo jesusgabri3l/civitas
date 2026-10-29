@@ -34,7 +34,7 @@ function setup(maxWarm: number) {
       },
     ]),
   ) as StageLoaders;
-  const host: StageHost = { compile: async (stage) => void log.push(`${stage.id}:warm`) };
+  const host: StageHost = { canvas: {} as HTMLCanvasElement, invalidate: () => {}, ambient: () => ({ starDensity: 1, shootingStars: false, idleSeconds: 60 }), pixelRatio: () => 1, compile: async (stage) => void log.push(`${stage.id}:warm`) };
   return { log, imports, manager: new StageManager(loaders, host, maxWarm) };
 }
 

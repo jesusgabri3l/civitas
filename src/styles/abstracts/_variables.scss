@@ -1,4 +1,24 @@
-$color-sky: #0b1220;
-$color-text: #f3ede2;
-$color-accent: #c98a3d;
-$font-body: system-ui, -apple-system, 'Segoe UI', sans-serif;
+// "Atlas de noche". The 3D palette lives in src/engine/stages/globe/palette.ts: keep both in sync.
+$color-ink: #0b0b0e;
+// The only accent: hotspots, the brand dot, "Visit" and the last line of the headline.
+$color-amber: #e8a33d;
+$color-text: #ede7da;
+$color-text-muted: rgba($color-text, 0.7);
+
+$font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+$font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+$ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+$duration-tooltip: 250ms;
+
+$touch-target: 2.75rem;
+// Keep in sync with LAYOUT in src/engine/stages/globe/geo.ts. 'stacked': headline on top, globe below, at every size.
+// 'split': headline left, globe right on wide screens (stacked only on narrow ones).
+$layout: 'stacked';
+
+$gutter: 1.5rem;
+$overlay-inset: clamp(2.5rem, 5vw, 5rem); // shared side margin of every overlay piece (brand, headline, coordinates, hint)
+
+// Stacked layout: where the headline block starts and how big its text is (the brand lines up with its first line).
+$stacked-headline-top: max(4.25rem, 9vh, calc(env(safe-area-inset-top) + 3.75rem));
+$stacked-headline-font: clamp(1.75rem, 3.4vw + 0.9rem, 4rem);

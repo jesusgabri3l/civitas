@@ -2,6 +2,7 @@ import { Color, WebGLRenderer } from 'three';
 import type { StageId } from '../state/appStore';
 import { PerformanceMonitor, QualityGovernor } from './quality/PerformanceMonitor';
 import {
+  ambientPolicyFor,
   detectQualityTier,
   isMobileDevice,
   lowerTier,
@@ -16,7 +17,7 @@ import { StageManager } from './stage/StageManager';
 import { stageLoaders } from './stages';
 
 const FADE_SECONDS = 0.26;
-const FADE_COLOR = 0x0b1220;
+const FADE_COLOR = 0x0b0b0e;
 
 interface FadeTween {
   from: number;
@@ -29,6 +30,8 @@ export interface EngineOptions {
   canvas: HTMLCanvasElement;
   /** Forces a tier and disables the adaptive governor (used by tests and `?quality=`). */
   tierOverride?: QualityTier;
+  /** Overrides the seconds of inactivity after which ambient animation pauses (tests and `?ambientIdle=`). */
+  ambientIdleSeconds?: number;
 }
 
 /**
@@ -45,6 +48,7 @@ export class Engine {
   private readonly monitor = new PerformanceMonitor();
   private readonly governor = new QualityGovernor();
   private readonly mobile: boolean;
+  private readonly ambientIdleSeconds: number | undefined;
   private readonly tierLocked: boolean;
   private quality: QualitySettings;
   private readonly fade: FadeState = { amount: 0, color: new Color(FADE_COLOR) };
@@ -58,8 +62,9 @@ export class Engine {
   private readonly resizeObserver: ResizeObserver;
   private readonly cleanups: Array<() => void> = [];
 
-  constructor({ canvas, tierOverride }: EngineOptions) {
+  constructor({ canvas, tierOverride, ambientIdleSeconds }: EngineOptions) {
     this.canvas = canvas;
+    this.ambientIdleSeconds = ambientIdleSeconds;
     const signals = readDeviceSignals();
     this.mobile = isMobileDevice(signals);
     this.tierLocked = tierOverride !== undefined;
@@ -69,7 +74,17 @@ export class Engine {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.quality.maxPixelRatio));
     this.pipeline = new LookPipeline(this.renderer, this.quality);
 
-    const host: StageHost = { compile: (stage) => this.renderer.compileAsync(stage.scene, stage.camera).then(() => {}) };
+    const host: StageHost = {
+      canvas,
+      invalidate: () => this.invalidate(),
+      ambient: () => {
+        const policy = ambientPolicyFor(this.quality.tier, this.mobile);
+        return this.ambientIdleSeconds === undefined ? policy : { ...policy, idleSeconds: this.ambientIdleSeconds };
+      },
+      tier: () => this.quality.tier,
+      pixelRatio: () => this.renderer.getPixelRatio() * this.quality.renderScale,
+      compile: (stage) => this.renderer.compileAsync(stage.scene, stage.camera).then(() => {}),
+    };
     this.manager = new StageManager(stageLoaders, host, this.quality.maxWarmStages);
 
     this.resizeObserver = new ResizeObserver(() => this.applySize());

@@ -1,5 +1,6 @@
 import type { PerspectiveCamera, Scene } from 'three';
 import type { StageId } from '../../state/appStore';
+import type { AmbientPolicy, QualityTier } from '../quality/qualityTier';
 import type { PlasterSettings } from '../render/PlasterLook';
 
 /**
@@ -27,12 +28,22 @@ export interface Stage {
 }
 
 export interface StageModule {
-  createStage(): Stage;
+  createStage(host: StageHost): Stage;
 }
 
 export type StageLoaders = Record<StageId, () => Promise<StageModule>>;
 
 export interface StageHost {
+  /** The canvas the engine renders to (stages that take input listen to it). */
+  readonly canvas: HTMLCanvasElement;
+  /** Asks for one more frame (render on demand). */
+  invalidate(): void;
+  /** Current ambient animation budget (depends on the quality tier and device). */
+  ambient(): AmbientPolicy;
+  /** Current quality tier (stages pick lighter assets on `low`). */
+  tier(): QualityTier;
+  /** Effective pixels per CSS pixel of the scene pass (device pixel ratio capped by the tier and render scale). */
+  pixelRatio(): number;
   /** Compiles the shaders of a stage without blocking (renderer.compileAsync). */
   compile(stage: Stage): Promise<void>;
 }

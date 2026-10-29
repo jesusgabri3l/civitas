@@ -1,0 +1,176 @@
+@use '../abstracts/variables' as *;
+
+$dot-size: 0.625rem;
+$hit-area: 3.5rem;
+
+@keyframes the-overlay-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+
+  12% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(3.6);
+  }
+}
+
+// First reveal of a city: the dot grows in with a fade, and a ring spreads out once.
+@keyframes the-overlay-dot-in {
+  from {
+    opacity: 0;
+    transform: scale(0);
+  }
+}
+
+@keyframes the-overlay-ring-in {
+  0% {
+    opacity: 0;
+    transform: scale(1);
+  }
+
+  25% {
+    opacity: 0.8;
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(4.2);
+  }
+}
+
+@keyframes the-overlay-label-in {
+  from {
+    opacity: 0;
+    transform: translate(0.4rem, -50%);
+  }
+}
+
+.the-overlay-hotspots {
+  position: fixed;
+  inset: 0;
+  // Below the tooltip card (z-index 4); the card has no pointer events with a mouse, so it never blocks a neighbor.
+  z-index: 3;
+  pointer-events: none;
+
+  &__item {
+    position: absolute;
+    display: grid;
+    place-items: center;
+    width: $hit-area;
+    height: $hit-area;
+    padding: 0;
+    border: 0;
+    background: none;
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: opacity 0.25s ease;
+    -webkit-tap-highlight-color: transparent;
+
+    &--dimmed {
+      opacity: 0.3;
+    }
+  }
+
+  &__dot,
+  &__pulse {
+    grid-area: 1 / 1;
+    width: $dot-size;
+    height: $dot-size;
+    border-radius: 50%;
+  }
+
+  &__dot {
+    background: $color-amber;
+    // A dark keyline keeps the dot readable over the chalk.
+    box-shadow: 0 0 0 2px $color-ink;
+    transition: transform 0.2s ease;
+  }
+
+  &__item:hover &__dot,
+  &__item--active &__dot {
+    transform: scale(1.4);
+  }
+
+  // A slow ring, out of step per city (the delay comes from the component).
+  &__pulse {
+    border: 1px solid $color-amber;
+    opacity: 0;
+    animation: the-overlay-pulse 4.8s ease-out infinite;
+    animation-delay: var(--pulse-delay, 0s);
+  }
+
+  &--entering &__dot {
+    animation: the-overlay-dot-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) var(--enter-delay, 0s) backwards;
+  }
+
+  &--entering &__pulse {
+    animation: the-overlay-ring-in 0.9s ease-out calc(var(--enter-delay, 0s) + 0.15s) backwards;
+  }
+
+  // City names: only where there is no hover (touch). Atlas style, like the ocean labels.
+  &__label {
+    display: none;
+    position: absolute;
+    transform: translate(0.9rem, -50%);
+    color: $color-text;
+    font-family: $font-display;
+    font-size: 0.9375rem;
+    font-style: italic;
+    line-height: 1;
+    text-shadow: 0 0 8px rgba($color-ink, 0.9), 0 0 2px rgba($color-ink, 0.6);
+    white-space: nowrap;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+
+    &--dimmed {
+      opacity: 0.2;
+    }
+
+    &--left {
+      transform: translate(calc(-100% - 0.9rem), -50%);
+    }
+  }
+
+  &--entering &__label {
+    animation: the-overlay-label-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) calc(var(--enter-delay, 0s) + 0.25s) backwards;
+  }
+
+  // The globe went still: so do the rings.
+  &--paused &__pulse {
+    animation: none;
+  }
+
+  &__item--active &__pulse,
+  &__item--dimmed &__pulse {
+    animation: none;
+  }
+}
+
+@media (pointer: coarse), (hover: none) {
+  .the-overlay-hotspots__label {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .the-overlay-hotspots--entering .the-overlay-hotspots__label {
+    animation: none;
+  }
+
+  .the-overlay-hotspots__pulse,
+  .the-overlay-hotspots--entering .the-overlay-hotspots__dot,
+  .the-overlay-hotspots--entering .the-overlay-hotspots__pulse {
+    animation: none;
+  }
+
+  .the-overlay-hotspots__dot,
+  .the-overlay-hotspots__item {
+    transition: none;
+  }
+}

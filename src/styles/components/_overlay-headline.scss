@@ -1,0 +1,192 @@
+@use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
+
+@keyframes the-overlay-headline-type {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes the-overlay-headline-caret {
+  0%,
+  99% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+$first-delay: 0.4s;
+$typing-time: 1.6s; // the whole headline, from first to last letter
+
+// Seconds per letter: the whole headline always takes $typing-time, however long the copy is.
+$letter-step: calc(#{$typing-time} / var(--letter-count, 1));
+
+// The catch line, left of the globe. Each phrase rises out of its own mask, one after the other.
+@keyframes the-overlay-headline-subtitle {
+  from {
+    opacity: 0;
+  }
+}
+
+// The subtitle starts typing when the headline ends, in about a second.
+$subtitle-delay: calc(#{$first-delay} + #{$typing-time});
+$subtitle-typing-time: 1s;
+$subtitle-letter-step: calc(#{$subtitle-typing-time} / var(--subtitle-letter-count, 1));
+
+// The last letter of the subtitle keeps its caret, blinking.
+@keyframes the-overlay-headline-caret-hold {
+  0%,
+  55% {
+    opacity: 1;
+  }
+
+  55.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.the-overlay-headline {
+  @include text-halo;
+  position: fixed;
+  z-index: 1;
+  // Centered without a transform, so the text never lands on a half pixel (that rasterizes it soft).
+  top: 0;
+  bottom: 0;
+  height: fit-content;
+  margin-block: auto;
+  left: max(#{$overlay-inset}, env(safe-area-inset-left));
+  width: fit-content;
+  max-width: 46vw;
+  margin-inline: 0;
+  color: $color-text;
+  font-family: $font-display;
+  font-size: clamp(2rem, 3.6vw, 4.4rem);
+  font-style: italic;
+  line-height: 1.12;
+  pointer-events: none;
+
+  &__line {
+    display: block;
+    white-space: nowrap;
+  }
+
+  &__word {
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  &__word:not(:last-child)::after {
+    content: ' ';
+    white-space: pre;
+  }
+
+  &__letter {
+    position: relative;
+    animation: the-overlay-headline-type 0.12s linear backwards;
+    animation-delay: calc(#{$first-delay} + var(--letter-index, 0) * #{$letter-step});
+
+    // A discreet caret rides on the letter being typed and moves on with the next one.
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0.12em;
+      right: -0.06em;
+      width: 0.06em;
+      height: 0.9em;
+      background: $color-amber;
+      opacity: 0;
+      animation: the-overlay-headline-caret #{$letter-step} steps(1, end);
+      animation-delay: calc(#{$first-delay} + var(--letter-index, 0) * #{$letter-step});
+    }
+  }
+
+  &__title {
+    margin: 0;
+  }
+
+  &__subtitle {
+    @include label-mono;
+    margin: 1.1rem 0 0;
+    color: $color-amber;
+    font-size: clamp(0.8125rem, 0.6vw + 0.6rem, 1.0625rem);
+    letter-spacing: 0.22em;
+  }
+
+  &__subtitle-word {
+    display: inline-block;
+    white-space: nowrap;
+  }
+
+  &__subtitle-word:not(:last-child)::after {
+    content: ' ';
+    white-space: pre;
+  }
+
+  &__subtitle-letter {
+    position: relative;
+    animation: the-overlay-headline-type 0.12s linear backwards;
+    animation-delay: calc(#{$subtitle-delay} + var(--letter-index, 0) * #{$subtitle-letter-step});
+
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0.1em;
+      right: -0.1em;
+      width: 0.09em;
+      height: 1em;
+      background: $color-amber;
+      opacity: 0;
+      animation: the-overlay-headline-caret #{$subtitle-letter-step} steps(1, end);
+      animation-delay: calc(#{$subtitle-delay} + var(--letter-index, 0) * #{$subtitle-letter-step});
+    }
+
+    &--last::after {
+      animation: the-overlay-headline-caret-hold 1.1s steps(1, end) infinite;
+      animation-delay: calc(#{$subtitle-delay} + var(--letter-index, 0) * #{$subtitle-letter-step});
+    }
+  }
+}
+
+// Stacked layout: text on top, centered on the page, globe below. Always with $layout 'stacked'; with 'split' only on narrow
+// screens (keep the ratio in sync with STACKED_MAX_ASPECT in geo.ts).
+@mixin stacked-headline {
+  .the-overlay-headline {
+    top: #{$stacked-headline-top};
+    right: 0;
+    left: 0;
+    width: fit-content;
+    max-width: calc(100vw - 2 * #{$overlay-inset});
+    margin: 0 auto;
+    font-size: #{$stacked-headline-font};
+    bottom: auto;
+  }
+}
+
+@if $layout == 'stacked' {
+  @include stacked-headline;
+} @else {
+  @media (max-aspect-ratio: 6/5) {
+    @include stacked-headline;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .the-overlay-headline__letter,
+  .the-overlay-headline__letter::after,
+  .the-overlay-headline__subtitle-letter,
+  .the-overlay-headline__subtitle-letter::after {
+    animation: none;
+  }
+
+  .the-overlay-headline__subtitle-letter--last::after {
+    opacity: 1;
+  }
+}
