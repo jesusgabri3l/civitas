@@ -1,61 +1,25 @@
-# Civitas — estado
+# Estado
 
-Última actualización: 2026-10-28. Último commit: `26f19b8` (Fase 2). Sin remoto todavía (no hay push ni deploy).
+Fecha: 30 de octubre de 2026. Fases en [PLAN.md](PLAN.md); diseño en [ART-DIRECTION.md](ART-DIRECTION.md).
 
-## Cómo retomar
+## Hecho
 
-- Proyecto: `C:\Users\Lenovo\Desktop\personal\projects\Civitas`. Plan completo en `docs/PLAN.md`.
-- Ver local: `npm run dev` (o el preview `civitas-dev` de `projects/.claude/launch.json`).
-- Código lo implementa el agente `jesus-gabriel` con la regla "Velocidad primero": sin tests ni pruebas de rendimiento, solo `npm run build` al final. Verificar al final o si Jesús lo pide.
-- Commits: solo asunto, sin cuerpo ni co-autor, como `jesusgabri3l`. Commit solo cuando Jesús lo diga, después de que lo pruebe localmente.
-
-## Hecho (fases 0-3)
-
-- Fase 0 y 1: scaffold Astro, StageManager, router pushState, tiers de calidad, sitio en inglés.
-- Fase 2, hub (difiere del plan original en varias cosas):
-  - Nombre y marca: **Civitas**. Logo en Fraunces blanco con un punto ámbar que es un mini globo.
-  - Layout **stacked** en desktop: headline "Every landmark tells a story." arriba y centrado, con "Spin the globe. Pick a monument." debajo (ambos con efecto de escritura y cursor ámbar). El globo es grande, centrado y cortado por abajo, como un planeta asomando. Hay un flag `LAYOUT = 'stacked' | 'split'` en `src/engine/stages/globe/geo.ts`, con su espejo `$layout` en `_variables.scss`.
-  - Logo alineado a la primera línea del headline en desktop y centrado en móvil.
-  - Globo de yeso con costas Natural Earth 110m, graticule y etiquetas de océano.
-  - Halo con dos capas: un borde fresnel ámbar fino (`HALO_RADIUS` 1.09) y un resplandor lejano muy tenue, elíptico, en `materials.ts`.
-  - Dither en el pase final (`PlasterLook.ts`) contra el banding de la viñeta.
-  - Estrellas en 3 capas con twinkle, deriva lenta y parallax, cubriendo todo el viewport. Estrella fugaz cada 8-15 s.
-  - Arcos ámbar rotativos entre ciudades (máximo 3 visibles; al hacer hover se muestran los arcos de esa ciudad).
-  - Interacción:
-    - Durante la intro el globo no es interactuable.
-    - Las ciudades entran escalonadas, con scale, fade y un anillo.
-    - Zoom manual acotado entre la vista inicial (zoom in máximo) y el globo completo (zoom out máximo). Rueda en cualquier punto en desktop, pinch en touch. Móvil vertical: 0.85x-1.7x. Sin lift automático.
-    - Desktop: hover muestra el tooltip, clic gira hasta la ciudad y navega.
-    - Táctil: etiquetas fijas con el nombre de cada ciudad. Tocar el punto abre la tarjeta ("Tap to visit") y tocar la tarjeta navega. Una pista de "nudge" una vez por visita.
-    - Hints en pills separadas, abajo a la derecha.
-
-- Fase 3, transición "zoom + fundido directo" (sin commit todavía, sin probar en navegador). Reemplaza el "Atravesar el halo" (relleno ámbar + estrellas procedurales), que se veía plano; nunca hay un color plano en pantalla:
-  - Clic/tap en ciudad: `diveIntoCity` (`globeStore`) precarga el stage y gira el globo (0.55 s); resuelve 0.2 s antes de terminar el giro, así la transición solapa. Luego `navigate` -> `Engine.goTo`.
-  - Un solo progreso `p` en `Engine` (`TransitionTween`, de `from` a `to`). Curvas puras en `src/engine/transition/timeline.ts`, por modo:
-    - `enter` (globo -> ciudad, 1.2 s): zoom del globo con ease-in-out p 0-0.45; swap en 0.4; `mix` 0 -> 1 (smoothstep) entre 0.4 y 0.85; la instantánea del globo se escala 1 -> 1.5 (ease-out) entre 0.4 y 1 alrededor del centro del globo (donde está la ciudad). La ciudad llega con un "settle" por `setEntry` (`cityAway`).
-    - Salida (ciudad -> globo): no es un modo aparte, es el viaje `enter` corriendo hacia atras (`direction -1`, arranca en progress 1). En frio, el primer frame orienta el globo de golpe a la ciudad (`restFor`, sirve tambien para deep link), lo pone en la pose del swap, lo renderiza y lo captura como instantanea; ese mismo frame renderiza la ciudad encima (`Engine.captureGlobeForExit`).
-    - Ritmo: `ENTER_SECONDS = 1.2 / 0.35` (~3.4 s), igual para entrar y salir.
-    - Puntos de ciudad: durante el viaje los HTML se desvanecen (100 ms) y el globo dibuja los suyos en la escena (`globe/HotspotMarkers.ts`), asi quedan en la instantanea y siguen el zoom. El de la ciudad destino va encima.
-    - `fade` (reduced motion y ciudad <-> ciudad, 0.3 s): fundido cruzado con la instantánea, sin zoom ni escala.
-  - Instantánea: `src/engine/render/FrameSnapshots.ts` guarda el último frame del canvas (ya con look) en dos `FramebufferTexture` (ping-pong, se recrean con el resize). Durante un viaje se copia cada frame; el primer frame del viaje solo dibuja y captura (`primed`) para que el swap tenga qué mostrar. Al swap, la instantánea del stage que sale se dibuja encima del que llega con opacidad `1 - mix`. Solo se renderiza una escena por frame.
-  - Si el stage destino no está listo al swap, el viaje queda en pausa en el punto de swap, mostrando el stage que sale (sin color plano ni loader por ahora).
-  - Si llega otro pedido o Atrás a mitad, `p` invierte desde donde va (a mitad de un viaje a un tercer stage, vuelve al globo y luego sigue). Si cruza el swap hacia atrás, la instantánea se suelta.
-  - Hooks opcionales en `Stage`: `transitionAnchor` (centro en pantalla), `setExit(p, target)`, `setEntry(p, source)`. Solo el globo los implementa; son el gancho para las fases 4-6.
-  - Panel de depuración `?scrub` (`src/engine/debug/tripScrubber.ts`): velocidad (pausa..1x), slider de progreso y readout de zoom, mix, snapScale y cityAway.
-  - El globo no se duerme (`StageManager.pin`). El governor de calidad no baja el tier durante la transición. Al volver no se repite la intro. El halo (limbo y glow) no cambia durante la transición.
-  - Stages placeholder por ciudad siguen siendo `createDummyStage`.
-
-## Siguiente: Fase 4, Atenas
-
-Escena real de Atenas (reemplaza el stage placeholder `athensStage.ts`). Después Roma (5) y París de noche (6).
+- **Hub (globo)**: titular y logo en Fraunces 600 recta, tagline bajo el logo, halo ámbar ceñido con línea crema en el borde, controles abajo a la izquierda, coordenadas abajo a la derecha, tooltip en tarjeta oscura.
+- **Índice de monumentos** (botón arriba a la derecha, ⌘K / Ctrl+K) y **Suggest a monument**: interfaz hecha; entrar a Atenas desde la lista funciona.
+- **Atenas** (`/athens`): maqueta low-poly del Partenón con 7 capítulos atados al scroll y Explore (arrastrar para girar, tocar una pieza abre su ficha, vistas Today / 432 BC / Painted / Apart).
+- **Paris** (`/paris`): maqueta de la Torre Eiffel (celosia instanciada, arcos, tres niveles, antena, luces ambar y estrellas), 7 capitulos atados al scroll (boceto, construccion, 1889, radio 1909, centelleo, Explore con vistas Today / 1889 / Sparkle / Apart). El centelleo corre solo a la hora en punto (Europe/Paris, 5 min) y a demanda en el capitulo Today. Titulo en Bodoni Moda cursiva.
+- **Roma** (`/rome`): maqueta del Coliseo (elipse de 80 arcos por nivel, tres arcadas con semicolumnas, ático, anillo interior, gradas, arena sobre hipogeo, velarium, neblina a ras de suelo), 7 capítulos atados al scroll (cantera de Tibur, construcción, juegos del año 80 con toldo, terremoto de 1349, hoy con contrafuertes de 1807 y 1827 en acento, Explore con vistas Today / AD 80 / Apart). Títulos en Cinzel 500.
+- **Marco de monumento** (`src/engine/stages/shared/monument.ts`) listo para Roma y los siguientes. Ganó `shadowFar` (monumentos altos) y `update`/`bind` opcionales del modelo (animación en vivo).
+- **Proceso para monumentos nuevos**: briefs en `docs/briefs/` (plantilla, Atenas, París y Roma construidos). ART-DIRECTION §7 exige proponer 2 o 3 identidades y esperar dos aprobaciones (identidad y brief) antes de escribir código.
+- Proyecto limpio: solo queda el enfoque oficial (sin las variantes `?story=`, `?set=` ni `?design=`, ni el modelo y la página anteriores). Las capturas de esas exploraciones quedaron en `capturas-proceso/` como material del proceso.
 
 ## Pendiente
 
-- Decidir si se crea el repo remoto en GitHub y el deploy en Cloudflare Pages.
-- Slider de París "1889 <-> hoy" (asumido en el plan).
-- Fase de pulido:
-  - Tests desactualizados o fallando.
-  - `scripts/smoke-test.mjs` todavía espera "WorldHub".
-  - Renombrar los internos `startWorldHub` y `window.__worldhub`.
-  - OG de SVG a PNG.
-- Fases 4 (Atenas), 5 (Roma), 6 (París de noche), 7 (panel de info) y 8 (pulido). Después del lanzamiento: Chichén Itzá.
+- Verificar con fuentes los datos de `src/data/stories/athens.ts` (fechas, cifras, policromía, restauración de la columnata norte, piezas de Elgin), `src/data/stories/paris.ts` (ver el TODO de su cabecera), las medidas de `parisConfig.ts`, `src/data/stories/rome.ts` (ver su cabecera: cantera de Tibur, cien días de juegos, terremoto de 1349, contrafuertes de 1807 y 1827, restauración 2013-2016) y las medidas de `romeConfig.ts`.
+- Índice: conectar buscador y filtros por región; estado vacío (`TheOverlayIndex.vue`, TODO).
+- Suggest a monument: backend, validación, estados de enviado y error, antispam (`TheOverlaySuggest.vue`, TODO).
+- Roma: revisar a ojo con `npm run dev` las cámaras (`KEYS` en `romeConfig.ts`; probar 1440×900, 1366×768 y 390×844), la caída del anillo exterior y la posición de los contrafuertes, la neblina y el velarium; OG en SVG (falta PNG). Las gradas no se derrumban en la ruina (solo la fachada).
+- Paris: revisar a ojo con `npm run dev` las camaras (`KEYS` en `parisConfig.ts`), el grosor de la celosia con la linea de tinta y el brillo de las luces; el centelleo real no revisa si es de noche (TODO en `EiffelTower.ts`); OG en SVG (falta PNG).
+- Globo: agrupar hotspots cercanos cuando haya muchos monumentos; girar hasta una ciudad enfocada con teclado en la cara oculta.
+- Lanzamiento: repo remoto, deploy en Cloudflare Pages, OG en PNG, pruebas en móviles reales.
+- `npm run smoke` necesita Chromium de Playwright instalado localmente.

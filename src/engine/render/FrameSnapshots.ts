@@ -1,4 +1,4 @@
-import { FramebufferTexture, ShaderMaterial, Vector2, type WebGLRenderer } from 'three';
+import { FramebufferTexture, LinearFilter, ShaderMaterial, Vector2, type WebGLRenderer } from 'three';
 import { FullScreenQuad } from 'three/examples/jsm/postprocessing/Pass.js';
 import { SCREEN_VERTEX } from './shaderChunks';
 
@@ -12,12 +12,7 @@ const FRAGMENT = /* glsl */ `
   uniform vec2 uAnchor;
   uniform vec2 uResolution;
   uniform float uReveal;
-
-  // Signed distance to a rounded box centered on the origin (negative inside).
-  float roundedBox(vec2 p, vec2 halfSize, float radius) {
-    vec2 q = abs(p) - (halfSize - radius);
-    return length(max(q, 0.0)) + min(max(q.x, q.y), 0.0) - radius;
-  }
+  uniform float uRevealInside;
 
   void main() {
     float aspect = uResolution.x / uResolution.y;
@@ -26,13 +21,14 @@ const FRAGMENT = /* glsl */ `
     if (uv.x < 0.0 || uv.x > 1.0 || uv.y < 0.0 || uv.y > 1.0) discard;
     float alpha = uOpacity;
 
-    // Reveal: a rounded window grows from the anchor and shows what is under the snapshot.
+    // Reveal: a circle grows from the anchor (the city). Entering it is a hole that shows what is under the snapshot;
+    // going back the snapshot itself shows inside a circle that grows as the reveal closes.
     if (uReveal > 0.0) {
       vec2 p = (vUv - uAnchor) * vec2(aspect, 1.0);
-      vec2 far = vec2(max(uAnchor.x, 1.0 - uAnchor.x) * aspect, max(uAnchor.y, 1.0 - uAnchor.y)) + 0.06;
-      vec2 halfSize = far * uReveal;
-      float radius = min(0.06, min(halfSize.x, halfSize.y));
-      alpha *= smoothstep(-1.5 * pixel, 1.5 * pixel, roundedBox(p, halfSize, radius));
+      float far = length(vec2(max(uAnchor.x, 1.0 - uAnchor.x) * aspect, max(uAnchor.y, 1.0 - uAnchor.y))) + 3.0 * pixel;
+      float radius = far * mix(uReveal, 1.0 - uReveal, uRevealInside);
+      float outside = smoothstep(-1.5 * pixel, 1.5 * pixel, length(p) - radius);
+      alpha *= mix(outside, 1.0 - outside, uRevealInside);
     }
 
     gl_FragColor = vec4(texture2D(tSnapshot, uv).rgb, alpha);
@@ -56,6 +52,7 @@ export class FrameSnapshots {
       uAnchor: { value: new Vector2(0.5, 0.5) },
       uResolution: { value: new Vector2(1, 1) },
       uReveal: { value: 0 },
+      uRevealInside: { value: 0 },
     },
     transparent: true,
     depthTest: false,
@@ -69,9 +66,17 @@ export class FrameSnapshots {
   /** Reallocates for the drawing buffer size (contents are lost). */
   resize(width: number, height: number) {
     this.textures.forEach((texture) => texture?.dispose());
-    this.textures[0] = new FramebufferTexture(width, height);
-    this.textures[1] = new FramebufferTexture(width, height);
+    this.textures[0] = FrameSnapshots.texture(width, height);
+    this.textures[1] = FrameSnapshots.texture(width, height);
     (this.material.uniforms.uResolution.value as Vector2).set(width, height);
+  }
+
+  /** FramebufferTexture samples nearest by default: scaled snapshots then show a faint dark grid (moiré). */
+  private static texture(width: number, height: number) {
+    const texture = new FramebufferTexture(width, height);
+    texture.minFilter = LinearFilter;
+    texture.magFilter = LinearFilter;
+    return texture;
   }
 
   /** Copies the canvas (the bound framebuffer) into a slot. */
@@ -82,9 +87,9 @@ export class FrameSnapshots {
 
   /**
    * Draws a slot over the canvas. `anchor` is in viewport fractions from the top left. `reveal` (0..1, 0 = off) opens a
-   * rounded window from the anchor.
+   * circle from the anchor; `revealInside` shows the snapshot inside it instead of around it.
    */
-  draw(slot: SnapshotSlot, opacity: number, scale: number, anchor: Vector2, reveal = 0) {
+  draw(slot: SnapshotSlot, opacity: number, scale: number, anchor: Vector2, reveal = 0, revealInside = false) {
     const texture = this.textures[slot];
     if (!texture || opacity <= 0) return;
     const { uniforms } = this.material;
@@ -92,6 +97,7 @@ export class FrameSnapshots {
     uniforms.uOpacity.value = opacity;
     uniforms.uScale.value = scale;
     uniforms.uReveal.value = reveal;
+    uniforms.uRevealInside.value = revealInside ? 1 : 0;
     (uniforms.uAnchor.value as Vector2).set(anchor.x, 1 - anchor.y);
     // Blend over the arriving stage already on the canvas: an auto clear would wipe it and make it pop in at the end.
     const autoClear = this.renderer.autoClear;

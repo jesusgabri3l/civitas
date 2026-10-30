@@ -69,8 +69,10 @@ $subtitle-letter-step: calc(#{$subtitle-typing-time} / var(--subtitle-letter-cou
   color: $color-text;
   font-family: $font-display;
   font-size: clamp(2rem, 3.6vw, 4.4rem);
-  font-style: italic;
-  line-height: 1.12;
+  font-style: normal;
+  font-weight: $font-display-weight;
+  letter-spacing: -0.01em;
+  line-height: 1.08;
   pointer-events: none;
 
   &__line {
@@ -186,6 +188,14 @@ $subtitle-letter-step: calc(#{$subtitle-typing-time} / var(--subtitle-letter-cou
 } @else {
   @media (max-aspect-ratio: 6/5) {
     @include stacked-headline;
+  }
+}
+
+// Phones: tighter tracking so the invitation breaks in one clean place.
+@media (max-width: 40rem) {
+  .the-overlay-headline__subtitle {
+    font-size: 0.75rem;
+    letter-spacing: 0.14em;
   }
 }
 

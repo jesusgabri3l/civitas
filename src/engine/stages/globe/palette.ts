@@ -2,6 +2,10 @@
 export const PALETTE = {
   ink: 0x0b0b0e,
   amber: 0xe8a33d,
+  /** Halo around the globe: the amber a touch warmer and brighter, tight to the limb. Keep in sync with $color-halo. */
+  halo: 0xf2a13a,
+  /** Thin bright line right on the limb, over the halo. */
+  limbLine: 0xffdda8,
   text: 0xede7da,
   /** Thin atmosphere hugging the limb, and the wider warm glow around it. */
   atmosphere: 0x86a9cf,

@@ -53,9 +53,9 @@ $card-gap: 4px;
     width: max-content;
     max-width: 14rem;
     padding: 0.55rem 0.75rem 0.6rem;
-    border: 1px solid rgba($color-text, 0.28);
-    border-radius: 2px;
-    background: rgba($color-ink, 0.84);
+    border: 1px solid rgba($color-text, 0.14);
+    border-radius: 8px;
+    background: rgba($color-ink, 0.78);
     color: $color-text;
     backdrop-filter: blur(6px);
     transition: opacity $duration-tooltip $ease-out, transform $duration-tooltip $ease-out;
@@ -83,7 +83,8 @@ $card-gap: 4px;
   &__name {
     font-family: $font-display;
     font-size: 1.0625rem;
-    font-style: italic;
+    font-style: normal;
+    font-weight: $font-display-weight;
     line-height: 1.2;
   }
 

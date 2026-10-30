@@ -1,0 +1,650 @@
+@use 'sass:map';
+@use '../abstracts' as *;
+
+// The monument page of docs/ART-DIRECTION.md §5 (components/TheMonumentStory.astro): text straight on the dark ground (no cards),
+// chrome in JetBrains Mono, the city's display face for titles, Cormorant for reading. Tokens per city in `$cities` (_variables.scss).
+@each $city, $theme in $cities {
+  [data-city='#{$city}'] {
+    --city-ground: #{map.get($theme, ground)};
+    --city-accent: #{map.get($theme, accent)};
+    --city-accent-strong: #{map.get($theme, accent-strong)};
+    --city-display: #{map.get($theme, font-display)};
+    --city-display-style: #{map.get($theme, display-style) or normal};
+    --city-display-weight: #{map.get($theme, display-weight) or 400};
+    --city-body: #{map.get($theme, font-body)};
+  }
+}
+
+// The page scrollbar takes the accent of the city under the pointer.
+@each $city, $theme in $cities {
+  :root:has([data-city='#{$city}']) {
+    @include thin-scrollbar(rgba($color-text, 0.24), map.get($theme, accent));
+  }
+}
+
+// Vertical rhythm of the page: room for the top bar and for the timeline, and type that scales with the smaller of width and
+// height, so every chapter fits in one viewport from big monitors to short laptops. Overridden below for laptops and phones.
+[data-city] {
+  --story-top: 7rem;
+  --story-bottom: 9rem;
+  --story-gap: 1.25rem;
+  --size-display: clamp(3.25rem, min(7.4vw, 12svh), 6.75rem);
+  --size-title: clamp(2.25rem, min(5vw, 8svh), 4.75rem);
+  --size-subtitle: clamp(1.25rem, min(2.2vw, 3.6svh), 2rem);
+  --size-text: clamp(1.0625rem, min(1.25vw + 0.6rem, 2.5svh), 1.375rem);
+
+  --city-text: #{$color-text};
+  --city-soft: #cfc8bb;
+  --city-muted: #a39d92;
+  --city-line: rgba(237, 231, 218, 0.18);
+  color: var(--city-text);
+
+  // Laptops (wide but short): tighter rhythm, the timeline shows years only.
+  @media (min-width: #{$breakpoint-narrow + 0.01}) and (max-height: 50rem) {
+    --story-top: 5.25rem;
+    --story-bottom: 6.25rem;
+    --story-gap: 0.9rem;
+  }
+
+  @media (min-width: #{$breakpoint-narrow + 0.01}) and (max-height: 42rem) {
+    --story-top: 4.5rem;
+    --story-bottom: 5.5rem;
+    --story-gap: 0.7rem;
+  }
+
+  // Phones and portrait tablets: the maquette takes the top of the screen, the text sits below it, the timeline is dots only.
+  @include narrow {
+    --story-top: 46svh;
+    --story-bottom: 4.5rem;
+    --story-gap: 0.9rem;
+    --size-display: clamp(2.75rem, 13vw, 4.5rem);
+    --size-title: clamp(2rem, 9vw, 3.25rem);
+    --size-subtitle: 1.375rem;
+    --size-text: 1.0625rem;
+  }
+}
+
+@mixin chrome-mono {
+  font-family: $font-mono;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.22em;
+  line-height: 1.5;
+  text-transform: uppercase;
+}
+
+// ---------- Top bar ----------
+.monument-bar {
+  @include chrome-mono;
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: $z-nav;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: calc(1.25rem + env(safe-area-inset-top)) max(#{$overlay-inset}, env(safe-area-inset-right)) 1.25rem;
+  pointer-events: none;
+
+  // A soft fade of the ground behind the bar, so the chapters scroll away under it.
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0 0 -2.5rem;
+    z-index: -1;
+    background: linear-gradient(180deg, var(--city-ground) 35%, transparent);
+    pointer-events: none;
+  }
+
+  // The Civitas logo (overlay) docks here.
+  &__brand-space {
+    width: 6.5rem;
+    height: 1px;
+  }
+
+  // The chrome is always mono, whatever the city.
+  &__city,
+  &__nav a {
+    @include chrome-mono;
+  }
+
+  &__city {
+    margin: 0;
+    color: var(--city-muted);
+  }
+
+  &__nav {
+    display: flex;
+    gap: 2rem;
+    pointer-events: auto;
+
+    a {
+      padding: 0.6rem 0;
+      color: var(--city-soft);
+      text-decoration: none;
+      border-bottom: 1px solid transparent;
+
+      &:hover,
+      &:focus-visible {
+        color: var(--city-text);
+        border-bottom-color: var(--city-accent);
+      }
+
+      &:focus-visible {
+        outline: none;
+      }
+    }
+  }
+
+  @include narrow {
+    &__city {
+      display: none;
+    }
+
+    &__nav {
+      gap: 1.25rem;
+    }
+  }
+}
+
+// ---------- Chapters ----------
+.monument-chapter {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 100svh;
+  box-sizing: border-box;
+  padding: var(--story-top) max(#{$overlay-inset}, env(safe-area-inset-left)) var(--story-bottom);
+  font-family: var(--city-body);
+  text-align: left;
+  // The canvas sits behind: only the text takes the pointer.
+  pointer-events: none;
+
+  &--hero {
+    align-items: center;
+  }
+
+  // Wide screens: a soft fade of the ground behind the text column, so a maquette that reaches under the text never fights it.
+  @media (min-width: #{$breakpoint-narrow + 0.01}) {
+    background: linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--city-ground) 82%, transparent) 0,
+      color-mix(in srgb, var(--city-ground) 55%, transparent) min(30rem, 34%),
+      transparent min(46rem, 52%)
+    );
+  }
+
+  &__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--story-gap);
+    width: min(34rem, 100%);
+    pointer-events: auto;
+    // No box: a wide soft shadow keeps the text legible where it meets the maquette.
+    text-shadow: 0 0 24px var(--city-ground), 0 0 8px var(--city-ground);
+  }
+
+  &__kicker {
+    @include chrome-mono;
+    margin: 0;
+    color: var(--city-accent-strong);
+    font-size: 0.75rem;
+    letter-spacing: 0.24em;
+  }
+
+  &__display {
+    margin: 0;
+    font-family: var(--city-display);
+    font-size: var(--size-display);
+    font-style: var(--city-display-style, normal);
+    font-weight: var(--city-display-weight, 400);
+    letter-spacing: 0.02em;
+    line-height: 0.95;
+  }
+
+  &__motif {
+    width: min(22.5rem, 70vw);
+    height: 0.75rem;
+
+    path {
+      fill: none;
+      stroke: var(--city-accent);
+      stroke-width: 1;
+    }
+
+    &-soft {
+      opacity: 0.5;
+    }
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: var(--size-subtitle);
+    font-style: italic;
+  }
+
+  &__title {
+    margin: 0;
+    font-family: var(--city-display);
+    font-size: var(--size-title);
+    font-style: var(--city-display-style, normal);
+    font-weight: var(--city-display-weight, 400);
+    line-height: 1;
+  }
+
+  &__lead,
+  &__text {
+    margin: 0;
+    color: var(--city-soft);
+    font-size: var(--size-text);
+    line-height: 1.45;
+  }
+
+  &__lead {
+    max-width: 28rem;
+  }
+
+  &__facts {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+    margin: 0.4rem 0 0;
+    padding-top: 1rem;
+    border-top: 1px solid var(--city-line);
+
+    div {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    dt {
+      @include chrome-mono;
+      color: var(--city-muted);
+      letter-spacing: 0.14em;
+    }
+
+    dd {
+      @include chrome-mono;
+      margin: 0;
+      color: var(--city-text);
+      letter-spacing: 0.1em;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 0.6rem;
+  }
+
+  &__cta {
+    @include chrome-mono;
+    display: inline-flex;
+    align-items: center;
+    min-height: 3rem;
+    padding: 0 1.5rem;
+    border: 1px solid var(--city-accent);
+    color: var(--city-text);
+    font-size: 0.75rem;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+
+    &:hover,
+    &:focus-visible {
+      background: color-mix(in srgb, var(--city-accent) 22%, transparent);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--city-accent-strong);
+      outline-offset: 2px;
+    }
+  }
+
+  &__hint {
+    @include chrome-mono;
+    color: var(--city-muted);
+    text-decoration: none;
+  }
+
+  // Phones: the maquette sits in the upper half (the camera lifts it), the text starts right below it on a soft ground.
+  @include narrow {
+    align-items: flex-start;
+    // Full-bleed ground under the text, fading in just above it (no box edges over the maquette).
+    background: linear-gradient(
+      180deg,
+      transparent calc(var(--story-top) - 3rem),
+      var(--city-ground) calc(var(--story-top) + 0.5rem)
+    );
+
+    &__body {
+      padding-top: 1.25rem;
+    }
+
+    &__kicker {
+      letter-spacing: 0.16em;
+    }
+
+    &__facts {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+}
+
+// ---------- Explore (last chapter): a tall section, the text stays put while the visitor plays with the maquette ----------
+.monument-chapter--explore {
+  align-items: flex-start;
+  min-height: 170svh;
+
+  // The text stays in view while the visitor plays; if it is taller than the room between bar and timeline it scrolls inside.
+  .monument-chapter__body {
+    position: sticky;
+    top: var(--story-top);
+    max-height: calc(100svh - var(--story-top) - var(--story-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    @include thin-scrollbar(color-mix(in srgb, var(--city-text) 24%, transparent), var(--city-accent));
+  }
+
+  // Phones: one screen tall (the panel scrolls inside); a taller section would end in a screen of plain ground with no maquette.
+  @include narrow {
+    min-height: 100svh;
+  }
+}
+
+.monument-explore {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 0.4rem;
+  text-shadow: none;
+
+  &__hint {
+    @include chrome-mono;
+    margin: 0;
+    color: var(--city-muted);
+  }
+
+  &__views,
+  &__parts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  &__view,
+  &__part {
+    @include chrome-mono;
+    min-height: 2.75rem;
+    padding: 0 1rem;
+    border: 1px solid var(--city-line);
+    background: color-mix(in srgb, var(--city-ground) 70%, transparent);
+    color: var(--city-soft);
+    cursor: pointer;
+    letter-spacing: 0.16em;
+
+    &:hover {
+      border-color: var(--city-accent);
+      color: var(--city-text);
+    }
+
+    &:focus-visible {
+      outline: 2px solid var(--city-accent-strong);
+      outline-offset: 2px;
+    }
+  }
+
+  &__view[aria-pressed='true'] {
+    border-color: var(--city-text);
+    background: var(--city-text);
+    color: var(--city-ground);
+  }
+
+  &__part[aria-pressed='true'] {
+    border-color: var(--city-accent);
+    color: var(--city-text);
+  }
+
+  &__card {
+    position: relative;
+    padding: 1rem 2.75rem 1rem 1.1rem;
+    border-top: 1px solid var(--city-accent);
+    background: color-mix(in srgb, var(--city-ground) 85%, transparent);
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  &__card-name {
+    margin: 0 0 0.35rem;
+    font-family: var(--city-display);
+    font-size: 1.5rem;
+  }
+
+  &__card-text {
+    margin: 0;
+    color: var(--city-soft);
+    font-size: 1.125rem;
+    line-height: 1.45;
+  }
+
+  &__close {
+    position: absolute;
+    top: 0.25rem;
+    right: 0.25rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    border: 0;
+    background: none;
+    color: var(--city-soft);
+    font-size: 1.1rem;
+    cursor: pointer;
+  }
+}
+
+// ---------- Museum label (hero, bottom right) ----------
+.monument-label {
+  position: absolute;
+  right: max(#{$overlay-inset}, env(safe-area-inset-right));
+  bottom: calc(var(--story-bottom) + 0.5rem);
+  width: 15.5rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid rgba(237, 231, 218, 0.28);
+  pointer-events: auto;
+
+  &__name {
+    margin: 0;
+    font-family: var(--city-display);
+    font-size: 1.25rem;
+    letter-spacing: 0.06em;
+  }
+
+  &__caption {
+    margin: 0.15rem 0 0.6rem;
+    color: var(--city-soft);
+    font-size: 1.0625rem;
+    font-style: italic;
+  }
+
+  &__lines {
+    display: flex;
+    flex-direction: column;
+    margin: 0;
+    color: var(--city-muted);
+    font-family: $font-mono;
+    font-size: 0.6875rem;
+    letter-spacing: 0.06em;
+    line-height: 1.7;
+  }
+
+  // Laptops: a smaller label; on very short screens it would sit on the maquette, so it goes (the kicker carries the facts).
+  @media (max-height: 50rem) {
+    width: 13.5rem;
+    padding-top: 0.6rem;
+
+    &__name {
+      font-size: 1.0625rem;
+    }
+
+    &__caption {
+      margin-bottom: 0.35rem;
+      font-size: 0.9375rem;
+    }
+
+    &__lines {
+      font-size: 0.625rem;
+      line-height: 1.6;
+    }
+  }
+
+  @media (max-height: 42rem) {
+    display: none;
+  }
+
+  @include narrow {
+    display: none;
+  }
+}
+
+// ---------- Timeline: the chapters along the bottom, the accent fills up to the current one ----------
+.monument-timeline {
+  position: fixed;
+  right: max(#{$overlay-inset}, env(safe-area-inset-right));
+  bottom: max(2.25rem, env(safe-area-inset-bottom));
+  left: max(#{$overlay-inset}, env(safe-area-inset-left));
+  z-index: $z-nav;
+  pointer-events: none;
+
+  // The ground fades in behind the timeline: the chapters scroll away under it.
+  &::before {
+    content: '';
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: -1;
+    height: calc(var(--story-bottom) + 1.5rem);
+    background: linear-gradient(0deg, var(--city-ground) 55%, transparent);
+    pointer-events: none;
+  }
+
+  &__list {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(var(--chapters, 7), minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+
+    // The rail behind the dots.
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0.3125rem;
+      right: 0;
+      left: 0;
+      height: 1px;
+      background: var(--city-line);
+    }
+
+    li {
+      position: relative;
+    }
+  }
+
+  &__stop {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding-bottom: 0.25rem;
+    color: var(--city-muted);
+    text-decoration: none;
+    pointer-events: auto;
+
+    // The rail segment to the next stop turns accent once this chapter is read.
+    &[data-passed]::after {
+      content: '';
+      position: absolute;
+      top: 0.3125rem;
+      left: 0.34rem;
+      width: 100%;
+      height: 1px;
+      background: var(--city-accent);
+    }
+
+    &:hover,
+    &:focus-visible,
+    &[aria-current] {
+      color: var(--city-text);
+    }
+
+    &:focus-visible {
+      outline: 1px solid var(--city-accent-strong);
+      outline-offset: 4px;
+    }
+  }
+
+  &__dot {
+    position: relative;
+    z-index: 1;
+    box-sizing: border-box;
+    width: 0.6875rem;
+    height: 0.6875rem;
+    border: 1px solid var(--city-muted);
+    border-radius: 50%;
+    background: var(--city-ground);
+    transition: background-color 0.3s ease, border-color 0.3s ease;
+  }
+
+  &__stop[data-passed] &__dot,
+  &__stop[aria-current] &__dot {
+    border-color: var(--city-accent);
+    background: var(--city-accent);
+  }
+
+  &__year,
+  &__name {
+    @include chrome-mono;
+    letter-spacing: 0.16em;
+    white-space: nowrap;
+  }
+
+  &__name {
+    letter-spacing: 0.12em;
+  }
+
+  // Laptops: years only, closer to the edge.
+  @media (min-width: #{$breakpoint-narrow + 0.01}) and (max-height: 50rem) {
+    bottom: max(1.5rem, env(safe-area-inset-bottom));
+
+    &__name {
+      display: none;
+    }
+  }
+
+  // Phones: dots only (the kicker of each chapter says where you are); each dot keeps a 44px tap area.
+  @include narrow {
+    bottom: max(1rem, env(safe-area-inset-bottom));
+
+    &__year,
+    &__name {
+      @include visually-hidden;
+    }
+
+    &__stop {
+      min-height: $touch-target;
+      padding-bottom: 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .monument-timeline__dot,
+  .monument-chapter__cta {
+    transition: none;
+  }
+}

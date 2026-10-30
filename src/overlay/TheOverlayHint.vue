@@ -28,17 +28,14 @@ const dimmed = computed(() => settled.value && ambientActive.value);
 
 <template>
   <div class="the-overlay-hint" :class="{ 'the-overlay-hint--dimmed': dimmed }" aria-hidden="true" data-hint>
-    <p class="the-overlay-hint__item" :class="{ 'the-overlay-hint__item--nudge': touchNudge }">
-      <span class="the-overlay-hint__dot"></span>
-      {{ onTouch ? 'Drag · Pinch' : 'Drag to rotate' }}
-    </p>
-    <p v-if="!onTouch" class="the-overlay-hint__item">
-      <span class="the-overlay-hint__dot"></span>
-      Scroll to zoom
+    <p class="the-overlay-hint__item">
+      <span class="the-overlay-hint__key" :class="{ 'the-overlay-hint__key--nudge': touchNudge }">Drag</span>Rotate
     </p>
     <p class="the-overlay-hint__item">
-      <span class="the-overlay-hint__dot"></span>
-      {{ onTouch ? 'Tap a city' : 'Click a city to visit' }}
+      <span class="the-overlay-hint__key">{{ onTouch ? 'Pinch' : 'Scroll' }}</span>Zoom
+    </p>
+    <p class="the-overlay-hint__item">
+      <span class="the-overlay-hint__key">{{ onTouch ? 'Tap' : 'Click' }}</span>Visit
     </p>
   </div>
 </template>

@@ -9,6 +9,7 @@ import TheOverlayCoordinates from './TheOverlayCoordinates.vue';
 import TheOverlayHeadline from './TheOverlayHeadline.vue';
 import TheOverlayHint from './TheOverlayHint.vue';
 import TheOverlayHotspots from './TheOverlayHotspots.vue';
+import TheOverlayIndex from './TheOverlayIndex.vue';
 import TheOverlayTooltip from './TheOverlayTooltip.vue';
 
 const props = defineProps<{ initialState: StageId }>();
@@ -66,6 +67,7 @@ watch(onGlobe, (isGlobe) => {
       <TheOverlayCoordinates />
       <TheOverlayHint />
       <TheOverlayCityList />
+      <TheOverlayIndex />
     </template>
   </div>
 </template>

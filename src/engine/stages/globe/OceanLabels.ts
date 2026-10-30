@@ -65,7 +65,7 @@ function drawLabel(text: string): HTMLCanvasElement {
   const canvas = document.createElement('canvas');
   const context = canvas.getContext('2d') as CanvasRenderingContext2D;
   const letters = [...text.toUpperCase()].map((letter, i) => ({ letter, size: i === 0 ? FONT_SIZE : FONT_SIZE * SMALL_CAP_RATIO }));
-  const font = (size: number) => `italic 400 ${size}px ${FONT_FAMILY}`;
+  const font = (size: number) => `600 ${size}px ${FONT_FAMILY}`;
   const gap = FONT_SIZE * TRACKING;
   const widths = letters.map(({ letter, size }) => {
     context.font = font(size);
@@ -119,7 +119,7 @@ export async function createOceanLabels(): Promise<Group> {
   const group = new Group();
   group.name = 'globe-ocean-labels';
   try {
-    await document.fonts.load(`italic 400 ${FONT_SIZE}px Fraunces`);
+    await document.fonts.load(`600 ${FONT_SIZE}px Fraunces`);
   } catch {
     // Falls back to the serif stack.
   }

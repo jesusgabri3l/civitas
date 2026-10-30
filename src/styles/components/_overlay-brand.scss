@@ -1,3 +1,4 @@
+@use 'sass:math';
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
@@ -24,20 +25,39 @@ $brand-line: 1.12 * 0.5; // half of the headline's line-height: its first line i
   color: $color-text;
   font-family: $font-display;
   font-size: 1.5rem;
-  font-style: italic;
+  font-style: normal;
+  font-weight: $font-display-weight;
+  letter-spacing: 0.01em;
   text-decoration: none;
+  z-index: 2;
+  transform-origin: 0 0; // the dock move scales from the corner
   pointer-events: auto;
   @include text-halo;
 
   &__globe {
-    width: 0.9rem;
-    height: 0.9rem;
-    margin-left: 0.08rem;
+    width: 0.6em;
+    height: 0.6em;
+    margin-left: 0.05em;
     align-self: baseline;
     fill: none;
     stroke: $color-amber;
     stroke-width: 1.1;
     stroke-linecap: round;
+  }
+
+  // What Civitas is, under the logo on the globe only (the docked logo drops it).
+  &__tagline {
+    @include label-mono;
+    position: absolute;
+    top: 100%;
+    left: $brand-touch-pad;
+    margin-top: -0.35rem;
+    color: $color-text-muted;
+    font-size: 0.625rem;
+    font-weight: 400;
+    letter-spacing: 0.2em;
+    line-height: 1;
+    white-space: nowrap;
   }
 
   &:focus-visible {
@@ -62,6 +82,11 @@ $brand-line: 1.12 * 0.5; // half of the headline's line-height: its first line i
     width: fit-content;
     margin: 0 auto;
   }
+
+  // No room for the tagline between the centered logo and the headline.
+  .the-overlay-brand__tagline {
+    display: none;
+  }
 }
 
 @if $layout == 'stacked' {
@@ -76,4 +101,22 @@ $brand-line: 1.12 * 0.5; // half of the headline's line-height: its first line i
   @media (max-aspect-ratio: 6/5) {
     @include brand-centered;
   }
+}
+
+// In a city the logo sits at the left of the top bar (`components/navbar`): the same box scaled down. Wins over the globe
+// positions above (same pieces, one class more), so it needs no media query of its own. The move between the two places is
+// animated by TheOverlayBrand (FLIP), not here.
+.the-overlay-brand.the-overlay-brand--docked {
+  $docked-height: $touch-target * $brand-docked-scale;
+  $docked-pad: $brand-touch-pad * $brand-docked-scale;
+
+  top: calc(env(safe-area-inset-top) + #{math.div($navbar-height - $docked-height, 2)});
+  right: auto;
+  left: calc(max(#{$overlay-inset}, env(safe-area-inset-left)) - #{$docked-pad});
+  width: auto;
+  height: $docked-height;
+  margin: 0;
+  padding: 0 $docked-pad;
+  font-size: 1.5rem * $brand-docked-scale;
+  line-height: $docked-height;
 }

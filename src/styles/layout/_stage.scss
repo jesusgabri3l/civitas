@@ -10,7 +10,27 @@
     inset: 0;
     width: 100%;
     height: 100%;
+    // iOS: the largest viewport, so the address bar showing or hiding never resizes the canvas.
+    height: 100lvh;
+    bottom: auto;
     display: block;
+  }
+
+  // Story chapters scroll over the fixed canvas; they hang off the top of the page and make it as tall as they need.
+  &__story {
+    position: absolute;
+    top: 0;
+    right: 0;
+    left: 0;
+    z-index: 1;
+    // Hidden by default (globe, trips, first paint); only a settled city shows it, with a short fade.
+    opacity: 0;
+    pointer-events: none;
+
+    &[data-visible] {
+      opacity: 1;
+      transition: opacity 0.35s ease-out;
+    }
   }
 
   // The content layer adds no chrome of its own: the overlay components position themselves.

@@ -18,6 +18,17 @@
   text-rendering: optimizeLegibility;
 }
 
+@mixin narrow {
+  @media (max-width: $breakpoint-narrow) {
+    @content;
+  }
+}
+
+@mixin focus-ring {
+  outline: 2px solid var(--focus, var(--accent));
+  outline-offset: 2px;
+}
+
 @mixin visually-hidden {
   position: absolute;
   width: 1px;
@@ -28,4 +39,29 @@
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
+// Thin scrollbar of the Civitas chrome: a slim pale thumb on no track, the accent under the pointer. Page, index list, Explore panel.
+@mixin thin-scrollbar($thumb: rgba($color-text, 0.24), $hover: $color-amber) {
+  scrollbar-width: thin;
+  scrollbar-color: $thumb transparent;
+
+  // Browsers without `scrollbar-color` (older Safari).
+  &::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: $thumb;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: $hover;
+  }
 }

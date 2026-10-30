@@ -1,4 +1,5 @@
 @use '../abstracts/variables' as *;
+@use '../abstracts/mixins' as *;
 
 *,
 *::before,
@@ -10,6 +11,18 @@ html,
 body {
   margin: 0;
   min-height: 100%;
+}
+
+// The globe is one fixed screen. A city page with a story unlocks the scroll (`data-scroll='free'`, set by story/storyScroll).
+html {
+  overflow: hidden;
+  overscroll-behavior: none;
+
+  &[data-scroll='free'] {
+    overflow-y: auto;
+  }
+
+  @include thin-scrollbar;
 }
 
 body {

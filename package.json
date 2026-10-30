@@ -18,7 +18,11 @@
   },
   "dependencies": {
     "@astrojs/vue": "^5.0.0",
+    "@fontsource/bodoni-moda": "^5.3.0",
+    "@fontsource/cinzel": "^5.3.0",
+    "@fontsource/cormorant-garamond": "^5.3.0",
     "@fontsource/fraunces": "^5.3.0",
+    "@fontsource/gfs-didot": "^5.3.0",
     "@fontsource/jetbrains-mono": "^5.3.0",
     "@nanostores/vue": "^0.11.0",
     "astro": "^5.18.2",

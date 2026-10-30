@@ -1,45 +1,40 @@
 # Civitas — plan
 
-Hub de monumentos 3D en una sola página: globo -> Atenas / Roma / París.
+Atlas interactivo de monumentos en 3D: un globo que lleva a cada monumento; en su página la historia se cuenta con el scroll
+armando, desarmando y transformando su maqueta. El diseño (tipografía, color, página, modelos) está en
+[ART-DIRECTION.md](ART-DIRECTION.md); este archivo cubre la arquitectura y las fases.
 
 ## Decisiones
 
-- Astro 5 estático + TypeScript, Three r170+, GSAP, Sass (7-1), nanostores.
-- Una isla Vue para el overlay (card, panel, slider). Motor 3D en TS imperativo, sin R3F.
-- Rutas estáticas `/`, `/athens`, `/rome`, `/paris` montan la misma app: cambia meta/OG, estado inicial y texto prerenderizado.
-- Navegación interna con pushState/popstate, sin View Transitions.
-- Panel informativo vía `#info`. Slider de París: "1889 <-> hoy".
-- Hosting objetivo: Cloudflare Pages.
-- Referencia (solo lectura): `../mediterranean-environment-lab` (model/*, PlasterLook, ScreenLook, shaderChunks, LookPipeline, shared/utils, lab/utils/sun.ts), se porta después de la fase 0.
+- Astro 5 estático + TypeScript, Three r170, GSAP (ScrollTrigger), Sass (7-1), nanostores.
+- Una isla Vue para el overlay del hub (logo, titular, tooltip, controles, coordenadas, índice). Motor 3D en TS imperativo, sin R3F.
+- Rutas estáticas `/` y `/<ciudad>`: cada página prerenderiza su historia (SEO, enlaces directos) y monta la misma app. La navegación interna es SPA (pushState/popstate): al ir de una ciudad a otra el cliente trae la historia prerenderizada de la ruta y la cachea.
+- Hosting objetivo: Cloudflare Pages (pendiente de crear el repo remoto y el deploy).
+- Idioma: el contenido del sitio en inglés (`<html lang="en">`, metas, aria-labels); la documentación en español.
+- Datos históricos verificados con fuente antes de publicar.
 
-- **Idioma**: todo el contenido del sitio (datos históricos, 'Did you know', sitios de interés, postal, slider) se escribe en inglés. `<html lang="en">`, `og:locale` en_US, metas, aria-labels, alt y mensajes de carga/error también.
+## Arquitectura
 
-## Fases y criterio de "hecho"
+- `src/engine/Engine.ts`: renderer, pipeline de look (`render/`: pase de escena, G-buffer para AO y contorno, pase final de yeso con grano, viñeta y línea de tinta), render bajo demanda, tiers de calidad (`quality/`).
+- `src/engine/stage/StageManager.ts`: ciclo de cada escena load → warm → activate → sleep → dispose, con precarga al abrir el tooltip de una ciudad.
+- `src/engine/transition/`: viaje globo ↔ ciudad (zoom, recuadro, fundido al color del fondo de la ciudad, `data/stageSky.ts`).
+- `src/engine/stages/globeStage.ts` + `globe/`: el globo (líneas Natural Earth 110m, hotspots, arcos, estrellas, halo).
+- `src/engine/stages/shared/`: el marco de toda página de monumento (`createMonumentStage`, pedestal, foco, polvo, cámara por capítulo, Explore).
+- `src/engine/stages/<ciudad>/`: config, maqueta y stage de cada monumento. Roma y París aún usan el stage provisional (`createDummyStage.ts`).
+- `src/state/`: `appStore` (máquina de estados globo / viaje / ciudad), `router`, `globeStore`, `storyStore` (capítulo, progreso, vista y pieza de Explore).
+- `src/story/`: scroll de la historia (`storyScroll.ts`), carga del HTML (`storyContent.ts`), línea de tiempo (`timelineUi.ts`) y Explore (`exploreUi.ts`).
+- `src/components/TheMonumentStory.astro` + `src/data/stories/`: la página de monumento y su contenido.
 
-0. **Setup**: `astro check` y `build` pasan; 4 rutas con metas distintas; CI verde.
-1. **Núcleo**: StageManager load -> warm -> activate -> sleep -> dispose, router/store y tiers de calidad. Sin fugas tras 10 idas y vueltas.
-2. **Globo**: líneas/puntos Natural Earth 110m, hotspots, tooltip anclado al hotspot, precarga al abrirlo. Dirección estética: **Atlas de noche** (ver abajo).
-3. **Transición**: zoom + fundido a color de cielo, sin long tasks >50 ms, reversa con Atrás.
-4. **Atenas**: hora dorada, god rays, polvo, niebla, AO.
-5. **Roma**: Coliseo con ático del 4.º nivel, amanecer frío y neblina.
-6. **París**: Eiffel de noche con luces ámbar, centelleo con `Intl` Europe/Paris y botón "ver centelleo".
-7. **Panel info**: datos, "sabías que", 3 sitios, postal PNG 1080x1350, slider con disolución.
-8. **Pulido**: móviles reales, OG por ciudad.
+## Fases
 
-Post-lanzamiento: Chichén Itzá.
+0. **Setup** — hecho.
+1. **Núcleo** (StageManager, router/store, pipeline, tiers) — hecho.
+2. **Globo** — hecho (Home con tipografía Fraunces 600, halo ámbar, índice de monumentos con UI pendiente de conectar).
+3. **Transición** globo ↔ ciudad — hecha.
+4. **Atenas** — hecha: maqueta del Partenón, 7 capítulos (despiece, armado y policromía, 1687, los mármoles, restauración) y Explore (órbita, vistas, fichas). Falta verificar los datos históricos con fuentes.
+5. **Roma** — Coliseo (ART-DIRECTION §4: Cinzel, pizarra fría, rojo pompeyano; momento: el anillo completo frente a la ruina).
+6. **París** — Torre Eiffel de noche (Bodoni Moda, noche violeta, champaña; momento: el centelleo a la hora en punto con `Intl`).
+7. **Índice y comunidad** — conectar buscador y filtros del índice; backend de "Suggest a monument".
+8. **Pulido y lanzamiento** — móviles reales, OG en PNG por ciudad, deploy.
 
-## Dirección estética: Atlas de noche (hub / globo)
-
-- Tipografía (self-host con `@fontsource`, OFL): Fraunces cursiva para marca y nombres de ciudad; JetBrains Mono en mayúsculas con tracking amplio para labels, coordenadas y hora.
-- Paleta (tokens en `styles/abstracts/_variables.scss`, espejo en `engine/stages/globe/palette.ts`): fondo `#0B0B0E`, yeso `#E9E2D3` con sombras `#B9AE98`, costas `#1B1A17`, único acento ámbar `#E8A33D`, texto `#EDE7DA` (secundario al 70%). Sin gradientes decorativos.
-- Fondo: 3 capas de Points (polvo, estrellas, brillantes), un draw call por capa, en la capa de cielo (fuera del G-buffer). Parallax por profundidad inclinando la cámara hasta 2,5° hacia el puntero, titileo lento, estiramiento leve al hacer zoom, estrella fugaz cada 20-30 s.
-- Globo: yeso en dos tonos, rim light cálido fino (cáscara con halo de borde), graticule al 9%, hotspots ámbar con anillo de pulso desfasado por ciudad (CSS), auto-rotación muy lenta tras 5 s en reposo.
-- Tooltip sin caja anclado al hotspot: leader line de ~31 px, se voltea por cuadrante, se oculta en la cara oculta. Tinta oscura con halo de yeso (el punto siempre está sobre el globo claro). Móvil: primer tap abre, tap en la etiqueta entra. La lista de ciudades y la nav quedan visually-hidden; el foco de teclado en la lista muestra el tooltip.
-- Batería: render continuo solo mientras algo anima. Escritorio pausa lo ambiental a los 60 s sin interacción; móvil y tier low a los 20 s (menos estrellas, sin fugaces). `prefers-reduced-motion`: sin parallax, titileo, fugaces ni auto-rotación. Query de pruebas: `?ambientIdle=<segundos>`.
-
-### Pendiente (después)
-
-- Arcos entre ciudades sobre el globo.
-- Relieve (sombreado de terreno) en el globo.
-- Al enfocar con teclado una ciudad cuyo hotspot está en la cara oculta, girar el globo hasta ella.
-- Rotar `StarField` con la orientación del globo si se quiere que las estrellas deriven con él.
+Después: más monumentos con el checklist de ART-DIRECTION §7 (Chichén Itzá, Machu Picchu…).

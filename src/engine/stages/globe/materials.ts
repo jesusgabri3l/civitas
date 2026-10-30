@@ -107,6 +107,7 @@ const LIMB_VERTEX = /* glsl */ `
 // the dark one, with a slow low-frequency wobble along the limb so it never reads as a perfect ring.
 const LIMB_FRAGMENT = /* glsl */ `
   uniform vec3 uColor;
+  uniform vec3 uLine;
   uniform vec3 uLight;
   uniform float uZoom;
   uniform float uTime;
@@ -119,15 +120,17 @@ const LIMB_FRAGMENT = /* glsl */ `
     fade *= fade;
     vec2 away = normalize(vViewPosition.xy - vCenter.xy);
     float sun = dot(away, normalize(uLight.xy));
-    float lit = mix(0.04, 1.0, smoothstep(-0.55, 0.65, sun));
+    float lit = mix(0.22, 1.0, smoothstep(-0.55, 0.65, sun));
     float angle = atan(away.y, away.x);
     float wobble = 0.82 + 0.18 * sin(angle * 3.0 + uTime * 0.05) * sin(angle * 5.0 - uTime * 0.035 + 1.7);
-    float density = exp(-h * 38.0) * 0.08 + exp(-h * 14.0) * 0.016;
+    // Bright and tight at the limb, quick falloff: it reads as light, not as haze. A thin cream line rides right on the edge.
+    float line = exp(-h * 140.0);
+    float density = line * 0.22 + exp(-h * 42.0) * 0.12 + exp(-h * 16.0) * 0.014;
     // Zooming out shrinks the globe on screen, so the same glow would read as a thicker ring: thin it out instead.
     float distanceFade = mix(0.35, 1.0, smoothstep(-0.5, 0.15, uZoom));
     float alpha = density * fade * lit * wobble * distanceFade;
     if (alpha < 0.002) discard;
-    gl_FragColor = vec4(uColor, alpha);
+    gl_FragColor = vec4(mix(uColor, uLine, clamp(line * 1.4, 0.0, 1.0)), alpha);
   }
 `;
 
@@ -137,7 +140,8 @@ export function createLimbMaterial(): ShaderMaterial {
     vertexShader: LIMB_VERTEX,
     fragmentShader: LIMB_FRAGMENT,
     uniforms: {
-      uColor: { value: new Color(PALETTE.amber) },
+      uColor: { value: new Color(PALETTE.halo) },
+      uLine: { value: new Color(PALETTE.limbLine) },
       uLight: { value: LIGHT_DIRECTION.clone() },
       uZoom: { value: 0 },
       uTime: { value: 0 },
@@ -172,10 +176,10 @@ const GLOW_FRAGMENT = /* glsl */ `
     float r = length(vPlane);
     float h = max(r - limb, 0.0);
     float side = vPlane.x * vPlane.x / max(r * r, 0.0001);
-    float reach = mix(0.6, 1.2, side);
+    float reach = mix(0.45, 0.9, side);
     float t = h / reach;
-    float glow = exp(-2.2 * t) * (1.0 - smoothstep(0.3, 1.0, t));
-    float alpha = max(glow * 0.04, 0.0);
+    float glow = exp(-3.2 * t) * (1.0 - smoothstep(0.3, 1.0, t));
+    float alpha = max(glow * 0.06, 0.0);
     gl_FragColor = vec4(uColor, alpha);
   }
 `;
@@ -186,7 +190,7 @@ export function createGlowMaterial(): ShaderMaterial {
     vertexShader: GLOW_VERTEX,
     fragmentShader: GLOW_FRAGMENT,
     uniforms: {
-      uColor: { value: new Color(PALETTE.amber) },
+      uColor: { value: new Color(PALETTE.halo) },
       uDistance: { value: 6 },
     },
     transparent: true,

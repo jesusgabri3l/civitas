@@ -19,7 +19,7 @@ import type { QualitySettings } from '../quality/qualityTier';
 import { FrameSnapshots, type SnapshotSlot } from './FrameSnapshots';
 import { PlasterLook, type PlasterSettings } from './PlasterLook';
 
-/** Layer of the sky dome: hidden from the G-buffer pass. */
+/** Layer of whatever must not reach the G-buffer pass: the sky dome and floating dust (the rays and the AO read sky as alpha 0). */
 export const SKY_LAYER = 1;
 
 // View-space normals (rgb, encoded 0..1) and linear depth in meters (a). Sky stays at a = 0.
@@ -61,8 +61,10 @@ export interface TransitionFrame {
   scale: number;
   /** Anchor of the scale, as viewport fractions (0..1 from the top left). */
   center: Vector2;
-  /** 0..1 size of the rounded window that opens from `center` (0 = none). */
+  /** 0..1 size of the circle that opens from `center` (0 = none). */
   reveal: number;
+  /** Going back: the overlay shows inside the circle, which grows as `reveal` falls. */
+  revealInside: boolean;
 }
 
 /**
@@ -141,7 +143,7 @@ export class LookPipeline {
     renderer.setRenderTarget(sceneTarget);
     renderer.render(scene, camera);
 
-    if (this.gbufferTarget && settings.aoStrength > 0) {
+    if (this.gbufferTarget && (settings.aoStrength > 0 || settings.outline > 0)) {
       // Shape pass: no sky dome, and shadows are not recomputed.
       renderer.getClearColor(this.clearColor);
       const clearAlpha = renderer.getClearAlpha();
@@ -178,7 +180,7 @@ export class LookPipeline {
     this.quad.render(renderer);
 
     if (transition.capture !== null) this.snapshots.capture(transition.capture);
-    if (transition.overlay !== null) this.snapshots.draw(transition.overlay, transition.opacity, transition.scale, transition.center, transition.reveal);
+    if (transition.overlay !== null) this.snapshots.draw(transition.overlay, transition.opacity, transition.scale, transition.center, transition.reveal, transition.revealInside);
   }
 
   dispose() {

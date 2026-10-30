@@ -34,7 +34,7 @@ export function isKnownPath(pathname: string): boolean {
 
 export function urlFor(stage: StageId, info = false): string {
   if (stage === 'globe') return '/';
-  return info ? `/${stage}${INFO_HASH}` : `/${stage}`;
+  return `/${stage}${info ? INFO_HASH : ''}`;
 }
 
 let infoPushedByUs = false;

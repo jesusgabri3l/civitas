@@ -2,3 +2,4 @@ node_modules/
 dist/
 .astro/
 .smoke/
+Claude outputs/

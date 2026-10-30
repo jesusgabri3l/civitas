@@ -2,23 +2,28 @@
 import TheOverlay from '../overlay/TheOverlay.vue';
 import { destinations } from '../data/destinations';
 import type { StageId } from '../state/appStore';
+import type { DestinationId } from '../data/destinations';
 
 interface Props {
   heading: string;
   intro: string;
   state: StageId;
+  /** City whose story chapters are in the slot (prerendered for SEO and deep links). */
+  storyCity?: DestinationId;
 }
 
-const { heading, intro, state } = Astro.props;
-// On the globe the page is the picture: the title and intro stay for search engines and screen readers only.
+const { heading, intro, state, storyCity } = Astro.props;
+// On the globe (and on a city with a story, where the first chapter opens the page) the title and intro stay for search engines
+// and screen readers only.
 const onGlobe = state === 'globe';
+const textHidden = onGlobe || Boolean(storyCity);
 ---
 
-<main id="main" class="the-stage" data-initial-state={state}>
+<main id="main" class="the-stage" data-initial-state={state} data-city={onGlobe ? undefined : state}>
   <canvas class="the-stage__canvas" aria-hidden="true" data-stage-canvas></canvas>
   <div class="the-stage__content">
-    <h1 class:list={['the-stage__title', { 'visually-hidden': onGlobe }]}>{heading}</h1>
-    <p class:list={['the-stage__intro', { 'visually-hidden': onGlobe }]}>{intro}</p>
+    <h1 class:list={['the-stage__title', { 'visually-hidden': textHidden }]}>{heading}</h1>
+    <p class:list={['the-stage__intro', { 'visually-hidden': textHidden }]}>{intro}</p>
     <TheOverlay client:load initialState={state} />
     <!-- Out of sight until a keyboard user reaches it. -->
     <nav class="the-stage__nav" aria-label="Destinations">
@@ -26,11 +31,14 @@ const onGlobe = state === 'globe';
       {destinations.map(({ path, name }) => <a href={path}>{name}</a>)}
     </nav>
   </div>
+  <div class="the-stage__story" data-story-root data-story-city={storyCity}>
+    <slot />
+  </div>
 </main>
 
 <script>
-  import { startWorldHub } from '../engine/startWorldHub';
+  import { startCivitas } from '../engine/startCivitas';
 
   const canvas = document.querySelector<HTMLCanvasElement>('[data-stage-canvas]');
-  if (canvas) void startWorldHub(canvas);
+  if (canvas) void startCivitas(canvas);
 </script>

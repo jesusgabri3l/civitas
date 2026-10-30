@@ -59,15 +59,15 @@ function watch(page) {
   });
 }
 
-const info = (page) => page.evaluate(() => window.__worldhub.info());
-const appState = (page) => page.evaluate(() => window.__worldhub.state());
+const info = (page) => page.evaluate(() => window.__civitas.info());
+const appState = (page) => page.evaluate(() => window.__civitas.state());
 const ready = (page) =>
-  page.waitForFunction(() => window.__worldhub?.info().activeStage, undefined, { timeout: 60000 });
+  page.waitForFunction(() => window.__civitas?.info().activeStage, undefined, { timeout: 60000 });
 const settled = (page, kind, city) =>
   page.waitForFunction(
     ([k, c]) => {
-      const state = window.__worldhub.state();
-      return state.kind === k && (c === undefined || state.city === c) && window.__worldhub.info().activeStage === (c ?? 'globe');
+      const state = window.__civitas.state();
+      return state.kind === k && (c === undefined || state.city === c) && window.__civitas.info().activeStage === (c ?? 'globe');
     },
     [kind, city],
     { timeout: 60000 },
@@ -97,7 +97,7 @@ const isVisuallyHidden = async (locator) => {
   return !box || (box.width <= 1 && box.height <= 1);
 };
 const cameraOf = (page) => page.evaluate(() => {
-  const { position } = window.__worldhub.engine.manager.active.camera;
+  const { position } = window.__civitas.engine.manager.active.camera;
   return { x: position.x, y: position.y, z: position.z };
 });
 const coordinatesOf = (page) => page.locator('[data-coordinates]').innerText();
@@ -134,15 +134,15 @@ async function globeChecks(page) {
   // "Atlas de noche" layout: brand, live coordinates and a usage hint; no visible city list or nav.
   check((await page.locator('.the-overlay-brand').innerText()).trim() === 'Civitas', 'brand shows Civitas');
   check(/^\d+\.\d°[NS] \d+\.\d°[EW]$/.test(await coordinatesOf(page)), 'coordinates readout is formatted like 43.0°N 13.0°E', await coordinatesOf(page));
-  check((await page.locator('[data-hint]').textContent()).trim() === 'Drag · Scroll to zoom', 'hint reads "Drag · Scroll to zoom" on desktop');
+  check((await page.locator('[data-hint]').textContent()).replace(/\s+/g, '') === 'DragRotateScrollZoomClickVisit', 'controls read Drag Rotate / Scroll Zoom / Click Visit on desktop');
   check(await isVisuallyHidden(page.locator('.the-overlay-cities')), 'city list is visually hidden');
   check(await isVisuallyHidden(page.locator('.the-stage__nav')), 'nav is visually hidden');
   check(
     await page.evaluate(async () => {
       await document.fonts.ready;
-      return document.fonts.check('italic 16px Fraunces') && document.fonts.check('12px "JetBrains Mono"');
+      return document.fonts.check('600 16px Fraunces') && document.fonts.check('12px "JetBrains Mono"');
     }),
-    'Fraunces italic and JetBrains Mono are loaded (self-hosted)',
+    'Fraunces SemiBold and JetBrains Mono are loaded (self-hosted)',
   );
   check((await cursorOf(page)) === 'grab', 'cursor is grab at rest', await cursorOf(page));
 
@@ -156,7 +156,7 @@ async function globeChecks(page) {
   await page.waitForTimeout(450);
   const others = await hotspot(page, 'paris').evaluate((el) => Number(getComputedStyle(el).opacity));
   check(others < 0.6, 'hovering a hotspot dims the others', String(others));
-  await page.waitForFunction(() => window.__worldhub.info().stages.rome === 'warm', undefined, { timeout: 30000 });
+  await page.waitForFunction(() => window.__civitas.info().stages.rome === 'warm', undefined, { timeout: 30000 });
   check(true, 'opening the tooltip preloads (warms) that city stage');
   check((await stageStatus(page, 'paris')) === 'idle', 'only the opened city is preloaded');
 
@@ -202,7 +202,7 @@ async function globeChecks(page) {
   await link.focus();
   await tooltip(page, 'athens').waitFor({ timeout: 5000 });
   check(true, 'focusing a list item shows its tooltip on the globe');
-  await page.waitForFunction(() => ['warm', 'active'].includes(window.__worldhub.info().stages.athens), undefined, { timeout: 30000 });
+  await page.waitForFunction(() => ['warm', 'active'].includes(window.__civitas.info().stages.athens), undefined, { timeout: 30000 });
   check(true, 'focusing a list item preloads its city');
   await page.keyboard.press('Tab');
   await tooltip(page, 'athens').waitFor({ state: 'detached', timeout: 5000 });
@@ -230,7 +230,7 @@ async function globeChecks(page) {
   check(!after || Math.abs(after.x - before.x) > 20 || !(await hotspot(page, 'rome').isVisible()), 'dragging rotates the globe', JSON.stringify({ before, after }));
   check((await coordinatesOf(page)) !== coordinatesBefore, 'coordinates follow the view', `${coordinatesBefore} -> ${await coordinatesOf(page)}`);
   check((await cursorOf(page)) === 'grab', 'cursor goes back to grab');
-  check((await page.locator('[data-hint]').count()) === 0, 'the hint disappears after the first interaction');
+  check((await page.locator('[data-hint]').count()) === 1, 'the controls stay after the first interaction (they only dim)');
   const afterDragFrames = (await info(page)).frames;
   await page.waitForTimeout(500);
   check((await info(page)).frames === afterDragFrames, 'globe goes idle after the drag and inertia');
@@ -268,9 +268,9 @@ async function globeChecks(page) {
     }
     await page.keyboard.press('Escape');
   }
-  await page.waitForFunction(() => Object.values(window.__worldhub.info().stages).every((status) => status !== 'loading'), undefined, { timeout: 30000 });
+  await page.waitForFunction(() => Object.values(window.__civitas.info().stages).every((status) => status !== 'loading'), undefined, { timeout: 30000 });
   await idle(page);
-  await page.evaluate(() => window.__worldhub.engine.manager.sleepInactive());
+  await page.evaluate(() => window.__civitas.engine.manager.sleepInactive());
   await page.waitForTimeout(100);
   const after0 = (await info(page)).memory;
   check(after0.geometries === base0.geometries && after0.textures === base0.textures, 'no GPU growth after 30 tooltip openings', `base=${JSON.stringify(base0)} now=${JSON.stringify(after0)}`);
@@ -282,17 +282,17 @@ async function globeChecks(page) {
  */
 async function uploadShootingStar(page) {
   const found = await page.evaluate(() => {
-    const mesh = window.__worldhub.engine.manager.active.scene.getObjectByName('shooting-star');
+    const mesh = window.__civitas.engine.manager.active.scene.getObjectByName('shooting-star');
     if (!mesh) return false;
     mesh.visible = true;
-    window.__worldhub.engine.invalidate();
+    window.__civitas.engine.invalidate();
     return true;
   });
   check(found, 'the globe has a shooting star mesh');
   await page.waitForTimeout(300);
   await page.evaluate(() => {
-    window.__worldhub.engine.manager.active.scene.getObjectByName('shooting-star').visible = false;
-    window.__worldhub.engine.invalidate();
+    window.__civitas.engine.manager.active.scene.getObjectByName('shooting-star').visible = false;
+    window.__civitas.engine.invalidate();
   });
   await idle(page);
 }
@@ -307,14 +307,14 @@ async function touchChecks(browser) {
   await idle(page);
   await hotspotsReady(page);
   await checkHotspotSeparation(page, 'mobile 390x844');
-  check((await page.locator('[data-hint]').textContent()).trim() === 'Pinch to zoom', 'hint reads "Pinch to zoom" on touch');
+  check((await page.locator('[data-hint]').textContent()).replace(/\s+/g, '') === 'DragRotatePinchZoomTapVisit', 'controls read Drag / Pinch / Tap on touch');
   await page.screenshot({ path: join(shots, 'mobile.png') });
 
   // First tap opens the tooltip (and warms the city), a second tap on its label goes in.
   await hotspot(page, 'rome').tap();
   await tooltip(page, 'rome').waitFor({ timeout: 5000 });
   check(true, 'first tap opens the tooltip on touch');
-  await page.waitForFunction(() => window.__worldhub.info().stages.rome === 'warm', undefined, { timeout: 30000 });
+  await page.waitForFunction(() => window.__civitas.info().stages.rome === 'warm', undefined, { timeout: 30000 });
   check(true, 'tap preloads the city on touch');
   const box = await tooltip(page, 'rome').boundingBox();
   check(box && box.x >= 0 && box.x + box.width <= 390, 'the label stays inside a 390px screen', JSON.stringify(box));
@@ -374,7 +374,7 @@ async function ambientPauseChecks(browser) {
 
   // Any interaction wakes it up.
   await page.touchscreen.tap(200, 600);
-  await page.waitForFunction((n) => window.__worldhub.info().frames > n, parked, { timeout: 5000 });
+  await page.waitForFunction((n) => window.__civitas.info().frames > n, parked, { timeout: 5000 });
   check((await info(page)).ambientActive === true, 'mobile: a tap resumes the ambient animation');
   const memoryAfter = (await info(page)).memory;
   check(memoryAfter.geometries === memoryBefore.geometries && memoryAfter.textures === memoryBefore.textures, 'mobile: no memory growth across a full ambient cycle', `${JSON.stringify(memoryBefore)} -> ${JSON.stringify(memoryAfter)}`);
@@ -489,30 +489,30 @@ async function main() {
       document.dispatchEvent(new Event('visibilitychange'));
     });
     const hiddenFrames = (await info(page)).frames;
-    await page.evaluate(() => window.__worldhub.engine.invalidate());
+    await page.evaluate(() => window.__civitas.engine.invalidate());
     await page.waitForTimeout(500);
     check((await info(page)).frames === hiddenFrames, 'no frames while the tab is hidden');
     await page.evaluate(() => {
       delete document.hidden;
       document.dispatchEvent(new Event('visibilitychange'));
     });
-    await page.waitForFunction((n) => window.__worldhub.info().frames > n, hiddenFrames, { timeout: 10000 });
+    await page.waitForFunction((n) => window.__civitas.info().frames > n, hiddenFrames, { timeout: 10000 });
     check(true, 'renders again when the tab is visible');
 
     // Context loss and restore.
     await idle(page);
     await page.evaluate(() => {
-      const gl = window.__worldhub.engine.renderer.getContext();
+      const gl = window.__civitas.engine.renderer.getContext();
       window.__loseContext = gl.getExtension('WEBGL_lose_context');
       window.__loseContext.loseContext();
     });
     await page.waitForTimeout(300);
     const lostFrames = (await info(page)).frames;
-    await page.evaluate(() => window.__worldhub.engine.invalidate());
+    await page.evaluate(() => window.__civitas.engine.invalidate());
     await page.waitForTimeout(300);
     check((await info(page)).frames === lostFrames, 'no frames while the context is lost');
     await page.evaluate(() => window.__loseContext.restoreContext());
-    await page.waitForFunction((n) => window.__worldhub.info().frames > n, lostFrames, { timeout: 15000 });
+    await page.waitForFunction((n) => window.__civitas.info().frames > n, lostFrames, { timeout: 15000 });
     check(true, 'renders again after the context is restored');
     await click(page, 'Athens');
     await settled(page, 'monument', 'athens');
@@ -537,7 +537,7 @@ async function main() {
     const after = (await info(page)).memory;
     console.log(`     steady: g=${steady.geometries} t=${steady.textures}  after 10 cycles: g=${after.geometries} t=${after.textures}`);
     check(after.geometries === steady.geometries && after.textures === steady.textures, 'no GPU growth after 10 round trips');
-    await page.evaluate(() => window.__worldhub.engine.manager.sleepInactive());
+    await page.evaluate(() => window.__civitas.engine.manager.sleepInactive());
     await page.waitForTimeout(100);
     const slept = (await info(page)).memory;
     console.log(`     all inactive asleep: g=${slept.geometries} t=${slept.textures}`);

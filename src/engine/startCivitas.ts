@@ -1,6 +1,11 @@
 import { $appState, $targetStage, settleTransition, type StageId } from '../state/appStore';
 import { $ambientActive, bindPreload } from '../state/globeStore';
 import { startRouter } from '../state/router';
+import { $explorePart, $exploreView, $story } from '../state/storyStore';
+import { startExploreUi } from '../story/exploreUi';
+import { startTimelineUi } from '../story/timelineUi';
+import { preloadStory } from '../story/storyContent';
+import { startStoryScroll } from '../story/storyScroll';
 import type { QualityTier } from './quality/qualityTier';
 import { Engine } from './Engine';
 
@@ -17,7 +22,7 @@ function tierFromQuery(): QualityTier | undefined {
 }
 
 /** Connects the URL/state machine to the 3D engine. */
-export async function startWorldHub(canvas: HTMLCanvasElement) {
+export async function startCivitas(canvas: HTMLCanvasElement) {
   const root = canvas.closest('.the-stage');
   let engine: Engine;
   try {
@@ -29,12 +34,23 @@ export async function startWorldHub(canvas: HTMLCanvasElement) {
   }
 
   startRouter();
+  startStoryScroll();
+  startTimelineUi();
+  startExploreUi();
   let shownStage: StageId = $targetStage.get();
   await engine.start(shownStage);
   root?.classList.add('the-stage--ready');
 
   // Opening a globe card (or focusing a city in the list) warms that city's stage before the user commits.
-  bindPreload((city) => engine.preload(city));
+  bindPreload((city) => Promise.all([engine.preload(city), preloadStory(city)]));
+
+  // The scroll story drives the camera and the maquette of the stage on screen (stages without a story ignore it).
+  $story.subscribe(({ chapter, t }) => engine.setStory(chapter, t));
+  // Explore chapter: the view buttons and the part cards drive the maquette; a tap on a part opens its card.
+  const sendExplore = () => engine.setExplore($exploreView.get(), $explorePart.get());
+  $exploreView.subscribe(sendExplore);
+  $explorePart.subscribe(sendExplore);
+  engine.onSelect((id) => $explorePart.set(id));
 
   // The store decides, the engine follows. Requests are serialized and the latest one wins.
   $targetStage.subscribe((target) => {
@@ -52,7 +68,7 @@ export async function startWorldHub(canvas: HTMLCanvasElement) {
 
   // Small read-only handle for tests and debugging.
   Object.assign(window, {
-    __worldhub: {
+    __civitas: {
       engine,
       state: () => $appState.get(),
       info: () => ({

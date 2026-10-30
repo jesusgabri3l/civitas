@@ -1,0 +1,145 @@
+---
+import type { MonumentStory } from '../data/stories';
+
+interface Props {
+  story: MonumentStory;
+}
+
+// The monument page of docs/ART-DIRECTION.md §5: top bar, hero without a card (museum label bottom right), one full-height section
+// per chapter with its text straight on the dark ground, and the chapter timeline along the bottom. The chrome (bar, timeline) is
+// mounted with the story; the maquette is the stage behind. Colors and faces come from the city (`$cities` → `[data-city]`).
+const { story } = Astro.props;
+const { hero, chapters, label } = story;
+const all = [hero, ...chapters];
+---
+
+<header class="monument-bar" data-story-chrome>
+  <span class="monument-bar__brand-space" aria-hidden="true"></span>
+  <p class="monument-bar__city">{story.city} · <span lang={story.cityLocalLang}>{story.cityLocal}</span></p>
+  <nav class="monument-bar__nav" aria-label="Page">
+    <a href="/">← Globe</a>
+    <a href={`#chapter-${chapters[chapters.length - 1].id}`} data-scroll-to={all.length - 1}>Explore</a>
+  </nav>
+</header>
+
+<section class="monument-chapter monument-chapter--hero" id={`chapter-${hero.id}`} data-story aria-labelledby="story-hero-title">
+  <div class="monument-chapter__body">
+    <p class="monument-chapter__kicker">{hero.kicker}</p>
+    <h2 class="monument-chapter__display" id="story-hero-title" lang={hero.titleLang}>{hero.title}</h2>
+    <svg class="monument-chapter__motif" viewBox="0 0 360 14" aria-hidden="true" focusable="false">
+      {story.motif === 'greek-key' && (
+        <>
+          <defs>
+            <pattern id="motif-greek-key" width="20" height="12" y="1" patternUnits="userSpaceOnUse">
+              <path d="M0 11.5 H2.5 V0.5 H15.5 V8.5 H6.5 V4.5 H11.5 M15.5 11.5 H20" />
+            </pattern>
+          </defs>
+          <rect width="360" height="14" fill="url(#motif-greek-key)"></rect>
+        </>
+      )}
+      {story.motif === 'double-rule' && (
+        <>
+          <path d="M0 4.5 H360" />
+          <path class="monument-chapter__motif-soft" d="M0 9.5 H360" />
+        </>
+      )}
+      {story.motif === 'truss' && (
+        <>
+          <defs>
+            <pattern id="motif-truss" width="14" height="14" patternUnits="userSpaceOnUse">
+              <path d="M0 1 L14 13 M14 1 L0 13" />
+            </pattern>
+          </defs>
+          <rect width="360" height="14" fill="url(#motif-truss)"></rect>
+          <path d="M0 0.5 H360 M0 13.5 H360" />
+        </>
+      )}
+    </svg>
+    <p class="monument-chapter__subtitle">{hero.subtitle}</p>
+    {hero.paragraphs.map((text) => <p class="monument-chapter__lead">{text}</p>)}
+    <div class="monument-chapter__actions">
+      <a class="monument-chapter__cta" href={`#chapter-${chapters[0].id}`} data-scroll-to="1">{hero.cta}</a>
+      <span class="monument-chapter__hint" aria-hidden="true">Or scroll ↓</span>
+    </div>
+  </div>
+  <aside class="monument-label" aria-label="Museum label">
+    <p class="monument-label__name" lang={label.nameLang}>{label.name}</p>
+    <p class="monument-label__caption">{label.caption}</p>
+    <p class="monument-label__lines">{label.lines.map((line) => <span>{line}</span>)}</p>
+  </aside>
+</section>
+
+{
+  chapters.map((chapter, index) => (
+    <section
+      class:list={['monument-chapter', chapter.explore && 'monument-chapter--explore']}
+      id={`chapter-${chapter.id}`}
+      data-story
+      aria-labelledby={`story-${chapter.id}`}
+    >
+      <div class="monument-chapter__body">
+        <p class="monument-chapter__kicker">{chapter.kicker}</p>
+        <h2 class="monument-chapter__title" id={`story-${chapter.id}`}>{chapter.title}</h2>
+        {chapter.paragraphs.map((text) => <p class="monument-chapter__text">{text}</p>)}
+        {chapter.facts && (
+          <dl class="monument-chapter__facts">
+            {chapter.facts.map((fact) => (
+              <div>
+                <dt>{fact.label}</dt>
+                <dd>{fact.value}</dd>
+              </div>
+            ))}
+          </dl>
+        )}
+        {chapter.explore && (
+          <div class="monument-explore">
+            <p class="monument-explore__hint">{chapter.explore.hint}</p>
+            <div class="monument-explore__views" role="group" aria-label="View of the maquette">
+              {chapter.explore.views.map((view, viewIndex) => (
+                <button type="button" class="monument-explore__view" data-explore-view={view.id} aria-pressed={viewIndex === 0 ? 'true' : 'false'}>
+                  {view.label}
+                </button>
+              ))}
+            </div>
+            <div class="monument-explore__parts" role="group" aria-label="Parts of the monument">
+              {chapter.explore.parts.map((part) => (
+                <button type="button" class="monument-explore__part" data-explore-part={part.id} aria-pressed="false">
+                  {part.name}
+                </button>
+              ))}
+            </div>
+            {chapter.explore.parts.map((part) => (
+              <div class="monument-explore__card" data-explore-card={part.id} role="region" aria-label={part.name} hidden>
+                <p class="monument-explore__card-name">{part.name}</p>
+                <p class="monument-explore__card-text">{part.text}</p>
+                <button type="button" class="monument-explore__close" data-explore-close aria-label={`Close ${part.name}`}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        {index === chapters.length - 1 && (
+          <div class="monument-chapter__actions">
+            <a class="monument-chapter__cta" href="/">Back to the globe</a>
+            <a class="monument-chapter__hint" href={`#chapter-${hero.id}`} data-scroll-to="0">Back to the top ↑</a>
+          </div>
+        )}
+      </div>
+    </section>
+  ))
+}
+
+<nav class="monument-timeline" data-story-chrome aria-label="Chapters">
+  <ol class="monument-timeline__list" style={`--chapters: ${all.length}`}>
+    {
+      all.map((chapter, index) => (
+        <li>
+          <a class="monument-timeline__stop" href={`#chapter-${chapter.id}`} data-nav-link={index}>
+            <span class="monument-timeline__dot" aria-hidden="true"></span>
+            <span class="monument-timeline__year">{chapter.year}</span>
+            <span class="monument-timeline__name">{chapter.name}</span>
+          </a>
+        </li>
+      ))
+    }
+  </ol>
+</nav>
