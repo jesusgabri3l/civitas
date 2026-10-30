@@ -65,6 +65,8 @@ export interface TransitionFrame {
   reveal: number;
   /** Going back: the overlay shows inside the circle, which grows as `reveal` falls. */
   revealInside: boolean;
+  /** 0..1 radial speed blur of the overlay toward `center`. */
+  blur: number;
 }
 
 /**
@@ -180,7 +182,7 @@ export class LookPipeline {
     this.quad.render(renderer);
 
     if (transition.capture !== null) this.snapshots.capture(transition.capture);
-    if (transition.overlay !== null) this.snapshots.draw(transition.overlay, transition.opacity, transition.scale, transition.center, transition.reveal, transition.revealInside);
+    if (transition.overlay !== null) this.snapshots.draw(transition.overlay, transition.opacity, transition.scale, transition.center, transition.reveal, transition.revealInside, transition.blur);
   }
 
   dispose() {

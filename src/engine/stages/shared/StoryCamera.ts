@@ -97,6 +97,13 @@ export class StoryCamera {
     shotAt(0, this.shot, this.track);
   }
 
+  /** Goes to a point of the story with no animation. */
+  jumpTo(chapter: number, t: number) {
+    this.goal = scrollPosition(chapter, t, this.track);
+    this.position = this.goal;
+    shotAt(this.position, this.shot, this.track);
+  }
+
   /** Returns true while the shot still moves toward its goal. */
   update(deltaSeconds: number, animated: boolean): boolean {
     if (!animated) {

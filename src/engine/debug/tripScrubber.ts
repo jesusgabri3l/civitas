@@ -53,14 +53,14 @@ export function mountTripScrubber(engine: Engine) {
     slider.disabled = !trip;
     if (trip) {
       if (!dragging) slider.value = String(trip.progress);
-      const { zoom, mix, snapScale, cityAway, reveal } = trip.sample;
+      const { zoom, mix, snapScale, cityAway, blur, reveal } = trip.sample;
       readout.textContent =
         `${trip.from} -> ${trip.to} (${trip.mode})  p ${format(trip.progress)}\n` +
         `zoom ${format(zoom)}  mix ${format(mix)}
 ` +
         `snapScale ${format(snapScale)}  cityAway ${format(cityAway)}
 ` +
-        `reveal ${format(reveal)}  anchor ${format(trip.anchor.x)},${format(trip.anchor.y)}`;
+        `reveal ${format(reveal)}  blur ${format(blur)}  anchor ${format(trip.anchor.x)},${format(trip.anchor.y)}`;
     }
     requestAnimationFrame(update);
   };

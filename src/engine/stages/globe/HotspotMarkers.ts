@@ -11,16 +11,23 @@ const KEYLINE_RADIUS = 7;
 const RING_MAX_RADIUS = 18;
 const PULSE_SECONDS = 4.8;
 const PULSE_STAGGER = 1.7;
-/** Just above the surface, so the dot never fights the sphere for depth. */
-const LIFT = 1.004;
+/** Just above the surface, so the dot never fights the sphere for depth. The HTML hotspots project the same point. */
+export const MARKER_LIFT = 1.004;
 const RENDER_ORDER = 10;
+/** Share of its view distance the sprite's depth moves toward the camera (bigger = survives steeper surface and bigger dots). */
+const DEPTH_PUSH = 0.05;
 
 const glsl = (value: number) => value.toFixed(1);
 
 const VERTEX = /* glsl */ `
   uniform float uSize;
   void main() {
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    vec4 view = modelViewMatrix * vec4(position, 1.0);
+    gl_Position = projectionMatrix * view;
+    // A point sprite has one depth for all its pixels, so the globe surface that curves toward the camera under its lower
+    // half hides it. Bring its depth (not its position) forward by a share of its distance, enough to clear that surface.
+    vec4 pushed = projectionMatrix * vec4(view.xy, view.z + ${DEPTH_PUSH.toFixed(3)} * -view.z, 1.0);
+    gl_Position.z = pushed.z / pushed.w * gl_Position.w;
     gl_PointSize = uSize;
   }
 `;
@@ -32,14 +39,21 @@ const FRAGMENT = /* glsl */ `
   uniform float uScale;
   uniform float uTime;
   uniform float uPhase;
+  // Close to CSS ease-out (cubic-bezier(0, 0, 0.58, 1)).
+  float easeOut(float x) {
+    return 1.0 - (1.0 - x) * (1.0 - x);
+  }
+
   void main() {
     float r = length(gl_PointCoord - 0.5) * ${glsl(BOX)};
     float aa = 1.0 / uScale;
     float dotMask = 1.0 - smoothstep(${glsl(DOT_RADIUS)} - aa, ${glsl(DOT_RADIUS)} + aa, r);
     float keyline = 1.0 - smoothstep(${glsl(KEYLINE_RADIUS)} - aa, ${glsl(KEYLINE_RADIUS)} + aa, r);
     float phase = fract((uTime + uPhase) / ${glsl(PULSE_SECONDS)});
-    float ringRadius = mix(${glsl(DOT_RADIUS)}, ${glsl(RING_MAX_RADIUS)}, phase);
-    float ring = (1.0 - smoothstep(0.4 * aa, 1.4 * aa, abs(r - ringRadius))) * 0.7 * (1.0 - phase);
+    // The curve of the CSS ring (the-overlay-pulse, ease-out): it grows over the whole cycle, fades in to 12 % and out after.
+    float ringRadius = mix(${glsl(DOT_RADIUS)}, ${glsl(RING_MAX_RADIUS)}, easeOut(phase));
+    float ringAlpha = phase < 0.12 ? easeOut(phase / 0.12) : 1.0 - easeOut((phase - 0.12) / 0.88);
+    float ring = (1.0 - smoothstep(0.4 * aa, 1.4 * aa, abs(r - ringRadius))) * 0.7 * ringAlpha;
     float alpha = max(keyline, ring) * uOpacity;
     if (alpha < 0.01) discard;
     float amber = clamp(max(dotMask, ring * (1.0 - keyline)), 0.0, 1.0);
@@ -81,7 +95,7 @@ export class HotspotMarkers {
         geometry,
         new ShaderMaterial({ vertexShader: VERTEX, fragmentShader: FRAGMENT, uniforms, transparent: true, depthWrite: false }),
       );
-      const position: Vector3 = latLonToVector3(coordinates.lat, coordinates.lon).multiplyScalar(LIFT);
+      const position: Vector3 = latLonToVector3(coordinates.lat, coordinates.lon).multiplyScalar(MARKER_LIFT);
       points.position.copy(position);
       points.frustumCulled = false;
       points.renderOrder = RENDER_ORDER;

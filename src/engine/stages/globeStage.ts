@@ -31,7 +31,7 @@ import { ArcLayer } from './globe/arcs';
 import { createOceanLabels } from './globe/OceanLabels';
 import { AUTO_ROTATE, autoRotationSpeed, nextShootingStarDelay } from './globe/ambient';
 import { GlobeControls } from './globe/GlobeControls';
-import { HotspotMarkers } from './globe/HotspotMarkers';
+import { HotspotMarkers, MARKER_LIFT } from './globe/HotspotMarkers';
 import {
   DEG,
   EUROPE,
@@ -59,10 +59,15 @@ import { ShootingStar } from './globe/ShootingStar';
 import { StarField } from './globe/StarField';
 import { ZoomModel } from './globe/ZoomModel';
 
-const SPIN_SECONDS = 3.4;
-const DOLLY_SECONDS = 2.4;
-/** The intro starts this far west of Europe (radians) and spins into place. */
-const INTRO_SPIN = 0.9;
+/** Intro on load: the globe comes up out of black, already almost in place (tuned to land with the headline typing). */
+const SPIN_SECONDS = 1.6;
+const DOLLY_SECONDS = 1.6;
+/** Seconds the exposure takes to rise from black to normal. */
+const INTRO_FADE_SECONDS = 1.1;
+/** The intro starts this far west of Europe (radians) and settles into place. */
+const INTRO_SPIN = 0.1;
+/** The intro starts this much farther out than the settled framing. */
+const INTRO_EXTRA_DISTANCE = 1.05;
 /** The view may tilt between these latitudes (radians): far enough south for Peru, never over the pole. */
 const MIN_TILT = (-50 * Math.PI) / 180;
 const MAX_TILT = (60 * Math.PI) / 180;
@@ -114,7 +119,7 @@ export function createStage(host: StageHost): Stage {
   glow.frustumCulled = false;
   const { tilt: europeTilt, yaw: europeYaw } = orientationFor(EUROPE);
   const hotspotPoints = new Map<string, Vector3>(
-    destinations.map(({ id, coordinates }) => [id, latLonToVector3(coordinates.lat, coordinates.lon)]),
+    destinations.map(({ id, coordinates }) => [id, latLonToVector3(coordinates.lat, coordinates.lon).multiplyScalar(MARKER_LIFT)]),
   );
 
   let aspect = 1;
@@ -184,6 +189,7 @@ export function createStage(host: StageHost): Stage {
       nudgeElapsed = null; // the user found it by themselves
       nudgeAngle = 0;
       spinElapsed = SPIN_SECONDS; // the user takes over: keep the yaw they have
+      look.exposure = DEFAULT_PLASTER.exposure;
       markInteracted();
     },
     onWheel: (deltaPixels) => {
@@ -256,7 +262,7 @@ export function createStage(host: StageHost): Stage {
   }
 
   /** The intro starts a bit farther out than the settled framing and moves in. */
-  const introDistance = () => Math.max(fitDistance(aspect), restDistance() * 1.25);
+  const introDistance = () => Math.max(fitDistance(aspect), restDistance() * INTRO_EXTRA_DISTANCE);
 
   function restartIntro() {
     if (introPlayed) {
@@ -271,6 +277,7 @@ export function createStage(host: StageHost): Stage {
     spinElapsed = instant ? SPIN_SECONDS : 0;
     dollyElapsed = instant ? DOLLY_SECONDS : 0;
     yaw = instant ? europeYaw : europeYaw - INTRO_SPIN;
+    look.exposure = instant ? DEFAULT_PLASTER.exposure : 0;
     tilt = europeTilt;
     zoom.snapTo(instant ? restDistance() : introDistance());
   }
@@ -357,12 +364,15 @@ export function createStage(host: StageHost): Stage {
     });
   }
 
+  // Mutable: the intro raises `exposure` from black.
+  const look = { ...DEFAULT_PLASTER, aoStrength: 0, grain: 0, warmth: 0, vignette: 0.22, filmic: 0 };
+
   return {
     id: 'globe',
     scene,
     camera,
     skyColor: stageSky.globe.skyColor,
-    look: { ...DEFAULT_PLASTER, aoStrength: 0, grain: 0, warmth: 0, vignette: 0.22, filmic: 0 },
+    look,
 
     async load() {
       scene.background = new Color(stageSky.globe.skyColor);
@@ -417,6 +427,7 @@ export function createStage(host: StageHost): Stage {
         spinElapsed = Math.min(spinElapsed + deltaSeconds, SPIN_SECONDS);
         yaw = europeYaw - INTRO_SPIN * (1 - easeOutCubic(spinElapsed / SPIN_SECONDS));
         animating = spinElapsed < SPIN_SECONDS;
+        look.exposure = DEFAULT_PLASTER.exposure * easeInOut(Math.min(spinElapsed / INTRO_FADE_SECONDS, 1));
       }
       // Follow the user's zoom (wide stacked layout). Nothing else moves the globe up or down.
       if (raisedLinear !== raiseTarget) {
@@ -477,7 +488,8 @@ export function createStage(host: StageHost): Stage {
       }
       markers.setOpacity(markerOpacity);
       markers.setScale(1 + MARKER_DIVE_GROWTH * diveAmount);
-      markers.setTime(ambientTime);
+      // The page clock, the same one the HTML rings run on (see TheOverlayHotspots): no jump in the pulse when they swap.
+      markers.setTime(performance.now() / 1000);
 
       const zoomAmount = (settled - zoom.distance) / settled;
       stars.setStretch(zoomAmount);
@@ -510,6 +522,7 @@ export function createStage(host: StageHost): Stage {
       nudgeElapsed = null;
       nudgeAngle = 0;
       introPlayed = true;
+      look.exposure = DEFAULT_PLASTER.exposure;
       spinElapsed = SPIN_SECONDS;
       dollyElapsed = DOLLY_SECONDS;
       raisedLinear = raiseTarget = 0;

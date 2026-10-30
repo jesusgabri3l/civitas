@@ -132,7 +132,7 @@ const BUDGETS: Record<QualityTier, { shadowMapSize: number; shadows: boolean; du
 };
 
 /** Arrival from the globe: the camera starts further, higher and turned, and settles at rest. */
-const ENTRY = { dolly: 25, yaw: 8, pitch: 5 } as const;
+const ENTRY = { dolly: 34, yaw: 3, pitch: 2 } as const;
 const CAMERA_NEAR = 1;
 const CAMERA_FAR = 2600;
 /** Slow sway of the presentation shot (degrees, radians per second). */
@@ -319,10 +319,12 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
 
     activate() {
       active = true;
-      story.reset();
+      // Born in the pose the page settles into (end of the prologue, what `storyScroll` publishes once mounted), so nothing
+      // moves when the story arrives after the trip.
+      story.jumpTo(0, 1);
       inHero = true;
-      goal = { ...definition.rest };
-      Object.assign(now, definition.rest);
+      goal = goalFor(0, 1);
+      Object.assign(now, goal);
       chapterNow = 0;
       exploreView = null;
       model?.setHighlight?.(null);

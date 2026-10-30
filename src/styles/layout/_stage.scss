@@ -8,7 +8,9 @@
   &__canvas {
     position: fixed;
     inset: 0;
-    width: 100%;
+    // The whole viewport, scrollbar included: the page scrollbar of a city (it unlocks after the trip) sits over the canvas
+    // instead of narrowing it, which would reframe the maquette and make it jump.
+    width: 100vw;
     height: 100%;
     // iOS: the largest viewport, so the address bar showing or hiding never resizes the canvas.
     height: 100lvh;

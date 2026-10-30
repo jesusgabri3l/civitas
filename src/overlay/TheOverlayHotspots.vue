@@ -55,6 +55,15 @@ function onPointerEnter(event: PointerEvent, id: DestinationId) {
   if (event.pointerType === 'mouse') showTooltip(id, false);
 }
 
+// Every ring runs on the page clock (start time 0), the same one the dots inside the globe scene pulse on during a trip,
+// so the swap at the end of a trip does not jump. A ring restarts each time its dot is shown again; this pins it back.
+function onAnimationStart(event: AnimationEvent) {
+  if (event.animationName !== 'the-overlay-pulse') return;
+  (event.target as Element).getAnimations().forEach((animation) => {
+    if ((animation as CSSAnimation).animationName === 'the-overlay-pulse') animation.startTime = 0;
+  });
+}
+
 function onPointerLeave(event: PointerEvent) {
   if (event.pointerType === 'mouse') scheduleHideTooltip();
 }
@@ -76,7 +85,7 @@ async function onClick(event: MouseEvent, id: DestinationId) {
 
 <template>
   <!-- Pointer enhancement: keyboard and screen reader users get the city list instead. -->
-  <div class="the-overlay-hotspots" :class="{ 'the-overlay-hotspots--paused': !ambientActive, 'the-overlay-hotspots--entering': entering, 'the-overlay-hotspots--travelling': travelling }" aria-hidden="true">
+  <div class="the-overlay-hotspots" :class="{ 'the-overlay-hotspots--paused': !ambientActive, 'the-overlay-hotspots--entering': entering, 'the-overlay-hotspots--travelling': travelling }" aria-hidden="true" @animationstart="onAnimationStart">
     <button
       v-for="hotspot in hotspots"
       v-show="hotspot.visible"

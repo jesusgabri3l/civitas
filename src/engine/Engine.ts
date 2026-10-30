@@ -72,6 +72,7 @@ export class Engine {
     center: new Vector2(0.5, 0.5),
     reveal: 0,
     revealInside: false,
+    blur: 0,
   };
   /** Snapshot of the stage the trip left, drawn over the arriving one; null while the leaving stage is still on screen. */
   private snapshotSlot: SnapshotSlot | null = null;
@@ -396,6 +397,7 @@ export class Engine {
     transition.opacity = mode === 'fade' ? 1 - sample.mix : 1;
     transition.reveal = sample.reveal;
     transition.revealInside = mode === 'exit';
+    transition.blur = sample.blur;
     transition.scale = sample.snapScale;
     // Leaving a city the circle follows it on the live globe as the camera pulls back.
     const anchor = mode === 'exit' && this.snapshotSlot !== null ? this.manager.get('globe')?.transitionAnchor?.(tween.from) : undefined;
@@ -413,7 +415,7 @@ export class Engine {
     stage?.setExit?.(0, other);
     stage?.setEntry?.(1, other);
     this.snapshotSlot = null;
-    Object.assign(this.transition, { capture: null, overlay: null, opacity: 0, scale: 1, reveal: 0, revealInside: false });
+    Object.assign(this.transition, { capture: null, overlay: null, opacity: 0, scale: 1, reveal: 0, revealInside: false, blur: 0 });
 
     if (tween.queued && tween.queued !== shown) return this.beginTrip(shown, tween.queued);
     this.settleWaiter(shown);
