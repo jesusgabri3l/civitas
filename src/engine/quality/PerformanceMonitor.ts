@@ -49,19 +49,39 @@ export class PerformanceMonitor {
   }
 }
 
-/** Asks for a lower tier after `windows` consecutive snapshots below `minFps`. */
+export type QualityVerdict = 'down' | 'up' | null;
+
+/**
+ * Asks for a lower tier after `downWindows` consecutive snapshots below `minFps`, and for a higher one after `upWindows`
+ * consecutive snapshots at or above `upFps` (a hitch, a busy tab or a blurred overlay no longer costs the quality for good).
+ */
 export class QualityGovernor {
   private slowWindows = 0;
+  private fastWindows = 0;
 
   constructor(
-    private readonly minFps = 30,
-    private readonly windows = 3,
+    private readonly minFps = 28,
+    private readonly downWindows = 4,
+    private readonly upFps = 55,
+    private readonly upWindows = 16,
   ) {}
 
-  shouldDowngrade({ fps }: PerformanceSnapshot): boolean {
+  judge({ fps }: PerformanceSnapshot): QualityVerdict {
     this.slowWindows = fps < this.minFps ? this.slowWindows + 1 : 0;
-    if (this.slowWindows < this.windows) return false;
+    this.fastWindows = fps >= this.upFps ? this.fastWindows + 1 : 0;
+    if (this.slowWindows >= this.downWindows) {
+      this.reset();
+      return 'down';
+    }
+    if (this.fastWindows >= this.upWindows) {
+      this.reset();
+      return 'up';
+    }
+    return null;
+  }
+
+  reset() {
     this.slowWindows = 0;
-    return true;
+    this.fastWindows = 0;
   }
 }

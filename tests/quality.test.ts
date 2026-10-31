@@ -19,6 +19,7 @@ describe('quality tiers', () => {
     expect(settingsForTier('high', false).maxWarmStages).toBe(2);
     expect(settingsForTier('low', false).useGBuffer).toBe(false);
     expect(settingsForTier('medium', false).useGBuffer).toBe(true);
+    expect(settingsForTier('medium', false).msaaSamples).toBe(2);
   });
 });
 
@@ -33,12 +34,20 @@ describe('PerformanceMonitor / QualityGovernor', () => {
   });
 
   it('downgrades only after sustained slow windows', () => {
-    const governor = new QualityGovernor(30, 3);
+    const governor = new QualityGovernor(30, 3, 55, 4);
     const slow = { fps: 20, frameMs: 50 };
-    expect(governor.shouldDowngrade(slow)).toBe(false);
-    expect(governor.shouldDowngrade({ fps: 60, frameMs: 16 })).toBe(false);
-    expect(governor.shouldDowngrade(slow)).toBe(false);
-    expect(governor.shouldDowngrade(slow)).toBe(false);
-    expect(governor.shouldDowngrade(slow)).toBe(true);
+    expect(governor.judge(slow)).toBeNull();
+    expect(governor.judge({ fps: 45, frameMs: 22 })).toBeNull();
+    expect(governor.judge(slow)).toBeNull();
+    expect(governor.judge(slow)).toBeNull();
+    expect(governor.judge(slow)).toBe('down');
+  });
+
+  it('asks to climb back after sustained fast windows', () => {
+    const governor = new QualityGovernor(30, 3, 55, 4);
+    const fast = { fps: 60, frameMs: 16 };
+    for (let i = 0; i < 3; i++) expect(governor.judge(fast)).toBeNull();
+    expect(governor.judge(fast)).toBe('up');
+    expect(governor.judge(fast)).toBeNull();
   });
 });

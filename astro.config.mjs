@@ -7,6 +7,17 @@ export default defineConfig({
   integrations: [vue(), sitemap({ serialize: (item) => ({ ...item, url: item.url.replace(/(.)\/$/, '$1') }) })],
   devToolbar: { enabled: false },
   vite: {
+    // The cities load on demand: without this, dev discovers these deep imports on the first trip, re-optimizes mid-session
+    // and the import in flight fails with 504 (Outdated Optimize Dep).
+    optimizeDeps: {
+      include: [
+        'three',
+        'three/examples/jsm/geometries/RoundedBoxGeometry.js',
+        'three/examples/jsm/postprocessing/Pass.js',
+        'gsap',
+        'gsap/ScrollTrigger',
+      ],
+    },
     build: {
       chunkSizeWarningLimit: 1200,
       rollupOptions: {

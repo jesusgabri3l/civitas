@@ -18,6 +18,18 @@
     display: block;
   }
 
+  // No WebGL: no canvas and no controls that drive the maquette; the chapters read as a plain page on the city's ground.
+  &--no-webgl[data-city] {
+    background: var(--city-ground);
+  }
+
+  &--no-webgl &__canvas,
+  &--no-webgl .monument-explore__hint,
+  &--no-webgl .monument-explore__views,
+  &--no-webgl .the-overlay-hint {
+    display: none;
+  }
+
   // Story chapters scroll over the fixed canvas; they hang off the top of the page and make it as tall as they need.
   &__story {
     position: absolute;

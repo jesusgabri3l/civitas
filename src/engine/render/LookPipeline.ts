@@ -5,7 +5,6 @@ import {
   FloatType,
   HalfFloatType,
   LinearFilter,
-  LinearMipmapLinearFilter,
   NearestFilter,
   ShaderMaterial,
   Vector2,
@@ -117,8 +116,9 @@ export class LookPipeline {
     this.sceneTarget = new WebGLRenderTarget(width, height, {
       type: this.supportsHalfFloatTarget ? HalfFloatType : undefined,
       samples: useGBuffer ? msaaSamples : 0,
-      generateMipmaps: true,
-      minFilter: LinearMipmapLinearFilter,
+      // The look pass reads it at mip 0 only: a mip chain rebuilt every frame was GPU time for nothing.
+      generateMipmaps: false,
+      minFilter: LinearFilter,
       magFilter: LinearFilter,
     });
     if (!useGBuffer) this.sceneTarget.depthTexture = new DepthTexture(width, height);

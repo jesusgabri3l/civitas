@@ -4,7 +4,10 @@ import { PerformanceMonitor, QualityGovernor } from './quality/PerformanceMonito
 import {
   ambientPolicyFor,
   detectQualityTier,
+  higherTier,
+  isBelow,
   isMobileDevice,
+  isSoftwareRenderer,
   lowerTier,
   readDeviceSignals,
   settingsForTier,
@@ -63,6 +66,10 @@ export class Engine {
   private readonly mobile: boolean;
   private readonly ambientIdleSeconds: number | undefined;
   private readonly tierLocked: boolean;
+  /** Best tier the governor may climb back to: the detected one, lowered when a climb did not hold. */
+  private tierCeiling: QualityTier;
+  /** The last change was a climb: if it drops again, the ceiling stays below it. */
+  private climbed = false;
   private quality: QualitySettings;
   private readonly transition: TransitionFrame = {
     capture: null,
@@ -101,9 +108,11 @@ export class Engine {
     const signals = readDeviceSignals();
     this.mobile = isMobileDevice(signals);
     this.tierLocked = tierOverride !== undefined;
-    this.quality = settingsForTier(tierOverride ?? detectQualityTier(signals), this.mobile);
 
     this.renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
+    const detected = isSoftwareRenderer(this.renderer.getContext()) ? 'low' : detectQualityTier(signals);
+    this.tierCeiling = tierOverride ?? detected;
+    this.quality = settingsForTier(this.tierCeiling, this.mobile);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.quality.maxPixelRatio));
     // On once for the whole app: stages that light with shadows compile with it, and the globe has no shadow light to pay for.
     this.renderer.shadowMap.enabled = true;
@@ -137,6 +146,7 @@ export class Engine {
     this.listen(canvas, 'webglcontextlost', this.onContextLost);
     this.listen(canvas, 'webglcontextrestored', this.onContextRestored);
     this.listen(document, 'visibilitychange', this.onVisibilityChange);
+    this.watchDevicePixelRatio();
     this.applySize();
   }
 
@@ -444,11 +454,23 @@ export class Engine {
   private watchPerformance(now: number) {
     const snapshot = this.monitor.recordFrame(now);
     // Swapping stages hitches on purpose (uploads, compiles): the governor must not read it as a slow device.
-    if (!snapshot || this.tween || this.tierLocked || this.quality.tier === 'low') return;
-    if (this.governor.shouldDowngrade(snapshot)) this.applyQuality(lowerTier(this.quality.tier));
+    if (!snapshot || this.tween || this.tierLocked) return;
+    const verdict = this.governor.judge(snapshot);
+    const { tier } = this.quality;
+    if (verdict === 'down' && tier !== 'low') {
+      // A climb that could not hold: stay below it from now on, so the quality does not swing back and forth.
+      if (this.climbed) this.tierCeiling = lowerTier(tier);
+      this.climbed = false;
+      this.applyQuality(lowerTier(tier));
+    } else if (verdict === 'up' && isBelow(tier, this.tierCeiling)) {
+      this.climbed = true;
+      this.applyQuality(higherTier(tier));
+    }
   }
 
   private applyQuality(tier: QualityTier) {
+    this.monitor.reset();
+    this.governor.reset();
     this.quality = settingsForTier(tier, this.mobile);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.quality.maxPixelRatio));
     this.manager.setMaxWarmStages(this.quality.maxWarmStages);
@@ -466,6 +488,20 @@ export class Engine {
     this.pipeline.resize();
     this.manager.active?.resize(this.aspect());
     this.invalidate();
+  }
+
+  /** Moving the window to a screen of another density (or zooming) changes the DPR without resizing the canvas. */
+  private watchDevicePixelRatio() {
+    const query = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`);
+    const onChange = () => {
+      query.removeEventListener('change', onChange);
+      if (this.disposed) return;
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.quality.maxPixelRatio));
+      this.applySize(true);
+      this.watchDevicePixelRatio();
+    };
+    query.addEventListener('change', onChange);
+    this.cleanups.push(() => query.removeEventListener('change', onChange));
   }
 
   private readonly onContextLost = (event: Event) => {

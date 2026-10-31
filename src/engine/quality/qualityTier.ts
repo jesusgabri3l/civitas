@@ -41,7 +41,8 @@ export function settingsForTier(tier: QualityTier, mobile: boolean): QualitySett
     return { tier, maxPixelRatio: Math.min(maxPixelRatio, 1), renderScale: 0.85, msaaSamples: 0, useGBuffer: false, maxWarmStages };
   }
   if (tier === 'medium') {
-    return { tier, maxPixelRatio, renderScale: 1, msaaSamples: 0, useGBuffer: true, maxWarmStages };
+    // 2x MSAA: without it the thin lines (lattice, flutes, ink outline) shimmer, and it costs little next to the G-buffer pass.
+    return { tier, maxPixelRatio, renderScale: 1, msaaSamples: 2, useGBuffer: true, maxWarmStages };
   }
   return { tier, maxPixelRatio, renderScale: 1, msaaSamples: 4, useGBuffer: true, maxWarmStages };
 }
@@ -66,6 +67,23 @@ export function ambientPolicyFor(tier: QualityTier, mobile: boolean): AmbientPol
 
 export function lowerTier(tier: QualityTier): QualityTier {
   return tier === 'high' ? 'medium' : 'low';
+}
+
+export function higherTier(tier: QualityTier): QualityTier {
+  return tier === 'low' ? 'medium' : 'high';
+}
+
+const TIER_RANK: Record<QualityTier, number> = { low: 0, medium: 1, high: 2 };
+
+export function isBelow(tier: QualityTier, other: QualityTier): boolean {
+  return TIER_RANK[tier] < TIER_RANK[other];
+}
+
+/** WebGL drawn on the CPU (GPU blocklisted or disabled): it works, but only the cheapest tier keeps it usable. */
+export function isSoftwareRenderer(gl: WebGLRenderingContext | WebGL2RenderingContext): boolean {
+  const info = gl.getExtension('WEBGL_debug_renderer_info');
+  const name = String(gl.getParameter(info ? info.UNMASKED_RENDERER_WEBGL : gl.RENDERER) ?? '');
+  return /swiftshader|llvmpipe|softpipe|software|basic render/i.test(name);
 }
 
 export function readDeviceSignals(): DeviceSignals {

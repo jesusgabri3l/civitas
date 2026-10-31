@@ -22,6 +22,21 @@ function tierFromQuery(): QualityTier | undefined {
   return tiers.find((tier) => tier === value);
 }
 
+/**
+ * No WebGL (or the first stage would not load): the page still works as text. Routing, the index and the chapters run; trips
+ * settle at once since there is nothing to animate.
+ */
+function startWithoutStage(root: Element | null, started: boolean) {
+  root?.classList.add('the-stage--no-webgl');
+  if (!started) {
+    startRouter();
+    startPageMeta();
+    startStoryScroll();
+    startTimelineUi();
+  }
+  $targetStage.subscribe((target) => settleTransition(target));
+}
+
 /** Connects the URL/state machine to the 3D engine. */
 export async function startCivitas(canvas: HTMLCanvasElement) {
   const root = canvas.closest('.the-stage');
@@ -30,7 +45,7 @@ export async function startCivitas(canvas: HTMLCanvasElement) {
     engine = new Engine({ canvas, tierOverride: tierFromQuery(), ambientIdleSeconds: ambientIdleFromQuery() });
   } catch (error) {
     console.error('WebGL is not available.', error);
-    root?.classList.add('the-stage--no-webgl');
+    startWithoutStage(root, false);
     return;
   }
 
@@ -40,7 +55,14 @@ export async function startCivitas(canvas: HTMLCanvasElement) {
   startTimelineUi();
   startExploreUi();
   let shownStage: StageId = $targetStage.get();
-  await engine.start(shownStage);
+  try {
+    await engine.start(shownStage);
+  } catch (error) {
+    console.error(`Could not load the "${shownStage}" scene.`, error);
+    engine.dispose();
+    startWithoutStage(root, true);
+    return;
+  }
   root?.classList.add('the-stage--ready');
 
   // Opening a globe card (or focusing a city in the list) warms that city's stage before the user commits.
