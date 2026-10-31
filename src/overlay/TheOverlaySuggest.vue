@@ -3,7 +3,7 @@ import { reactive } from 'vue';
 
 /**
  * "Suggest a monument", inside the index panel.
- * UI ONLY FOR NOW: nothing is sent. TODO: pick a backend (form service, Cloudflare Worker + KV, or a GitHub issue), validate, show a
+ * UI ONLY FOR NOW: nothing is sent. TODO: pick a backend (form service, Vercel function + Google Sheets, or a GitHub issue), validate, show a
  * sent state and an error state, add spam protection (honeypot or Turnstile).
  */
 defineEmits<{ back: []; close: [] }>();

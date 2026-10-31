@@ -8,7 +8,7 @@ import { applyPageMeta, startPageMeta } from '../src/state/pageMeta';
 const head = `
   <title>x</title>
   <meta name="description" content="x" />
-  <link rel="canonical" href="https://civitas.pages.dev/athens" />
+  <link rel="canonical" href="https://visitcivitas.com/athens" />
   <meta property="og:title" content="x" />
   <meta property="og:description" content="x" />
   <meta property="og:url" content="x" />
@@ -29,16 +29,16 @@ describe('page meta', () => {
     applyPageMeta('rome');
     expect(document.title).toBe(rome.title);
     expect(content('meta[name="description"]')).toBe(rome.description);
-    expect(content('meta[property="og:url"]')).toBe('https://civitas.pages.dev/rome');
-    expect(content('meta[property="og:image"]')).toBe('https://civitas.pages.dev/og/rome.jpg');
+    expect(content('meta[property="og:url"]')).toBe('https://visitcivitas.com/rome');
+    expect(content('meta[property="og:image"]')).toBe('https://visitcivitas.com/og/rome.jpg');
     expect(content('meta[property="og:image:alt"]')).toBe(rome.ogImageAlt);
-    expect(content('meta[name="twitter:image"]')).toBe('https://civitas.pages.dev/og/rome.jpg');
-    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('https://civitas.pages.dev/rome');
+    expect(content('meta[name="twitter:image"]')).toBe('https://visitcivitas.com/og/rome.jpg');
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('https://visitcivitas.com/rome');
 
     applyPageMeta('globe');
     expect(document.title).toBe(home.title);
     expect(content('meta[property="og:title"]')).toBe(home.title);
-    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('https://civitas.pages.dev/');
+    expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('https://visitcivitas.com/');
   });
 
   it('follows the stage when the app navigates from a city to the globe', () => {

@@ -9,7 +9,7 @@ armando, desarmando y transformando su maqueta. El diseño (tipografía, color, 
 - Astro 5 estático + TypeScript, Three r170, GSAP (ScrollTrigger), Sass (7-1), nanostores.
 - Una isla Vue para el overlay del hub (logo, titular, tooltip, controles, coordenadas, índice). Motor 3D en TS imperativo, sin R3F.
 - Rutas estáticas `/` y `/<ciudad>`: cada página prerenderiza su historia (SEO, enlaces directos) y monta la misma app. La navegación interna es SPA (pushState/popstate): al ir de una ciudad a otra el cliente trae la historia prerenderizada de la ruta y la cachea.
-- Hosting objetivo: Cloudflare Pages (pendiente de crear el repo remoto y el deploy).
+- Hosting objetivo: Vercel, dominio visitcivitas.com (pendiente de crear el repo remoto y el deploy).
 - Idioma: el contenido del sitio en inglés (`<html lang="en">`, metas, aria-labels); la documentación en español.
 - Datos históricos verificados con fuente antes de publicar.
 

@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://civitas.pages.dev/sitemap-index.xml
+Sitemap: https://visitcivitas.com/sitemap-index.xml
