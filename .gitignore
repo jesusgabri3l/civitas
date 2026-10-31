@@ -3,3 +3,7 @@ dist/
 .astro/
 .smoke/
 Claude outputs/
+.env
+.env.*
+!.env.example
+.vercel/
