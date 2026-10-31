@@ -2,9 +2,48 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
+$globe-in-delay: 1.3s;
+$globe-in-duration: 0.7s;
+
 // The overlay itself adds no box: every piece is fixed to the viewport.
 .the-overlay {
   display: contents;
+
+  // Globe pieces share one wrapper (no box either) so they can come in together when a trip ends on the globe: they fade in
+  // at the end of the closing circle, once it has done its work (the exit lasts 2 s: delay + duration stay under it).
+  &__globe {
+    display: contents;
+  }
+
+  // The hint already has its own late entrance.
+  &__globe--arriving > :not(.the-overlay-hint) {
+    animation: the-overlay-globe-in $globe-in-duration $ease-out $globe-in-delay backwards;
+  }
+
+  // On the way to a city they fade out instead of vanishing (TheOverlay: GLOBE_LEAVE_MS). Two classes: it must beat the pieces'
+  // own entrance animations (the hint, the coordinates), declared later.
+  &__globe.the-overlay__globe-leave-active > * {
+    animation: the-overlay-globe-out 0.6s ease-out forwards;
+  }
+}
+
+@keyframes the-overlay-globe-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes the-overlay-globe-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .the-overlay__globe--arriving > *,
+  .the-overlay__globe.the-overlay__globe-leave-active > * {
+    animation: none;
+  }
 }
 
 $brand-touch-pad: 0.75rem;
@@ -29,10 +68,28 @@ $brand-line: 1.12 * 0.5; // half of the headline's line-height: its first line i
   font-weight: $font-display-weight;
   letter-spacing: 0.01em;
   text-decoration: none;
-  z-index: 2;
-  transform-origin: 0 0; // the dock move scales from the corner
+  // Above the monument bar and the story: the logo is the one piece that never goes away.
+  z-index: $z-nav + 1;
+  // Fades in with the chapters of a city (same 0.35 s as the story).
+  transition: opacity 0.35s ease-out;
   pointer-events: auto;
   @include text-halo;
+
+  // Part of each page, not of the trip: hidden on the way to a city, it comes in with the globe on the way back.
+  &--hidden {
+    opacity: 0;
+    transition-duration: 0.6s;
+    pointer-events: none;
+  }
+
+  &--arriving {
+    animation: the-overlay-globe-in $globe-in-duration $ease-out $globe-in-delay backwards;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
+    animation: none;
+  }
 
   &__globe {
     width: 0.6em;

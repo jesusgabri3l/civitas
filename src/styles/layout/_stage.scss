@@ -25,13 +25,18 @@
     right: 0;
     left: 0;
     z-index: 1;
-    // Hidden by default (globe, trips, first paint); only a settled city shows it, with a short fade.
+    // Hidden by default (globe, trips, first paint); only a settled city shows it. It fades in and out with the trips, so the
+    // page never blinks at the start of the way back or at the end of the way in.
     opacity: 0;
     pointer-events: none;
+    transition: opacity 0.6s ease-out;
 
     &[data-visible] {
       opacity: 1;
-      transition: opacity 0.35s ease-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      transition: none;
     }
   }
 

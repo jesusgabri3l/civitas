@@ -88,11 +88,8 @@ export function startStoryScroll(): () => void {
   /** The trip started: lock the scroll, dress the page for the city it goes to and get its chapters ready (hidden). */
   async function onTravelling(target: ReturnType<typeof stageOf>) {
     lockScroll();
-    hideStory(); // hidden for the whole trip, back to the globe or not: it only fades in once settled
-    if (target === 'globe') {
-      delete main!.dataset.city;
-      return;
-    }
+    hideStory(); // fades out for the whole trip, back to the globe or not: it only fades in once settled
+    if (target === 'globe') return; // the city keeps its dress while its page fades out; onSettled takes it off
     main!.dataset.city = target;
     if (mountedCity() === target) return;
     scrollToTop();
