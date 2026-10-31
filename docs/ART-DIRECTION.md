@@ -191,7 +191,8 @@ config, su maqueta y su historia, todo en `src/cities/<ciudad>/`.
 ## 7. Checklist: nuevo monumento
 
 Cuando se pida "implementa <monumento>", **la identidad y la historia las decide Jesús**: Claude propone, espera aprobación y
-solo después construye. Hay dos puntos de aprobación; no se escribe código antes del segundo.
+solo después construye. Hay tres puntos de aprobación: identidad y brief (no se escribe código antes del segundo) y la página
+construida (el SEO se hace solo después de ese tercero).
 
 ### Fase A · Propuesta (sin código)
 
@@ -204,10 +205,16 @@ solo después construye. Hay dos puntos de aprobación; no se escribe código an
 
 ### Fase B · Construcción (siguiendo el brief aprobado)
 
-7. **Carpeta de la ciudad**: `src/cities/<ciudad>/` con `meta.ts` (datos, SEO, `theme`, fecha y región del índice), `story.ts`, `fonts.ts` (fuente de títulos con `@fontsource`) y `stage/` (`<ciudad>Config.ts` leyendo `meta.theme`, la maqueta y `<ciudad>Stage.ts`). Copiar la forma de Atenas o París. Añadir la fila a la tabla de la sección 4.
+7. **Carpeta de la ciudad**: `src/cities/<ciudad>/` con `meta.ts` (datos, `theme`, fecha y región del índice; `title`, `description` y `ogImage` provisionales hasta la fase C), `story.ts`, `fonts.ts` (fuente de títulos con `@fontsource`) y `stage/` (`<ciudad>Config.ts` leyendo `meta.theme`, la maqueta y `<ciudad>Stage.ts`). Copiar la forma de Atenas o París. Añadir la fila a la tabla de la sección 4.
 8. **Registro**: una línea en `src/cities/index.ts` (`cities` y `cityStageLoaders`) y otra en `src/cities/server.ts` (historia y fuentes). Quitar la fila de `soon` en `src/data/monumentIndex.ts`. La ruta, el globo, el índice, el tema CSS y el cielo salen solos.
-9. **SEO (obligatorio, ninguna ciudad sale sin esto)**: en `meta.ts`, `title` (monumento + ciudad + "3D", 60 caracteres o menos, termina en "— Civitas") y `description` (140 a 160 caracteres, qué hace el visitante con el monumento; ver "Voz del contenido" en §5), aprobados en la sección 9 del brief. Imagen OG en JPG de 1200×630 (menos de 300 KB) sacada de la maqueta en su momento compartible: añadir la ciudad a `MOMENTS` en `scripts/build-og.mjs` (capítulo o vista de Explore) y correr, en este orden, `npm run build && npm run og && npm run build` (el script captura sobre `dist/` y deja `public/og/<ciudad>.jpg`; el segundo build lo copia). Mirar la imagen antes de darlo por bueno. El sitemap y los datos estructurados (JSON-LD del monumento y migas Civitas › Ciudad) salen solos del registro: comprobar en el `dist/` que la ciudad aparece en ellos.
-10. **Revisar**: `npm run check`, `npm test`, `npm run build`; probar en escritorio, laptop (1366×768) y móvil (390×844), `prefers-reduced-motion` y teclado. Validar la página con el Rich Results Test de Google y la vista previa de enlaces (LinkedIn Post Inspector). Cambiar el brief a `construido` y actualizar `docs/STATUS.md`.
+9. **Revisar**: `npm run check`, `npm test`, `npm run build`; probar en escritorio, laptop (1366×768) y móvil (390×844), `prefers-reduced-motion` y teclado. Cambiar el brief a `construido`.
+10. **Parar y presentar la página.** ⏸ **Aprobación 3**: Jesús prueba la página con `npm run dev` y la aprueba. Hasta entonces no se toca el SEO.
+
+### Fase C · SEO (obligatorio, después de la aprobación 3; ninguna ciudad sale sin esto)
+
+11. **Proponer title y description** en la sección 9 del brief: `title` (monumento + ciudad + "3D", 60 caracteres o menos, termina en "— Civitas") y `description` (140 a 160 caracteres, qué hace el visitante con el monumento; ver "Voz del contenido" en §5), y el momento de la maqueta para la imagen OG. ⏸ Jesús los aprueba; pasarlos a `meta.ts`.
+12. **Imagen OG** en JPG de 1200×630 (menos de 300 KB) sacada de la maqueta en el momento aprobado: añadir la ciudad a `MOMENTS` en `scripts/build-og.mjs` (capítulo o vista de Explore) y correr, en este orden, `npm run build && npm run og && npm run build` (el script captura sobre `dist/` y deja `public/og/<ciudad>.jpg`; el segundo build lo copia). Mirar la imagen antes de darla por buena.
+13. **Comprobar** que la ciudad aparece en `dist/sitemap-0.xml` y en el JSON-LD de su página (monumento y migas Civitas › Ciudad; salen solos del registro). Ya desplegada, validarla con el Rich Results Test de Google y la vista previa de enlaces (LinkedIn Post Inspector). Actualizar `docs/STATUS.md`.
 
 ### Criterios de identidad (para cada opción propuesta)
 

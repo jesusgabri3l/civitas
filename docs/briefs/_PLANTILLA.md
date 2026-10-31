@@ -76,6 +76,8 @@ Lo que aún no tiene fuente.
 
 ## 9. SEO
 
+Se llena en la fase C (ART-DIRECTION §7), después de que Jesús apruebe la página construida.
+
 - **Title** (60 caracteres o menos, monumento + ciudad + "3D", termina en "— Civitas"):
 - **Meta description** (140 a 160 caracteres, qué hace el visitante con el monumento, sin hablar de la técnica):
 - **Imagen OG**: qué capítulo o vista de la maqueta se captura (el momento compartible).
