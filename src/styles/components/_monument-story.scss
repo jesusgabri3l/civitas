@@ -1,25 +1,12 @@
-@use 'sass:map';
 @use '../abstracts' as *;
 
 // The monument page of docs/ART-DIRECTION.md §5 (components/TheMonumentStory.astro): text straight on the dark ground (no cards),
-// chrome in JetBrains Mono, the city's display face for titles, Cormorant for reading. Tokens per city in `$cities` (_variables.scss).
-@each $city, $theme in $cities {
-  [data-city='#{$city}'] {
-    --city-ground: #{map.get($theme, ground)};
-    --city-accent: #{map.get($theme, accent)};
-    --city-accent-strong: #{map.get($theme, accent-strong)};
-    --city-display: #{map.get($theme, font-display)};
-    --city-display-style: #{map.get($theme, display-style) or normal};
-    --city-display-weight: #{map.get($theme, display-weight) or 400};
-    --city-body: #{map.get($theme, font-body)};
-  }
-}
+// chrome in JetBrains Mono, the city's display face for titles, Cormorant for reading. The tokens per city (`--city-*`) come from
+// `meta.theme` (src/cities/<id>/meta.ts); TheLayout emits them for every `[data-city]`.
 
-// The page scrollbar takes the accent of the city under the pointer.
-@each $city, $theme in $cities {
-  :root:has([data-city='#{$city}']) {
-    @include thin-scrollbar(rgba($color-text, 0.24), map.get($theme, accent));
-  }
+// The page scrollbar takes the accent of the city under the pointer (`--scrollbar-accent`, set on the root by TheLayout).
+:root:has([data-city]) {
+  @include thin-scrollbar(rgba($color-text, 0.24), var(--scrollbar-accent, #{$color-amber}));
 }
 
 // Vertical rhythm of the page: room for the top bar and for the timeline, and type that scales with the smaller of width and

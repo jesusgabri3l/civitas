@@ -1,6 +1,6 @@
 import { PerspectiveCamera, Vector3 } from 'three';
 import { describe, expect, it } from 'vitest';
-import { destinations } from '../src/data/destinations';
+import { cities } from '../src/cities';
 import {
   EUROPE,
   GLOBE_FOV,
@@ -78,7 +78,7 @@ describe('hotspots at the settled Europe framing', () => {
     const { tilt, yaw } = orientationFor(EUROPE);
     const rotation = rotationMatrix(tilt, yaw);
 
-    const screens = destinations.map(({ id, coordinates }) => ({
+    const screens = cities.map(({ id, coordinates }) => ({
       id,
       ...projectToScreen(latLonToVector3(coordinates.lat, coordinates.lon), rotation, camera),
     }));

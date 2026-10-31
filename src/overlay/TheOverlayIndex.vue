@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { monumentIndex, REGIONS } from '../data/monumentIndex';
-import type { DestinationId } from '../data/destinations';
+import type { DestinationId } from '../cities';
 import { diveIntoCity, hideTooltip } from '../state/globeStore';
 import { navigate } from '../state/router';
 import TheOverlaySuggest from './TheOverlaySuggest.vue';

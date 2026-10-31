@@ -13,10 +13,12 @@
     "check": "astro check",
     "test": "vitest run",
     "test:watch": "vitest",
+    "og": "node scripts/build-og.mjs",
     "smoke": "node scripts/smoke-test.mjs",
     "build:globe-data": "node scripts/build-globe-data.mjs"
   },
   "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
     "@astrojs/vue": "^5.0.0",
     "@fontsource/bodoni-moda": "^5.3.0",
     "@fontsource/cinzel": "^5.3.0",

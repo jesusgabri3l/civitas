@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { destinations } from '../data/destinations';
+import { cities } from '../cities';
 import { $hotspots, $openTooltip, diveIntoCity, hideTooltip } from '../state/globeStore';
 import { navigate } from '../state/router';
 import { isTooltipShown, placementFor } from './tooltip';
@@ -9,7 +9,7 @@ import { isTooltipShown, placementFor } from './tooltip';
 const openTooltip = useStore($openTooltip);
 const hotspots = useStore($hotspots);
 
-const destination = computed(() => destinations.find(({ id }) => id === openTooltip.value?.city));
+const destination = computed(() => cities.find(({ id }) => id === openTooltip.value?.city));
 const hotspot = computed(() => hotspots.value.find(({ id }) => id === openTooltip.value?.city));
 const shown = computed(() => isTooltipShown(openTooltip.value, hotspot.value));
 const placement = computed(() => placementFor(hotspot.value?.x ?? 0, hotspot.value?.y ?? 0));

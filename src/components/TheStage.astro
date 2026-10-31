@@ -1,8 +1,7 @@
 ---
 import TheOverlay from '../overlay/TheOverlay.vue';
-import { destinations } from '../data/destinations';
+import { cities, type DestinationId } from '../cities';
 import type { StageId } from '../state/appStore';
-import type { DestinationId } from '../data/destinations';
 
 interface Props {
   heading: string;
@@ -28,7 +27,7 @@ const textHidden = onGlobe || Boolean(storyCity);
     <!-- Out of sight until a keyboard user reaches it. -->
     <nav class="the-stage__nav" aria-label="Destinations">
       <a href="/">Globe</a>
-      {destinations.map(({ path, name }) => <a href={path}>{name}</a>)}
+      {cities.map(({ path, name }) => <a href={path}>{name}</a>)}
     </nav>
   </div>
   <div class="the-stage__story" data-story-root data-story-city={storyCity}>

@@ -16,7 +16,7 @@ import {
   Vector3,
   type Object3D,
 } from 'three';
-import type { DestinationId } from '../../../data/destinations';
+import type { DestinationId } from '../../../cities';
 import type { QualityTier } from '../../quality/qualityTier';
 import { DEFAULT_PLASTER, type PlasterSettings } from '../../render/PlasterLook';
 import type { Stage, StageHost, TransitionAnchor } from '../../stage/Stage';
@@ -34,7 +34,7 @@ import { StoryCamera, type CameraTrack } from './StoryCamera';
  * rim, contact shadow and the look of the final pass. One per monument, in `stages/<city>/<city>Config.ts`.
  */
 export interface MonumentEnvironment {
-  /** Ground of the city (background and fog). Keep in sync with `$cities` in _variables.scss and `stageSky`. */
+  /** Ground of the city (background and fog). Read from `meta.theme.ground` of the city. */
   backdrop: number;
   /** Room floor; the pedestal stands on it and its top is the base of the model. */
   floorY: number;

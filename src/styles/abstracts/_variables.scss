@@ -27,38 +27,6 @@ $overlay-inset: clamp(2.5rem, 5vw, 5rem); // shared side margin of every overlay
 $stacked-headline-top: max(4.25rem, 9vh, calc(env(safe-area-inset-top) + 3.75rem));
 $stacked-headline-font: clamp(1.75rem, 3.4vw + 0.9rem, 4rem);
 
-// Identity of each monument page (docs/ART-DIRECTION.md §4). `components/monument-story` turns each entry into `[data-city='<id>']`
-// custom properties. `ground`: background (the 3D backdrop and fog use the same color); `accent`: lines, CTA border, timeline;
-// `accent-strong`: the accent lifted for small text (contrast >= 4.5:1 on the ground); one display face per city, Cormorant for
-// reading in every city. The 3D side lives in src/engine/stages/<city>/<city>Config.ts (`*_ENV.backdrop`, `ACCENT`): keep in sync.
-$cities: (
-  'athens': (
-    ground: #0f1a2a,
-    accent: #c8673e,
-    accent-strong: #e08a62,
-    font-display: "'GFS Didot', 'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-    font-body: "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-  ),
-  // Rome: cold slate, pompeian red (4.8:1 on the ground, so no separate text accent). Cinzel 500: the capitals of Roman inscriptions.
-  'rome': (
-    ground: #141a22,
-    accent: #db5f45,
-    accent-strong: #db5f45,
-    font-display: "'Cinzel', 'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-    font-body: "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-    display-weight: 500,
-  ),
-  // Paris: night violet, champagne. Bodoni Moda italic is the voice of the city (a conscious exception to the upright brand type).
-  'paris': (
-    ground: #121022,
-    accent: #e9c46a,
-    accent-strong: #f0d58a,
-    font-display: "'Bodoni Moda', 'Didot', 'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-    font-body: "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
-    display-style: italic,
-  ),
-);
-
 // Top bar of a monument page (`components/monument-story`). The Civitas logo docks inside it (`components/overlay-brand`).
 $navbar-height: 3.75rem;
 $brand-docked-scale: 0.8;

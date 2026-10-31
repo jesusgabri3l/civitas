@@ -29,13 +29,13 @@ Estado: `construido`
 
 ## 3-6. Estado, maqueta, Explore, ficha
 
-En código: `src/engine/stages/paris/parisConfig.ts` (`ParisState`: `explode`, `lights`, `sparkle`, `mast`; `stateFor`, cámaras, Explore,
+En código: `src/cities/paris/stage/parisConfig.ts` (`ParisState`: `explode`, `lights`, `sparkle`, `mast`; `stateFor`, cámaras, Explore,
 `shadowFar` para un monumento alto), `EiffelTower.ts` (celosía instanciada, arcos, tres niveles, antena, luces, centelleo en vivo) y
-`src/data/stories/paris.ts` (textos, partes: piers, arches, levels, shaft, mast; ficha).
+`src/cities/paris/story.ts` (textos, partes: piers, arches, levels, shaft, mast; ficha).
 
 Cámara: la torre es vertical; los encuadres son más abiertos y la maqueta queda a la derecha igual que en Atenas.
 
 ## 8. Por verificar
 
-El TODO de la cabecera de `src/data/stories/paris.ts`, las medidas de `parisConfig.ts` y que el centelleo real solo ocurre de noche
+El TODO de la cabecera de `src/cities/paris/story.ts`, las medidas de `src/cities/paris/stage/parisConfig.ts` y que el centelleo real solo ocurre de noche
 (TODO en `EiffelTower.ts`).

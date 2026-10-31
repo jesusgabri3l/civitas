@@ -1,5 +1,5 @@
 import { atom } from 'nanostores';
-import type { DestinationId } from '../data/destinations';
+import type { DestinationId } from '../cities';
 
 /** Where a hotspot sits on screen. x and y are 0..1 fractions of the viewport. */
 export interface HotspotScreen {

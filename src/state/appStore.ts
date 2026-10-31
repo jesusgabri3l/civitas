@@ -1,5 +1,5 @@
 import { atom, computed } from 'nanostores';
-import type { DestinationId } from '../data/destinations';
+import type { DestinationId } from '../cities';
 
 export type StageId = 'globe' | DestinationId;
 

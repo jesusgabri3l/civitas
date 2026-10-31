@@ -73,3 +73,9 @@ Lista de referencias para cada fecha, cifra y afirmación de la historia.
 ## 8. Por verificar
 
 Lo que aún no tiene fuente.
+
+## 9. SEO
+
+- **Title** (60 caracteres o menos, monumento + ciudad + "3D", termina en "— Civitas"):
+- **Meta description** (140 a 160 caracteres, qué hace el visitante con el monumento, sin hablar de la técnica):
+- **Imagen OG**: qué capítulo o vista de la maqueta se captura (el momento compartible).

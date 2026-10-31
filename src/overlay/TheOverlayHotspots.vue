@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue';
 import { computed, ref, watch } from 'vue';
-import { destinations, type DestinationId } from '../data/destinations';
+import { cities, type DestinationId } from '../cities';
 import { $appState } from '../state/appStore';
 import { navigate } from '../state/router';
 import {
@@ -43,10 +43,10 @@ watch(
 const isOpen = (id: DestinationId) => openTooltip.value?.city === id;
 const isDimmed = (id: DestinationId) => Boolean(openTooltip.value) && !isOpen(id);
 // Each city pulses out of step with the others.
-const indexOf = (id: DestinationId) => destinations.findIndex((destination) => destination.id === id);
+const indexOf = (id: DestinationId) => cities.findIndex((destination) => destination.id === id);
 const pulseDelay = (id: DestinationId) => `${-indexOf(id) * PULSE_STAGGER_SECONDS}s`;
 const enterDelay = (id: DestinationId) => `${indexOf(id) * ENTER_STAGGER_SECONDS}s`;
-const nameOf = (id: DestinationId) => destinations.find((destination) => destination.id === id)?.name ?? id;
+const nameOf = (id: DestinationId) => cities.find((destination) => destination.id === id)?.name ?? id;
 // Labels sit to the right of their dot, unless that would run off the screen.
 const labelOnLeft = (x: number) => x > 0.78;
 const percent = (fraction: number) => `${(fraction * 100).toFixed(2)}%`;

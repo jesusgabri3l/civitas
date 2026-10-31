@@ -1,4 +1,4 @@
-import { destinations, type DestinationId } from '../data/destinations';
+import { cities, type DestinationId } from '../cities';
 import {
   $appState,
   beginTransition,
@@ -9,7 +9,7 @@ import {
   type StageId,
 } from './appStore';
 
-const cityIds = new Set<string>(destinations.map(({ id }) => id));
+const cityIds = new Set<string>(cities.map(({ id }) => id));
 const INFO_HASH = '#info';
 
 export interface RouteLocation {

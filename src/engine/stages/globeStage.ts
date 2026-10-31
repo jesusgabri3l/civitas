@@ -9,7 +9,7 @@ import {
   SphereGeometry,
   type Vector3,
 } from 'three';
-import { destinations, type DestinationId } from '../../data/destinations';
+import { cities, type DestinationId } from '../../cities';
 import { stageSky } from '../../data/stageSky';
 import {
   $openTooltip,
@@ -119,7 +119,7 @@ export function createStage(host: StageHost): Stage {
   glow.frustumCulled = false;
   const { tilt: europeTilt, yaw: europeYaw } = orientationFor(EUROPE);
   const hotspotPoints = new Map<string, Vector3>(
-    destinations.map(({ id, coordinates }) => [id, latLonToVector3(coordinates.lat, coordinates.lon).multiplyScalar(MARKER_LIFT)]),
+    cities.map(({ id, coordinates }) => [id, latLonToVector3(coordinates.lat, coordinates.lon).multiplyScalar(MARKER_LIFT)]),
   );
 
   let aspect = 1;
@@ -344,7 +344,7 @@ export function createStage(host: StageHost): Stage {
 
   /** Turns the globe along the shortest way until the city sits in the middle. Resolves when it gets there. */
   function turnTo(city: DestinationId, leadSeconds = 0): Promise<void> {
-    const target = destinations.find(({ id }) => id === city);
+    const target = cities.find(({ id }) => id === city);
     if (!target || prefersReducedMotion()) return Promise.resolve();
     focusTurn?.done();
     const { yaw: toYaw, tilt: toTilt } = orientationFor(target.coordinates);
@@ -512,7 +512,7 @@ export function createStage(host: StageHost): Stage {
     },
 
     restFor(target) {
-      const city = destinations.find(({ id }) => id === target);
+      const city = cities.find(({ id }) => id === target);
       if (!city) return;
       // As if the globe had already turned to the city and settled: no intro, no pending turn, nothing left to animate.
       const { yaw: toYaw, tilt: toTilt } = orientationFor(city.coordinates);

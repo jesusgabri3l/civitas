@@ -1,5 +1,6 @@
 import { $appState, $targetStage, settleTransition, type StageId } from '../state/appStore';
 import { $ambientActive, bindPreload } from '../state/globeStore';
+import { startPageMeta } from '../state/pageMeta';
 import { startRouter } from '../state/router';
 import { $explorePart, $exploreView, $story } from '../state/storyStore';
 import { startExploreUi } from '../story/exploreUi';
@@ -34,6 +35,7 @@ export async function startCivitas(canvas: HTMLCanvasElement) {
   }
 
   startRouter();
+  startPageMeta();
   startStoryScroll();
   startTimelineUi();
   startExploreUi();

@@ -1,5 +1,5 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Line, Points, ShaderMaterial, Vector3 } from 'three';
-import { destinations, type DestinationId } from '../../../data/destinations';
+import { cities, type City, type DestinationId } from '../../../cities';
 import { $openTooltip } from '../../../state/globeStore';
 import { PALETTE } from './palette';
 import { latLonToVector3 } from './geo';
@@ -154,7 +154,7 @@ const keyOf = (a: DestinationId, b: DestinationId) => (a < b ? `${a}|${b}` : `${
 const randomBetween = (min: number, max: number) => min + Math.random() * (max - min);
 
 /**
- * Thin amber arcs between destinations, all derived from `destinations`. At rest at most three show, and every few
+ * Thin amber arcs between cities, all derived from `cities`. At rest at most three show, and every few
  * seconds one fades while a different pair draws itself (longer, more distant pairs first). With a city in focus
  * (tooltip open) only that city's arcs to its closest or related cities show. A small dot travels each arc.
  * With `still` set three fixed arcs are simply there and nothing moves.
@@ -172,9 +172,9 @@ export class ArcLayer {
   private still = false;
 
   constructor() {
-    destinations.forEach(({ id, coordinates }) => this.points.set(id, latLonToVector3(coordinates.lat, coordinates.lon)));
-    this.pairs = destinations.flatMap((from, i) =>
-      destinations.slice(i + 1).map((to) => ({
+    cities.forEach(({ id, coordinates }) => this.points.set(id, latLonToVector3(coordinates.lat, coordinates.lon)));
+    this.pairs = cities.flatMap((from, i) =>
+      cities.slice(i + 1).map((to) => ({
         key: keyOf(from.id, to.id),
         from: from.id,
         to: to.id,
@@ -241,7 +241,7 @@ export class ArcLayer {
 
   /** The closest (or related) cities to `city`, up to the focus limit. */
   private focusKeys(city: DestinationId): Set<string> {
-    const related = destinations.find(({ id }) => id === city)?.related ?? [];
+    const related = (cities as readonly City[]).find(({ id }) => id === city)?.related ?? [];
     const rank = ({ from, to, span }: Pair) => (related.includes(from === city ? to : from) ? 10 : 0) - span;
     const keys = this.pairs
       .filter(({ from, to }) => from === city || to === city)

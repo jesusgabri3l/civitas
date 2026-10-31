@@ -17,13 +17,13 @@ armando, desarmando y transformando su maqueta. El diseño (tipografía, color, 
 
 - `src/engine/Engine.ts`: renderer, pipeline de look (`render/`: pase de escena, G-buffer para AO y contorno, pase final de yeso con grano, viñeta y línea de tinta), render bajo demanda, tiers de calidad (`quality/`).
 - `src/engine/stage/StageManager.ts`: ciclo de cada escena load → warm → activate → sleep → dispose, con precarga al abrir el tooltip de una ciudad.
-- `src/engine/transition/`: viaje globo ↔ ciudad (zoom, recuadro, fundido al color del fondo de la ciudad, `data/stageSky.ts`).
+- `src/engine/transition/`: viaje globo ↔ ciudad (zoom, recuadro, fundido al color del fondo de la ciudad, `data/stageSky.ts`, que lo lee de `meta.theme.ground`).
 - `src/engine/stages/globeStage.ts` + `globe/`: el globo (líneas Natural Earth 110m, hotspots, arcos, estrellas, halo).
 - `src/engine/stages/shared/`: el marco de toda página de monumento (`createMonumentStage`, pedestal, foco, polvo, cámara por capítulo, Explore).
-- `src/engine/stages/<ciudad>/`: config, maqueta y stage de cada monumento. Roma y París aún usan el stage provisional (`createDummyStage.ts`).
+- `src/cities/<ciudad>/`: una carpeta por ciudad (Atenas, Roma y París): `meta.ts` (datos, SEO y `theme`, liviano para el cliente), `story.ts`, `fonts.ts` (solo servidor) y `stage/` (config, maqueta y stage). `src/cities/index.ts` es el registro del cliente (lista, `DestinationId`, carga de cada stage) y `src/cities/server.ts` el del servidor (historias y fuentes). Una sola ruta, `src/pages/[city].astro`.
 - `src/state/`: `appStore` (máquina de estados globo / viaje / ciudad), `router`, `globeStore`, `storyStore` (capítulo, progreso, vista y pieza de Explore).
 - `src/story/`: scroll de la historia (`storyScroll.ts`), carga del HTML (`storyContent.ts`), línea de tiempo (`timelineUi.ts`) y Explore (`exploreUi.ts`).
-- `src/components/TheMonumentStory.astro` + `src/data/stories/`: la página de monumento y su contenido.
+- `src/components/TheMonumentStory.astro` + `src/views/DestinationView.astro`: la página de monumento; su contenido está en `src/cities/<ciudad>/story.ts`. `state/pageMeta.ts` actualiza title, description, canonical y OG al navegar.
 
 ## Fases
 
@@ -32,9 +32,9 @@ armando, desarmando y transformando su maqueta. El diseño (tipografía, color, 
 2. **Globo** — hecho (Home con tipografía Fraunces 600, halo ámbar, índice de monumentos con UI pendiente de conectar).
 3. **Transición** globo ↔ ciudad — hecha.
 4. **Atenas** — hecha: maqueta del Partenón, 7 capítulos (despiece, armado y policromía, 1687, los mármoles, restauración) y Explore (órbita, vistas, fichas). Falta verificar los datos históricos con fuentes.
-5. **Roma** — Coliseo (ART-DIRECTION §4: Cinzel, pizarra fría, rojo pompeyano; momento: el anillo completo frente a la ruina).
-6. **París** — Torre Eiffel de noche (Bodoni Moda, noche violeta, champaña; momento: el centelleo a la hora en punto con `Intl`).
+5. **Roma** — hecha: Coliseo (ART-DIRECTION §4: Cinzel, pizarra fría, rojo pompeyano; momento: el anillo completo frente a la ruina).
+6. **París** — hecha: Torre Eiffel de noche (Bodoni Moda, noche violeta, champaña; momento: el centelleo a la hora en punto con `Intl`).
 7. **Índice y comunidad** — conectar buscador y filtros del índice; backend de "Suggest a monument".
-8. **Pulido y lanzamiento** — móviles reales, OG en PNG por ciudad, deploy.
+8. **Pulido y lanzamiento** — móviles reales, deploy.
 
 Después: más monumentos con el checklist de ART-DIRECTION §7 (Chichén Itzá, Machu Picchu…).

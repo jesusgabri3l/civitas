@@ -83,7 +83,7 @@ Cada fila sale de un brief aprobado (`docs/briefs/<ciudad>.md`); una ciudad nuev
 
 La cursiva de París es una excepción consciente: la regla "sin cursiva" aplica a la marca Civitas, no a la voz de cada ciudad.
 
-En código: `$cities` en `_variables.scss` → `[data-city]` (colores y fuentes de la página) y `src/engine/stages/<ciudad>/<ciudad>Config.ts` (espejo 3D: fondo y acento).
+En código: `theme` en `src/cities/<ciudad>/meta.ts` → `[data-city]` (colores y fuentes de la página, lo emite `TheLayout`) y `src/cities/<ciudad>/stage/<ciudad>Config.ts` (espejo 3D: fondo y acento, leídos del mismo `theme`, un solo sitio).
 
 ## 5. Plantilla de página de monumento
 
@@ -173,18 +173,20 @@ Cada monumento necesita al menos uno, pensado para un video de 6 a 10 segundos: 
 ### Implementación de referencia: Atenas
 
 Cada monumento tiene la misma forma. El marco común (`src/engine/stages/shared/`) ya resuelve la escena; un monumento solo aporta su
-config, su maqueta y su historia.
+config, su maqueta y su historia, todo en `src/cities/<ciudad>/`.
 
 | Pieza | Archivo | Qué hace |
 |---|---|---|
 | Marco común | `src/engine/stages/shared/monument.ts` | `MonumentEnvironment` (fondo, niebla, pedestal, foco, haz, polvo, look), `createToonPlaster` (yeso en 3 bandas) y `createMonumentStage`: luces, pedestal, polvo, cámara por capítulo, transición desde el globo, estado que sigue al scroll con amortiguación, Explore (órbita acotada, toque para elegir pieza, vistas). |
 | Piezas comunes | `shared/Exhibit.ts`, `BeamDust.ts`, `ContactShadow.ts`, `ExploreOrbit.ts`, `StoryCamera.ts`, `proceduralSurfaces.ts` | Pedestal y suelo sin muros, polvo en el haz, sombra de contacto, arrastre y toque, cámara entre capítulos, texturas de piedra. |
-| Config | `src/engine/stages/athens/athensConfig.ts` | Escena (`ATHENS_ENV`), medidas reales, colores (yeso, tintes, acento, policromía), estado (`AthensState`: `explode`, `paint`, `ruin`, `elgin`, `restore`), `stateFor(capítulo, t)`, cámaras por capítulo y Explore (vistas y límites de la órbita). |
-| Maqueta | `src/engine/stages/athens/Parthenon.ts` | Una caja unitaria instanciada para todos los bloques, 4 tornos para los tambores (20 caras planas = estrías), equino, frontones extruidos; tintes por instancia. ~8 draw calls. Cada pieza sabe su capa del despiece, qué le pasa en la catástrofe (cae, se recorta, aparece como escombro, queda rota), su color pintado y su parte (ficha de Explore). `setState` es una función pura del estado. |
-| Stage | `src/engine/stages/athens/athensStage.ts` | Una llamada a `createMonumentStage` con lo anterior. |
-| Historia | `src/data/stories/athens.ts` (tipos en `types.ts`, registro en `index.ts`) | Hero, capítulos, datos, ficha del museo, motivo, contenido de Explore. |
-| Página | `src/components/TheMonumentStory.astro` + `src/views/DestinationView.astro` | Barra superior, inicio con ficha, capítulos sin tarjeta, Explore, línea de tiempo. Común a todas las ciudades. |
-| Estilos | `src/styles/components/_monument-story.scss` + `$cities` en `_variables.scss` | Tokens de la ciudad (fondo, acento, acento para texto pequeño, fuentes). |
+| Config | `src/cities/athens/stage/athensConfig.ts` | Escena (`ATHENS_ENV`), medidas reales, colores (yeso, tintes, acento, policromía), estado (`AthensState`: `explode`, `paint`, `ruin`, `elgin`, `restore`), `stateFor(capítulo, t)`, cámaras por capítulo y Explore (vistas y límites de la órbita). |
+| Maqueta | `src/cities/athens/stage/Parthenon.ts` | Una caja unitaria instanciada para todos los bloques, 4 tornos para los tambores (20 caras planas = estrías), equino, frontones extruidos; tintes por instancia. ~8 draw calls. Cada pieza sabe su capa del despiece, qué le pasa en la catástrofe (cae, se recorta, aparece como escombro, queda rota), su color pintado y su parte (ficha de Explore). `setState` es una función pura del estado. |
+| Stage | `src/cities/athens/stage/athensStage.ts` | Una llamada a `createMonumentStage` con lo anterior. |
+| Meta | `src/cities/athens/meta.ts` | Datos livianos para el cliente: nombre, monumento, SEO, coordenadas, zona horaria, fecha y región del índice, `theme` (fondo, acento, fuentes). Se registra en `src/cities/index.ts`. |
+| Historia | `src/cities/athens/story.ts` (tipos en `src/cities/types.ts`, registro en `src/cities/server.ts`) | Hero, capítulos, datos, ficha del museo, motivo, contenido de Explore. |
+| Fuentes | `src/cities/athens/fonts.ts` | Solo servidor: CSS de `@fontsource` de la ciudad y los archivos a precargar. |
+| Página | `src/components/TheMonumentStory.astro` + `src/views/DestinationView.astro` + `src/pages/[city].astro` | Barra superior, inicio con ficha, capítulos sin tarjeta, Explore, línea de tiempo. Común a todas las ciudades; la ruta sale del registro. |
+| Estilos | `src/styles/components/_monument-story.scss` + `theme` en `meta.ts` | El layout emite los tokens `--city-*` de cada ciudad desde su `theme`; el SCSS solo los consume. |
 
 ## 7. Checklist: nuevo monumento
 
@@ -194,7 +196,7 @@ solo después construye. Hay dos puntos de aprobación; no se escribe código an
 ### Fase A · Propuesta (sin código)
 
 1. **Investigar** el monumento: fechas, medidas, hechos y momentos de su historia, con fuentes.
-2. **Crear el brief** copiando `docs/briefs/_PLANTILLA.md` como `docs/briefs/<ciudad>.md`. Ejemplos llenos: `athens.md`, `paris.md` (construidos) y `rome.md` (construidos).
+2. **Crear el brief** copiando `docs/briefs/_PLANTILLA.md` como `docs/briefs/<ciudad>.md`. Ejemplos llenos: `athens.md`, `paris.md` y `rome.md` (construidos).
 3. **Proponer 2 o 3 opciones de identidad** en la tabla del brief (fuente, título, fondo, acento, motivo, luz, momento compartible), cada una con su razón y comprobada con los criterios de abajo.
 4. **Parar y presentar las opciones.** ⏸ **Aprobación 1**: Jesús elige (o ajusta) una identidad. Anotarla como "Elegida" en el brief.
 5. **Completar el brief** con esa identidad: 7 capítulos, estados de la maqueta, piezas y medidas, Explore, ficha del museo, fuentes y lo que queda por verificar.
@@ -202,11 +204,10 @@ solo después construye. Hay dos puntos de aprobación; no se escribe código an
 
 ### Fase B · Construcción (siguiendo el brief aprobado)
 
-7. **Identidad en el sistema**: añadir la fila a la tabla de la sección 4; entrada en `$cities` (`_variables.scss`); fuente de títulos con `@fontsource`, importada y precargada solo en su ruta (`TheLayout.astro`).
-8. **Datos**: entrada en `src/data/destinations.ts` (id, nombre, monumento, coordenadas, zona horaria…) y en `src/data/monumentIndex.ts` con `destination` (pasa de "Soon" a "Open").
-9. **Historia**: `src/data/stories/<ciudad>.ts` (mismo formato que `athens.ts`, con su `motif` y su Explore) y registrarla en `src/data/stories/index.ts`. La página (`src/pages/<ciudad>.astro` → `src/views/<Ciudad>View.astro` → `DestinationView`) la muestra sola. OG propio en `public/og/`.
-10. **3D**: `src/engine/stages/<ciudad>/` con `<ciudad>Config.ts` (escena, estado, `stateFor`, cámaras, Explore), la maqueta (clase que implementa `MonumentModel`) y `<ciudad>Stage.ts` (una llamada a `createMonumentStage`). Registrarlo en `src/engine/stages/index.ts` (reemplaza al stage provisional) y su fondo en `src/data/stageSky.ts`. Seguir la sección 6 y copiar la forma de Atenas o París.
-11. **Revisar**: `npm run check`, `npm test`, `npm run build`; probar en escritorio, laptop (1366×768) y móvil (390×844), `prefers-reduced-motion` y teclado. Cambiar el brief a `construido` y actualizar `docs/STATUS.md`.
+7. **Carpeta de la ciudad**: `src/cities/<ciudad>/` con `meta.ts` (datos, SEO, `theme`, fecha y región del índice), `story.ts`, `fonts.ts` (fuente de títulos con `@fontsource`) y `stage/` (`<ciudad>Config.ts` leyendo `meta.theme`, la maqueta y `<ciudad>Stage.ts`). Copiar la forma de Atenas o París. Añadir la fila a la tabla de la sección 4.
+8. **Registro**: una línea en `src/cities/index.ts` (`cities` y `cityStageLoaders`) y otra en `src/cities/server.ts` (historia y fuentes). Quitar la fila de `soon` en `src/data/monumentIndex.ts`. La ruta, el globo, el índice, el tema CSS y el cielo salen solos.
+9. **SEO (obligatorio, ninguna ciudad sale sin esto)**: en `meta.ts`, `title` (monumento + ciudad + "3D", 60 caracteres o menos, termina en "— Civitas") y `description` (140 a 160 caracteres, qué hace el visitante con el monumento; ver "Voz del contenido" en §5), aprobados en la sección 9 del brief. Imagen OG en JPG de 1200×630 (menos de 300 KB) sacada de la maqueta en su momento compartible: añadir la ciudad a `MOMENTS` en `scripts/build-og.mjs` (capítulo o vista de Explore) y correr, en este orden, `npm run build && npm run og && npm run build` (el script captura sobre `dist/` y deja `public/og/<ciudad>.jpg`; el segundo build lo copia). Mirar la imagen antes de darlo por bueno. El sitemap y los datos estructurados (JSON-LD del monumento y migas Civitas › Ciudad) salen solos del registro: comprobar en el `dist/` que la ciudad aparece en ellos.
+10. **Revisar**: `npm run check`, `npm test`, `npm run build`; probar en escritorio, laptop (1366×768) y móvil (390×844), `prefers-reduced-motion` y teclado. Validar la página con el Rich Results Test de Google y la vista previa de enlaces (LinkedIn Post Inspector). Cambiar el brief a `construido` y actualizar `docs/STATUS.md`.
 
 ### Criterios de identidad (para cada opción propuesta)
 

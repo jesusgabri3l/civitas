@@ -1,5 +1,5 @@
 import type { ScrollTrigger as ScrollTriggerType } from 'gsap/ScrollTrigger';
-import type { DestinationId } from '../data/destinations';
+import type { DestinationId } from '../cities';
 import { $appState, stageOf, type AppState } from '../state/appStore';
 import { resetStoryProgress, setStoryProgress } from '../state/storyStore';
 import { loadStoryHtml, storySections } from './storyContent';

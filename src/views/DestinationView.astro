@@ -2,11 +2,11 @@
 import TheLayout from '../layouts/TheLayout.astro';
 import TheMonumentStory from '../components/TheMonumentStory.astro';
 import TheStage from '../components/TheStage.astro';
-import { monumentStories } from '../data/stories';
-import type { Destination } from '../data/destinations';
+import { monumentStories } from '../cities/server';
+import type { City } from '../cities';
 
 interface Props {
-  destination: Destination;
+  destination: City;
 }
 
 // A monument page: the stage of the city and, once its story exists, the chapters prerendered for search engines and deep links

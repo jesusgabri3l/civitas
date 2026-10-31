@@ -1,0 +1,12 @@
+---
+import { cities } from '../cities';
+import DestinationView from '../views/DestinationView.astro';
+
+export function getStaticPaths() {
+  return cities.map((destination) => ({ params: { city: destination.id }, props: { destination } }));
+}
+
+const { destination } = Astro.props;
+---
+
+<DestinationView {destination} />

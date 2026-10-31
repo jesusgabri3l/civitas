@@ -1,4 +1,4 @@
-import type { DestinationId } from '../data/destinations';
+import type { DestinationId } from '../cities';
 
 const SECTION_SELECTOR = '[data-story]';
 /** What the page renders into the story slot: the chapters and the chrome that goes with them (top bar, timeline). */

@@ -1,5 +1,5 @@
 import { BufferAttribute, BufferGeometry, Color, Group, Points, ShaderMaterial, type Vector3 } from 'three';
-import { destinations, type DestinationId } from '../../../data/destinations';
+import { cities, type DestinationId } from '../../../cities';
 import { latLonToVector3 } from './geo';
 import { PALETTE } from './palette';
 
@@ -79,7 +79,7 @@ export class HotspotMarkers {
 
   constructor() {
     this.group.name = 'globe-hotspot-markers';
-    destinations.forEach(({ id, coordinates }, index) => {
+    cities.forEach(({ id, coordinates }, index) => {
       const geometry = new BufferGeometry();
       geometry.setAttribute('position', new BufferAttribute(new Float32Array(3), 3));
       const uniforms = {

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { destinations, type DestinationId } from '../data/destinations';
+import { cities, type DestinationId } from '../cities';
 import { $openTooltip, hideTooltip, showTooltip } from '../state/globeStore';
 
 const reveal = (id: DestinationId) => showTooltip(id, true);
@@ -13,7 +13,7 @@ const conceal = (id: DestinationId) => {
   <section class="the-overlay-cities visually-hidden" aria-labelledby="the-overlay-cities-title">
     <h2 id="the-overlay-cities-title">Destinations</h2>
     <ul class="the-overlay-cities__list">
-      <li v-for="destination in destinations" :key="destination.id" class="the-overlay-cities__item">
+      <li v-for="destination in cities" :key="destination.id" class="the-overlay-cities__item">
         <a
           class="the-overlay-cities__link"
           :href="destination.path"

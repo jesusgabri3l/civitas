@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Stage, StageHost, StageLoaders } from '../src/engine/stage/Stage';
 import { StageManager } from '../src/engine/stage/StageManager';
 import type { StageId } from '../src/state/appStore';
+import { cities } from '../src/cities';
 
 function fakeStage(id: StageId, log: string[]): Stage {
   const call = (name: string) => log.push(`${id}:${name}`);
@@ -24,7 +25,7 @@ function fakeStage(id: StageId, log: string[]): Stage {
 function setup(maxWarm: number) {
   const log: string[] = [];
   const imports: string[] = [];
-  const ids: StageId[] = ['globe', 'athens', 'rome', 'paris'];
+  const ids: StageId[] = ['globe', ...cities.map(({ id }) => id)];
   const loaders = Object.fromEntries(
     ids.map((id) => [
       id,

@@ -1,5 +1,5 @@
 ---
-import type { MonumentStory } from '../data/stories';
+import type { MonumentStory } from '../cities/types';
 
 interface Props {
   story: MonumentStory;
@@ -7,7 +7,7 @@ interface Props {
 
 // The monument page of docs/ART-DIRECTION.md §5: top bar, hero without a card (museum label bottom right), one full-height section
 // per chapter with its text straight on the dark ground, and the chapter timeline along the bottom. The chrome (bar, timeline) is
-// mounted with the story; the maquette is the stage behind. Colors and faces come from the city (`$cities` → `[data-city]`).
+// mounted with the story; the maquette is the stage behind. Colors and faces come from the city (`meta.theme` → `[data-city]`, emitted by TheLayout).
 const { story } = Astro.props;
 const { hero, chapters, label } = story;
 const all = [hero, ...chapters];

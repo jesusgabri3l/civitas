@@ -29,10 +29,10 @@ Estado: `construido` · Brief de referencia (llenado después de construir; para
 
 ## 3-6. Estado, maqueta, Explore, ficha
 
-En código: `src/engine/stages/athens/athensConfig.ts` (estado, `stateFor`, cámaras, Explore), `Parthenon.ts` (piezas, reglas de ruina,
-partes) y `src/data/stories/athens.ts` (textos, Explore, ficha).
+En código: `src/cities/athens/stage/athensConfig.ts` (estado, `stateFor`, cámaras, Explore), `Parthenon.ts` (piezas, reglas de ruina,
+partes) y `src/cities/athens/story.ts` (textos, Explore, ficha).
 
 ## 8. Por verificar
 
-Fechas y cifras de `src/data/stories/athens.ts`, la policromía, la restauración de la columnata norte y "about half" de las piezas
+Fechas y cifras de `src/cities/athens/story.ts`, la policromía, la restauración de la columnata norte y "about half" de las piezas
 retiradas por Elgin.
