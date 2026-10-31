@@ -7,6 +7,14 @@ export default defineConfig({
   integrations: [vue(), sitemap({ serialize: (item) => ({ ...item, url: item.url.replace(/(.)\/$/, '$1') }) })],
   devToolbar: { enabled: false },
   vite: {
-    build: { chunkSizeWarningLimit: 1200 },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          // three in its own chunk: it barely changes between deploys, so returning visitors keep it cached.
+          manualChunks: (id) => (id.includes('/node_modules/three/') ? 'three' : undefined),
+        },
+      },
+    },
   },
 });

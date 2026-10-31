@@ -1,4 +1,4 @@
-import { BufferGeometry, InstancedMesh, Line, Material, Mesh, Points, ShaderMaterial, Texture, type Object3D } from 'three';
+import { BufferGeometry, InstancedMesh, Line, type Material, Mesh, Points, ShaderMaterial, Texture, type Object3D } from 'three';
 
 const textureKeys = [
   'map', 'normalMap', 'aoMap', 'roughnessMap', 'metalnessMap', 'alphaMap', 'emissiveMap', 'envMap', 'bumpMap',

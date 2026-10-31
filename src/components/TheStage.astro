@@ -36,8 +36,14 @@ const textHidden = onGlobe || Boolean(storyCity);
 </main>
 
 <script>
-  import { startCivitas } from '../engine/startCivitas';
+  import { stageLoaders } from '../engine/stages';
+  import type { StageId } from '../state/appStore';
 
+  // Tiny entry: the engine (three) and the stage on screen download in parallel, instead of the stage waiting for the engine to run.
   const canvas = document.querySelector<HTMLCanvasElement>('[data-stage-canvas]');
-  if (canvas) void startCivitas(canvas);
+  if (canvas) {
+    const initial = canvas.closest<HTMLElement>('.the-stage')?.dataset.initialState as StageId | undefined;
+    void stageLoaders[initial ?? 'globe']?.().catch(() => {});
+    void import('../engine/startCivitas').then(({ startCivitas }) => startCivitas(canvas));
+  }
 </script>

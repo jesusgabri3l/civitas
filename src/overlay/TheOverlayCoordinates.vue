@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue';
 import { computed } from 'vue';
-import { formatCoordinates } from '../engine/stages/globe/geo';
+import { formatCoordinates } from '../engine/stages/globe/coordinates';
 import { $viewCenter } from '../state/globeStore';
 
 const center = useStore($viewCenter);
