@@ -18,6 +18,7 @@ export const meta = {
   date: '1889',
   year: 1889,
   region: 'Europe',
+  keywords: ['Tour Eiffel', 'La Dame de Fer', 'Iron Lady', 'Champ de Mars', 'French'],
   theme: {
     ground: '#121022',
     accent: '#e9c46a',

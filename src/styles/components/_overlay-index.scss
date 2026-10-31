@@ -244,6 +244,12 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
       outline: 1px solid $color-amber;
       outline-offset: -1px;
     }
+
+    // Row chosen with the arrow keys (the focus stays in the search box).
+    &--active {
+      background: rgba($color-text, 0.06);
+      box-shadow: inset 2px 0 0 $color-amber;
+    }
   }
 
   &__number {
@@ -284,6 +290,41 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
     border-radius: 999px;
     color: $color-text-muted;
     font-size: 0.625rem;
+  }
+
+  &__empty {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding-top: 1rem;
+  }
+
+  &__empty-title {
+    margin: 0;
+    font-family: $font-display;
+    font-size: 1.25rem;
+    font-weight: $font-display-weight;
+  }
+
+  &__empty-text {
+    margin: 0;
+    color: $color-text-muted;
+    font-family: $font-mono;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
+  &__empty-clear {
+    @include label-mono;
+    min-height: $touch-target;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: $color-amber;
+    letter-spacing: 0.18em;
+    cursor: pointer;
   }
 
   &__suggest {

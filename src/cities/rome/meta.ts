@@ -18,6 +18,7 @@ export const meta = {
   date: 'AD 80',
   year: 80,
   region: 'Europe',
+  keywords: ['Roma', 'Colosseo', 'Flavian Amphitheatre', 'Amphitheatrum Flavium', 'Roman'],
   theme: {
     ground: '#141a22',
     accent: '#db5f45',

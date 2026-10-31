@@ -18,6 +18,7 @@ export const meta = {
   date: '447 BC',
   year: -447,
   region: 'Europe',
+  keywords: ['Athína', 'Αθήνα', 'Παρθενώνας', 'Acropolis', 'Greek', 'Hellas'],
   theme: {
     ground: '#0f1a2a',
     accent: '#c8673e',

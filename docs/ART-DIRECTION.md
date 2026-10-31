@@ -206,7 +206,7 @@ construida (el SEO se hace solo después de ese tercero).
 ### Fase B · Construcción (siguiendo el brief aprobado)
 
 7. **Carpeta de la ciudad**: `src/cities/<ciudad>/` con `meta.ts` (datos, `theme`, fecha y región del índice; `title`, `description` y `ogImage` provisionales hasta la fase C), `story.ts`, `fonts.ts` (fuente de títulos con `@fontsource`) y `stage/` (`<ciudad>Config.ts` leyendo `meta.theme`, la maqueta y `<ciudad>Stage.ts`). Copiar la forma de Atenas o París. Añadir la fila a la tabla de la sección 4.
-8. **Registro**: una línea en `src/cities/index.ts` (`cities` y `cityStageLoaders`) y otra en `src/cities/server.ts` (historia y fuentes). Quitar la fila de `soon` en `src/data/monumentIndex.ts`. La ruta, el globo, el índice, el tema CSS y el cielo salen solos.
+8. **Registro**: una línea en `src/cities/index.ts` (`cities` y `cityStageLoaders`) y otra en `src/cities/server.ts` (historia y fuentes). Quitar la fila de `soon` en `src/data/monumentIndex.ts`. La ruta, el globo, el índice (y su buscador), el tema CSS y el cielo salen solos; para que el buscador lo encuentre por nombre local o alias, añadir `keywords` en su `meta.ts` (p. ej. nombre local, otras grafías). `tests/monumentIndex.test.ts` comprueba que quedó indexada.
 9. **Revisar**: `npm run check`, `npm test`, `npm run build`; probar en escritorio, laptop (1366×768) y móvil (390×844), `prefers-reduced-motion` y teclado. Cambiar el brief a `construido`.
 10. **Parar y presentar la página.** ⏸ **Aprobación 3**: Jesús prueba la página con `npm run dev` y la aprueba. Hasta entonces no se toca el SEO.
 

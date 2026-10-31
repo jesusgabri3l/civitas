@@ -47,6 +47,8 @@ export interface CityMeta extends PageMeta {
   date: string;
   year: number;
   region: Region;
+  /** Extra words the index search matches (local names, aliases, other spellings). Optional: name, monument, country and region are already searched. */
+  keywords?: readonly string[];
   theme: CityTheme;
   /** Cities that read as related: the globe prefers them for this city's arcs on hover. */
   related?: readonly DestinationId[];

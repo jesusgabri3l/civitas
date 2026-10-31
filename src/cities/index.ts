@@ -6,7 +6,8 @@ import { meta as rome } from './rome/meta';
 
 /**
  * Registry of the cities, safe for the client (only the light `meta` of each one). To add a city: its folder in `cities/<id>/`,
- * one line in `cities` and one in `cityStageLoaders` here, and one in `server.ts`. The order is the one of the globe list and the nav.
+ * one line in `cities` and one in `cityStageLoaders` here, and one in `server.ts`. The index search picks it up from `cities`:
+ * drop its row from `soon` in data/monumentIndex.ts and give its meta `keywords` (tests/monumentIndex.test.ts checks it). The order is the one of the globe list and the nav.
  */
 export const cities = [athens, rome, paris] as const;
 
