@@ -15,7 +15,7 @@ Fecha: 30 de octubre de 2026. Fases en [PLAN.md](PLAN.md); diseño en [ART-DIREC
 
 ## Pendiente
 
-- Verificar con fuentes los datos de `src/cities/athens/story.ts` (fechas, cifras, policromía, restauración de la columnata norte, piezas de Elgin), `src/cities/paris/story.ts` (ver el TODO de su cabecera), las medidas de `src/cities/paris/stage/parisConfig.ts`, `src/cities/rome/story.ts` (ver su cabecera: cantera de Tibur, cien días de juegos, terremoto de 1349, contrafuertes de 1807 y 1827, restauración 2013-2016) y las medidas de `src/cities/rome/stage/romeConfig.ts`.
+- Datos históricos de Atenas, París y Roma revisados con fuentes el 30 oct 2026 (sin errores de fondo; en París se corrigió "Opened" por "Inaugurated" y se añadieron los 674 escalones abiertos al público). Arcos de París: 39,40 m bajo clave y 74,24 m de cuerda (fuente: cosmovisions.com, texto antiguo, sin fuente oficial moderna); el modelo ya usa `halfSpan: 37.1` y `height: 39.4`.
 - Índice: buscador, filtros por región, teclado y estado vacío conectados (`TheOverlayIndex.vue` + `src/data/monumentSearch.ts`); falta probarlo a ojo con `npm run dev`.
 - Suggest a monument: backend, validación, estados de enviado y error, antispam (`TheOverlaySuggest.vue`, TODO).
 - Roma: revisar a ojo con `npm run dev` las cámaras (`KEYS` en `src/cities/rome/stage/romeConfig.ts`; probar 1440×900, 1366×768 y 390×844), la caída del anillo exterior y la posición de los contrafuertes, la neblina y el velarium. Las gradas no se derrumban en la ruina (solo la fachada).

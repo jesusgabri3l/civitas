@@ -23,7 +23,7 @@ export const EIFFEL_MODEL = {
   /** Top of today's antenna. */
   mastTop: 330,
   /** The great arches between the piers: clear half span and crown height. */
-  arch: { halfSpan: 38, height: 39, planeOffset: 40 },
+  arch: { halfSpan: 37.1, height: 39.4, planeOffset: 40 },
   /** The outline of the tower: half width of the outer posts at height `h`, an exponential taper fitted to the real silhouette. */
   profile: { floor: 2.8, amplitude: 59.65, scale: 76.9 },
 } as const;

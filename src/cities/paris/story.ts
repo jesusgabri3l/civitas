@@ -66,7 +66,7 @@ export const story: MonumentStory = {
         'At night it was lit by gas lamps along its edges and a beacon at the summit.',
       ],
       facts: [
-        { label: 'Opened', value: '31 Mar 1889' },
+        { label: 'Inaugurated', value: '31 Mar 1889' },
         { label: 'Height', value: '300 m' },
         { label: 'Record', value: 'Until 1930' },
       ],
@@ -132,7 +132,7 @@ export const story: MonumentStory = {
           {
             id: 'levels',
             name: 'The three levels',
-            text: 'Visitors reach three levels: the first at about 57 m, the second at about 116 m and the top at about 276 m. The stairs to the top are around 1,665 steps.',
+            text: 'Visitors reach three levels: the first at about 57 m, the second at about 116 m and the top at about 276 m. The stairs to the top are around 1,665 steps; visitors may climb the 674 up to the second level.',
           },
           {
             id: 'shaft',
