@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@astrojs/sitemap": "^3.7.4",
+    "@astrojs/vercel": "^8.2.11",
     "@astrojs/vue": "^5.0.0",
     "@fontsource/bodoni-moda": "^5.3.0",
     "@fontsource/cinzel": "^5.3.0",

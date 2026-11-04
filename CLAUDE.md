@@ -26,4 +26,4 @@ Astro 5 (estático) · TypeScript · Three · GSAP · Sass (7-1) · nanostores �
 - Colores y fuentes solo desde tokens: `src/styles/abstracts/_variables.scss` (CSS) y `src/engine/stages/globe/palette.ts` (globo). Los colores y fuentes de cada ciudad viven solo en `theme` de `src/cities/<ciudad>/meta.ts`: de ahí salen el CSS (`--city-*`, emitido por `TheLayout`) y el 3D (`stage/<ciudad>Config.ts`).
 - Modelos 3D 100 % en código, con instancing y presupuesto de draw calls (sección 6 de `ART-DIRECTION.md`).
 - La referencia de página y modelo es Atenas (`src/cities/athens/`); el marco común está en `src/engine/stages/shared/monument.ts`. Ver la tabla de la sección 6 de `ART-DIRECTION.md`.
-- UI pendiente de conectar: el formulario "Suggest a monument" (`src/overlay/TheOverlaySuggest.vue`) tiene la interfaz hecha pero no la lógica (ver el TODO).
+- "Suggest a monument": formulario + `/api/suggest` (única ruta no prerenderizada). Puesta en marcha en `docs/SUGGEST-SETUP.md`.

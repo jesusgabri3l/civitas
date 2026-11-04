@@ -1,9 +1,12 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import vue from '@astrojs/vue';
+import vercel from '@astrojs/vercel';
 
 export default defineConfig({
   site: 'https://visitcivitas.com',
+  // Everything stays prerendered; only `src/pages/api/suggest.ts` runs as a function.
+  adapter: vercel(),
   integrations: [vue(), sitemap({ serialize: (item) => ({ ...item, url: item.url.replace(/(.)\/$/, '$1') }) })],
   devToolbar: { enabled: false },
   vite: {

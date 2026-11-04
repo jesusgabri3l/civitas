@@ -5,6 +5,7 @@ import { searchMonuments } from '../data/monumentSearch';
 import type { DestinationId } from '../cities';
 import { diveIntoCity, hideTooltip } from '../state/globeStore';
 import { navigate } from '../state/router';
+import { track } from '../state/track';
 import TheOverlaySuggest from './TheOverlaySuggest.vue';
 
 /**
@@ -63,7 +64,10 @@ function onSearchKeydown(event: KeyboardEvent) {
   visit(destination);
 }
 
-async function show() {
+let openedByShortcut = false;
+
+async function show(byShortcut = false) {
+  openedByShortcut = byShortcut;
   hideTooltip();
   open.value = true;
   await nextTick();
@@ -79,6 +83,7 @@ function close() {
 async function visit(city: DestinationId) {
   open.value = false;
   await diveIntoCity(city);
+  track('city_open', { city, from: openedByShortcut ? 'shortcut' : 'index' });
   navigate(city);
 }
 
@@ -86,7 +91,7 @@ function onKeydown(event: KeyboardEvent) {
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
     event.preventDefault();
     if (open.value) close();
-    else show();
+    else show(true);
   } else if (event.key === 'Escape' && open.value) {
     if (suggesting.value) suggesting.value = false;
     else close();
@@ -98,7 +103,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown));
 </script>
 
 <template>
-  <button ref="trigger" type="button" class="the-overlay-index__trigger" aria-haspopup="dialog" :aria-expanded="open" @click="show">
+  <button ref="trigger" type="button" class="the-overlay-index__trigger" aria-haspopup="dialog" :aria-expanded="open" @click="show()">
     <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="4.5" /><path d="M9.4 9.4 13 13" /></svg>
     <span>Index · {{ monumentIndex.length }} monuments</span>
     <kbd class="the-overlay-index__kbd">⌘K</kbd>

@@ -382,6 +382,26 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
     resize: vertical;
   }
 
+  &__trap {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+  }
+
+  &__check {
+    min-height: 65px;
+  }
+
+  &__error {
+    margin: 0;
+    color: $color-amber;
+    font-family: $font-mono;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+
   &__send {
     @include label-mono;
     min-height: 3rem;
