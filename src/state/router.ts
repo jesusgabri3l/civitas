@@ -8,6 +8,7 @@ import {
   stateFor,
   type StageId,
 } from './appStore';
+import { track, trackPageview } from './track';
 
 const cityIds = new Set<string>(cities.map(({ id }) => id));
 const INFO_HASH = '#info';
@@ -71,6 +72,7 @@ export function closeInfo(city: DestinationId) {
 
 function onPopState() {
   infoPushedByUs = false;
+  trackPageview();
   applyLocation(parseLocation(location.pathname, location.hash));
 }
 
@@ -90,6 +92,7 @@ function onClick(event: MouseEvent) {
 export function startRouter(): () => void {
   const first = parseLocation(location.pathname, location.hash);
   initAppState(stateFor(first.stage, first.info));
+  if (first.stage !== 'globe') track('city_open', { city: first.stage, from: 'url' });
   window.addEventListener('popstate', onPopState);
   document.addEventListener('click', onClick);
   return () => {

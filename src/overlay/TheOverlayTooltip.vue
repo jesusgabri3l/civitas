@@ -4,6 +4,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
 import { cities } from '../cities';
 import { $hotspots, $openTooltip, diveIntoCity, hideTooltip } from '../state/globeStore';
 import { navigate } from '../state/router';
+import { track } from '../state/track';
 import { isTooltipShown, placementFor } from './tooltip';
 
 const openTooltip = useStore($openTooltip);
@@ -22,6 +23,7 @@ async function visit() {
   if (!city) return;
   hideTooltip();
   await diveIntoCity(city);
+  track('city_open', { city, from: 'globe' });
   navigate(city);
 }
 

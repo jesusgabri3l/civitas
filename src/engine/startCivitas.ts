@@ -3,6 +3,7 @@ import { $ambientActive, bindPreload } from '../state/globeStore';
 import { startPageMeta } from '../state/pageMeta';
 import { startRouter } from '../state/router';
 import { $explorePart, $exploreView, $story } from '../state/storyStore';
+import { track } from '../state/track';
 import { startExploreUi } from '../story/exploreUi';
 import { startTimelineUi } from '../story/timelineUi';
 import { preloadStory } from '../story/storyContent';
@@ -75,6 +76,29 @@ export async function startCivitas(canvas: HTMLCanvasElement) {
   $exploreView.subscribe(sendExplore);
   $explorePart.subscribe(sendExplore);
   engine.onSelect((id) => $explorePart.set(id));
+
+  // Analytics: what the visitor does inside a monument (the city is whatever stage is on screen).
+  const cityOnScreen = () => {
+    const stage = $targetStage.get();
+    return stage === 'globe' ? null : stage;
+  };
+  const chaptersReached = new Set<string>();
+  $story.listen(({ chapter }) => {
+    const city = cityOnScreen();
+    if (!city || chapter === 0 || chaptersReached.has(`${city}:${chapter}`)) return;
+    chaptersReached.add(`${city}:${chapter}`);
+    track('chapter_reached', { city, chapter });
+  });
+  $exploreView.listen((view) => {
+    const city = cityOnScreen();
+    if (city && view) track('explore_view', { city, view });
+  });
+  $explorePart.listen((piece) => {
+    const city = cityOnScreen();
+    if (city && piece) track('piece_open', { city, piece });
+  });
+  // A new visit to a monument counts its chapters again.
+  $targetStage.listen((stage) => stage === 'globe' && chaptersReached.clear());
 
   // The store decides, the engine follows. Requests are serialized and the latest one wins.
   $targetStage.subscribe((target) => {

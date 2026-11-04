@@ -4,6 +4,7 @@ import { computed, ref, watch } from 'vue';
 import { cities, type DestinationId } from '../cities';
 import { $appState } from '../state/appStore';
 import { navigate } from '../state/router';
+import { track } from '../state/track';
 import {
   $ambientActive,
   $hotspots,
@@ -79,6 +80,7 @@ async function onClick(event: MouseEvent, id: DestinationId) {
   }
   hideTooltip();
   await diveIntoCity(id); // a short turn that centers the city first
+  track('city_open', { city: id, from: 'globe' });
   navigate(id);
 }
 </script>
