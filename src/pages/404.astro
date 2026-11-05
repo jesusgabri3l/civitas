@@ -12,6 +12,14 @@ import { home } from '../data/home';
   noindex
 >
   <main id="main" class="not-found">
+    <!-- Same logo as the globe (TheOverlayBrand.vue); its global styles fix it to a corner, .not-found__brand puts it back in the flow. -->
+    <a class="the-overlay-brand not-found__brand" href="/" aria-label="Civitas, back to the globe">
+      <span class="the-overlay-brand__name">Civitas</span><svg class="the-overlay-brand__globe" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+        <circle cx="8" cy="8" r="6.5" />
+        <ellipse cx="8" cy="8" rx="2.6" ry="6.5" />
+        <path d="M2 5.6h12M2 10.4h12" />
+      </svg>
+    </a>
     <p class="not-found__code">404</p>
     <h1>This place is not on the map.</h1>
     <a class="not-found__home" href="/">Back to the globe</a>
@@ -30,6 +38,12 @@ import { home } from '../data/home';
     text-align: center;
     background: $color-ink;
     color: $color-text;
+  }
+
+  .not-found__brand {
+    position: static;
+    justify-self: center;
+    margin: 0 0 1rem;
   }
 
   .not-found__code {
