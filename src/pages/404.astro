@@ -1,0 +1,49 @@
+---
+import TheLayout from '../layouts/TheLayout.astro';
+import { home } from '../data/home';
+---
+
+<TheLayout
+  title="Page not found · Civitas"
+  description="This page does not exist."
+  ogImage={home.ogImage}
+  ogImageAlt={home.ogImageAlt}
+  path="/404"
+  noindex
+>
+  <main id="main" class="not-found">
+    <p class="not-found__code">404</p>
+    <h1>This place is not on the map.</h1>
+    <a class="not-found__home" href="/">Back to the globe</a>
+  </main>
+</TheLayout>
+
+<style lang="scss">
+  @use '../styles/abstracts' as *;
+
+  .not-found {
+    min-height: 100svh;
+    display: grid;
+    place-content: center;
+    gap: 1.25rem;
+    padding: $gutter;
+    text-align: center;
+    background: $color-ink;
+    color: $color-text;
+  }
+
+  .not-found__code {
+    margin: 0;
+    font-family: $font-mono;
+    color: $color-amber;
+  }
+
+  .not-found__home {
+    justify-self: center;
+    min-height: $touch-target;
+    display: inline-flex;
+    align-items: center;
+    font-family: $font-mono;
+    color: $color-amber;
+  }
+</style>
