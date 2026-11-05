@@ -19,6 +19,17 @@ Civitas is a visual wiki of world monuments. The home page is a 3D globe: every 
 
 <img src="docs/screenshots/desktop-rome.jpg" alt="The Colosseum page on desktop: the COLOSSEVM title in Cinzel, a plaster model of the amphitheatre on a stone pedestal with Pompeian red debris, and the chapter timeline at the bottom" width="100%" />
 
+### On a phone
+
+<table>
+  <tr>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-hub.jpg" alt="Hub on a phone: the globe with Paris, Rome and Athens hotspots" width="100%" /><br /><sub>The globe</sub></td>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-athens.jpg" alt="Parthenon page on a phone" width="100%" /><br /><sub>Athens</sub></td>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-rome.jpg" alt="Colosseum page on a phone" width="100%" /><br /><sub>Rome</sub></td>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-paris.jpg" alt="Eiffel Tower page on a phone" width="100%" /><br /><sub>Paris</sub></td>
+  </tr>
+</table>
+
 ## Art direction
 
 **One night, one light per city.** Civitas has two layers:
@@ -60,8 +71,44 @@ Project structure and architecture: [docs/PLAN.md](docs/PLAN.md#arquitectura) *(
 - **Every model is code.** No imported meshes or scanned textures: each monument is built from Three.js primitives with real proportions, using `InstancedMesh` for anything repeated (columns, arches, girders).
 - **One look for everything.** A custom pipeline renders the scene, a G-buffer for ambient occlusion and ink outlines, and a final plaster pass with grain and vignette.
 - **Scroll drives the story.** GSAP ScrollTrigger maps each chapter to a camera pose and a model state, so scrolling literally takes the monument apart and puts it back together.
-- **Globe ↔ city trips.** The camera dives into the globe and a circular reveal fades into the city's own color; the next city is prepared off screen before the dive.
-- **Adaptive quality.** Rendering is on demand, and a governor drops or raises the quality tier (shadows, MSAA, pixel ratio) based on real frame times. Without WebGL, the story still reads as plain text.
+- **Globe ↔ city trips.** The camera dives into the globe and a circular reveal fades into the city's own color. Navigation is client-side, but every route is also prerendered for SEO and direct links.
+
+## Engineering for performance
+
+A real-time 3D site lives or dies on its frame budget, so performance was designed in from the start, not patched at the end.
+
+**Loading and preloading**
+- **Monuments load before you click.** Opening a city's tooltip on the globe, or resting 200 ms on its row in the index, starts loading that monument, so the trip usually begins with the scene already prepared off screen.
+- **Each scene has a lifecycle:** `load → warm → activate → sleep → dispose`. Shaders are compiled during the warm-up, so the first frame never stutters, and scenes you leave release their GPU memory.
+- **Models are built in parts.** Model construction is async and yields to the main thread between groups of pieces, so hover, the index and scrolling stay responsive while a monument is built.
+
+**Rendering**
+- **Render on demand.** Nothing is drawn when nothing moves, and shadows are static, redrawn only when the model changes.
+- **Instancing and a draw-call budget** of about 10–20 calls per model; procedural textures are generated once, cached and shared between cities; the G-buffer uses half floats.
+
+**Adaptive quality**
+- Three tiers (`low`, `medium`, `high`) control shadows, MSAA, dust and pixel ratio. A governor watches real frame times: it drops a tier after ~2 s under 28 fps, jumps straight to `low` under 10 fps, and climbs back only after ~8 s above 55 fps, never above the tier detected for the device.
+- Software WebGL starts on `low`, the pixel ratio is adjusted when you change monitor or zoom, and **without WebGL the story still reads as plain text**.
+
+### Built for phones
+
+- Tested on a real iPhone 15, including **Low Power Mode**: Safari caps it at 30 fps, and the governor recognizes that cap instead of downgrading the scene.
+- The canvas uses large-viewport units (`100lvh`), so the iOS toolbar showing or hiding never shifts the globe hotspots.
+- Atmospheric gradients (like Rome's mist) are drawn in shaders, because canvas textures left visible blotches on iOS.
+- Touch-first UI: inputs at 16 px to avoid iOS auto-zoom, no autofocus on touch screens, and *back* goes straight to the globe.
+
+### Measured
+
+Live site, Chrome on Intel integrated graphics, 1440 × 900, cold cache, median of 3 runs. The second set of columns repeats the test with the CPU slowed down 4× as a stand-in for a mid-range phone.
+
+| Page | Ready | FPS | Ready (CPU 4×) | FPS (CPU 4×) | Draw calls / frame |
+| :-- | --: | --: | --: | --: | --: |
+| Hub (globe) | 0.9 s | 144 | 1.3 s | 138 | 17 |
+| Athens | 1.0 s | 144 | 2.0 s | 139 | 24 |
+| Rome | 1.1 s | 136 | 2.0 s | 118 | 33 |
+| Paris | 1.1 s | 136 | 1.9 s | 136 | 12 |
+
+*Ready* is from navigation to the first rendered scene. *FPS* counts frames actually rendered by the engine while dragging the globe or scrolling the story (144 is the monitor's limit); no run had a frame over 50 ms. Draw calls include every pass (scene, G-buffer and plaster). JavaScript per page: ~210–260 KB gzipped.
 
 ## Suggest a monument
 
@@ -71,7 +118,7 @@ Visitors can propose the next landmark from the index. To avoid running a full b
 2. Validates and sanitizes the fields.
 3. Appends a row to a **Google Sheet** through a service account, signing the JWT with Web Crypto (no `googleapis` dependency).
 
-## Performance
+## PageSpeed
 
 PageSpeed Insights on [visitcivitas.com](https://visitcivitas.com), before applying my SEO workflow:
 
@@ -89,19 +136,6 @@ PageSpeed Insights on [visitcivitas.com](https://visitcivitas.com), before apply
   </tr>
 </table>
 
-## 3D performance
-
-Measured on the live site in Chrome, 1440 × 900, Intel integrated graphics (`high` tier):
-
-| Page | Ready in | Draw calls / frame | Triangles / frame | FPS while scrolling |
-| :-- | --: | --: | --: | --: |
-| Hub (globe) | 3.0 s | 17 | 15 k | 144 |
-| Athens | 1.0 s | 24 | 76 k | 140 |
-| Rome | 1.0 s | 33 | 147 k | 123 |
-| Paris | 0.8 s | 12 | 41 k | 144 |
-
-Draw calls and triangles count every pass (scene, G-buffer and plaster). "Ready in" is from navigation to the first rendered scene. JavaScript (gzip): ~213 KB on the hub, ~250 KB on a monument page.
-
 ## Analytics
 
 Umami runs only in production (`src/state/track.ts`). Besides page views, it receives:
@@ -113,6 +147,10 @@ Umami runs only in production (`src/state/track.ts`). Besides page views, it rec
 | `explore_view` | A historical view is picked in Explore |
 | `piece_open` | A piece of the model is clicked to open its card |
 | `suggest_sent` | A monument suggestion is sent |
+
+## Adding a monument
+
+The atlas keeps growing. Every new monument follows the same checklist: propose two or three identities (typeface, color, motif, moment), write and fact-check a brief, build the model and its chapters, and only then add its SEO. The checklist is in [docs/ART-DIRECTION.md §7](docs/ART-DIRECTION.md) *(Spanish)*, and new pages are indexed in the search automatically from the city registry.
 
 ## Development
 
