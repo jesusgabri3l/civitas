@@ -56,7 +56,7 @@ Fuentes con `@fontsource` (OFL, self-host). Cada fuente de ciudad se importa y p
 
 - Logo arriba a la izquierda: "Civitas" + icono del globo en ámbar; debajo, en mono pequeño, "The interactive atlas of monuments" (se oculta en pantallas angostas y en el logo acoplado de las ciudades).
 - Titular centrado arriba en Fraunces 600; subtítulo mono en ámbar.
-- Botón **Index · N monuments** (⌘K / Ctrl+K) arriba a la derecha: panel lateral con buscador, filtros por región y lista cronológica. Incluye "Suggest a monument".
+- Botón **Index · N monuments** (sin atajo de teclado) arriba a la derecha: panel lateral con buscador, filtros por región y lista cronológica. Incluye "Suggest a monument".
 - Controles (Drag / Scroll / Click) como lista discreta abajo a la izquierda, sin pastillas: el globo queda libre para interactuar.
 - Coordenadas en vivo abajo a la derecha.
 - Tooltip de ciudad: tarjeta oscura sutil (`rgba(ink, .78)`, desenfoque, borde al 14 %) para que no se pierda sobre el globo claro.

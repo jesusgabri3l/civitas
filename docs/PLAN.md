@@ -16,7 +16,7 @@ armando, desarmando y transformando su maqueta. El diseño (tipografía, color, 
 ## Arquitectura
 
 - `src/engine/Engine.ts`: renderer, pipeline de look (`render/`: pase de escena, G-buffer para AO y contorno, pase final de yeso con grano, viñeta y línea de tinta), render bajo demanda, tiers de calidad (`quality/`).
-- `src/engine/stage/StageManager.ts`: ciclo de cada escena load → warm → activate → sleep → dispose, con precarga al abrir el tooltip de una ciudad.
+- `src/engine/stage/StageManager.ts`: ciclo de cada escena load → warm → activate → sleep → dispose, con precarga al abrir el tooltip de una ciudad o al detenerse 200 ms sobre su fila del índice.
 - `src/engine/transition/`: viaje globo ↔ ciudad (zoom, recuadro, fundido al color del fondo de la ciudad, `data/stageSky.ts`, que lo lee de `meta.theme.ground`).
 - `src/engine/stages/globeStage.ts` + `globe/`: el globo (líneas Natural Earth 110m, hotspots, arcos, estrellas, halo).
 - `src/engine/stages/shared/`: el marco de toda página de monumento (`createMonumentStage`, pedestal, foco, polvo, cámara por capítulo, Explore).
