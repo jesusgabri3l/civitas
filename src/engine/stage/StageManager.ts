@@ -57,15 +57,22 @@ export class StageManager {
     this.enforceWarmLimit();
   }
 
-  /** load -> warm. Safe to call many times: concurrent calls share the same work. */
-  async preload(id: StageId): Promise<Stage> {
+  /**
+   * load -> warm. Safe to call many times: concurrent calls share the same work.
+   * `speculative` (hover, a row the visitor lingers on): never evicts another warm stage. Without a free slot it only loads, so
+   * moving the pointer across the globe does not put stages to sleep and recompile them over and over.
+   */
+  async preload(id: StageId, { speculative = false } = {}): Promise<Stage> {
     const entry = this.entryFor(id);
     if (entry.stage && (entry.status === 'warm' || entry.status === 'active')) return entry.stage;
-    if (!entry.preparing) {
-      entry.preparing = this.prepare(id, entry).finally(() => {
-        entry.preparing = null;
-      });
+    if (speculative && entry.stage && !this.hasRoomToWarm()) return entry.stage;
+    if (entry.preparing) {
+      // A committed request must not settle for a speculative run that may have stopped at `loaded` (no room to warm).
+      return speculative ? entry.preparing : entry.preparing.then(() => this.preload(id));
     }
+    entry.preparing = this.prepare(id, entry, speculative).finally(() => {
+      entry.preparing = null;
+    });
     return entry.preparing;
   }
 
@@ -137,7 +144,11 @@ export class StageManager {
     return entry;
   }
 
-  private async prepare(id: StageId, entry: Entry): Promise<Stage> {
+  private hasRoomToWarm(): boolean {
+    return this.warmOrder.filter((warmId) => !this.pinned.has(warmId)).length < this.maxWarmStages;
+  }
+
+  private async prepare(id: StageId, entry: Entry, speculative: boolean): Promise<Stage> {
     if (!entry.stage) {
       entry.status = 'loading';
       const { createStage } = await this.loaders[id]();
@@ -146,6 +157,7 @@ export class StageManager {
       entry.stage = stage;
     }
     entry.status = 'loaded';
+    if (speculative && !this.hasRoomToWarm()) return entry.stage;
     await this.host.compile(entry.stage);
     // The stage may have been disposed or activated while compiling.
     if (this.entries.get(id) !== entry) return entry.stage;

@@ -52,6 +52,8 @@ export interface LookFrame {
   tanHalfFov: number;
   near: number;
   far: number;
+  /** Linear fog of the scene (view depth where it starts and where it is total); null without fog. */
+  fog: { near: number; far: number } | null;
   settings: PlasterSettings;
 }
 
@@ -75,6 +77,7 @@ const FRAGMENT = /* glsl */ `
   uniform float uOutline;
   uniform vec3 uOutlineColor;
   uniform float uOutlineWidth;
+  uniform vec2 uFogRange;
 
   // Linear distance in meters. Reads the G-buffer, or the depth texture of the color pass on the low preset.
   float sceneDepth(vec2 uv) {
@@ -155,7 +158,8 @@ const FRAGMENT = /* glsl */ `
       edge = max(edge, sameSurface * step(0.25, 1.0 - dot(centerNormal, normalize(other.xyz * 2.0 - 1.0))));
     }
   #endif
-    return edge;
+    // The ink fades with the fog like the shapes it draws: the far edge of the floor never turns into a line on the horizon.
+    return edge * (1.0 - smoothstep(uFogRange.x, uFogRange.y, centerDepth));
   }
 
   vec3 filmic(vec3 c) {
@@ -221,6 +225,7 @@ export class PlasterLook {
         uOutline: { value: 0 },
         uOutlineColor: { value: new Color(0x1b1a17) },
         uOutlineWidth: { value: 1 },
+        uFogRange: { value: new Vector2(1e9, 2e9) },
       },
       depthTest: false,
       depthWrite: false,
@@ -257,6 +262,7 @@ export class PlasterLook {
     uniforms.uRaySamples.value = frame.settings.raySamples;
     uniforms.uOutline.value = frame.settings.outline;
     uniforms.uOutlineWidth.value = frame.settings.outlineWidth * frame.pixelRatio;
+    (uniforms.uFogRange.value as Vector2).set(frame.fog?.near ?? 1e9, frame.fog?.far ?? 2e9);
     (uniforms.uOutlineColor.value as Color).set(frame.settings.outlineColor);
   }
 

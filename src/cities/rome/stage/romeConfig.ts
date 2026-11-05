@@ -65,7 +65,7 @@ export const ROME_ENV: MonumentEnvironment = {
   shadowFar: 760,
   bias: -0.0003,
   normalBias: 0.15,
-  look: { exposure: 1.05, aoStrength: 0.6, aoRadius: 6, grain: 0.03, warmth: 0.05, vignette: 0.3, filmic: 0.2, outline: 0.55, outlineWidth: 1, outlineColor: 0x1b1a17 },
+  look: { exposure: 1.05, aoStrength: 0.6, aoRadius: 6, grain: 0.015, warmth: 0.05, vignette: 0.3, filmic: 0.2, outline: 0.55, outlineWidth: 1, outlineColor: 0x1b1a17 },
   framingX: 0.24,
 };
 

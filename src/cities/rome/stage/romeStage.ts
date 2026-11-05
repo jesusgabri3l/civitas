@@ -10,7 +10,7 @@ export function createStage(host: StageHost): Stage {
     env: ROME_ENV,
     track: ROME_TRACK,
     seed: SEED,
-    createModel: () => new Colosseum(SEED),
+    createModel: () => Colosseum.create(SEED),
     rest: REST,
     warmUp: WARM_UP,
     stateFor,

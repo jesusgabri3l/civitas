@@ -64,7 +64,7 @@ export const PARIS_ENV: MonumentEnvironment = {
   shadowFar: 900,
   bias: -0.0003,
   normalBias: 0.15,
-  look: { exposure: 1.05, aoStrength: 0.6, aoRadius: 8, grain: 0.03, warmth: 0.1, vignette: 0.3, filmic: 0.2, outline: 0.55, outlineWidth: 1, outlineColor: 0x1b1a17 },
+  look: { exposure: 1.05, aoStrength: 0.6, aoRadius: 8, grain: 0.015, warmth: 0.1, vignette: 0.3, filmic: 0.2, outline: 0.55, outlineWidth: 1, outlineColor: 0x1b1a17 },
   framingX: 0.24,
 };
 

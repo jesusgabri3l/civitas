@@ -13,8 +13,9 @@ import {
   Vector3,
 } from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { SKY_LAYER } from '../../render/LookPipeline';
 import type { MonumentEnvironment } from './monument';
-import { createStoneTextures, type StoneTextures } from './proceduralSurfaces';
+import { getStoneTextures, STONE_TONE_PEAK, type StoneTextures } from './proceduralSurfaces';
 
 const BEAM_VERTEX = /* glsl */ `
   varying vec2 vUv;
@@ -56,15 +57,14 @@ export class Exhibit {
   readonly mesh = new Group();
   private readonly geometries: BufferGeometry[] = [];
   private readonly materials: (MeshStandardMaterial | ShaderMaterial)[] = [];
-  private readonly stone: StoneTextures;
+  private readonly stone: StoneTextures = getStoneTextures();
 
-  constructor(env: MonumentEnvironment, seed: number) {
+  constructor(env: MonumentEnvironment) {
     const { floor, pedestal } = env;
     const floorMaterial = new MeshStandardMaterial({ color: floor.color, roughness: floor.roughness, metalness: 0.15 });
-    // Worn stone: mottled color and roughness plus a faint bump; the canvas keeps the 4:1 aspect of the long faces.
-    this.stone = createStoneTextures({ color: pedestal.color, seed });
+    // Worn stone shared by the cities (grayscale): the tint is the material color; the canvas keeps the 4:1 aspect of the long faces.
     const pedestalMaterial = new MeshStandardMaterial({
-      color: 0xffffff,
+      color: new Color(pedestal.color).multiplyScalar(STONE_TONE_PEAK),
       map: this.stone.map,
       roughness: 1,
       roughnessMap: this.stone.roughnessMap,
@@ -120,13 +120,14 @@ export class Exhibit {
     mesh.position.copy(apex).add(aim).multiplyScalar(0.5);
     mesh.quaternion.copy(new Quaternion().setFromUnitVectors(new Vector3(0, -1, 0), direction.normalize()));
     mesh.renderOrder = 2;
+    // Out of the shape pass: light is air, not a shape (in it, the ink line traced the edge of the cone).
+    mesh.layers.set(SKY_LAYER);
     return mesh;
   }
 
   dispose() {
     this.geometries.forEach((geometry) => geometry.dispose());
     this.materials.forEach((material) => material.dispose());
-    this.stone.dispose();
     this.mesh.removeFromParent();
   }
 }

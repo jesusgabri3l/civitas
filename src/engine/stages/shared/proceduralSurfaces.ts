@@ -1,9 +1,9 @@
-import { CanvasTexture, Color, LinearFilter, RepeatWrapping, SRGBColorSpace } from 'three';
+import { CanvasTexture, LinearFilter, RepeatWrapping, SRGBColorSpace } from 'three';
 import { createRandom } from '../../utils/random';
 
 /**
  * Procedural canvas textures for the room props (reusable by the other cities): worn plaster/stone, a soft light cookie.
- * Everything is drawn once at build time; the caller owns the textures and disposes them.
+ * Everything is drawn once per session and shared by the cities (never disposed).
  */
 
 /** Smooth value noise on a lattice, tileable on both axes (`cells` per side). */
@@ -29,35 +29,39 @@ export interface StoneTextures {
   map: CanvasTexture;
   roughnessMap: CanvasTexture;
   bumpMap: CanvasTexture;
-  dispose(): void;
 }
 
-export interface StoneOptions {
-  color: number;
-  seed: number;
-  /** Canvas size; keep the aspect of the surface so the grain is not stretched. */
-  width?: number;
-  height?: number;
-  /** Times the texture repeats over the mapped face. */
-  repeat?: [number, number];
+/** The grayscale in the color map peaks at this (a tone above 1 would clip in 8 bits); the material color gets it back. */
+export const STONE_TONE_PEAK = 1.2;
+
+const STONE_SEED = 41;
+const STONE_SIZE = { width: 1024, height: 256 } as const;
+const clamp255 = (value: number) => Math.round(Math.min(1, Math.max(0, value)) * 255);
+
+/** One canvas whose pixels the caller writes straight into `data` (RGBA). */
+function createSurface(width: number, height: number) {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext('2d')!;
+  return { canvas, context, image: context.createImageData(width, height) };
 }
 
-/** Worn stone/plaster: low-amplitude mottling in color and roughness, faint veins, a few chips. Color map is sRGB, the other two linear data. */
-export function createStoneTextures({ color, seed, width = 1024, height = 256, repeat = [8, 1] }: StoneOptions): StoneTextures {
-  const broad = createValueNoise(6, seed);
-  const medium = createValueNoise(18, seed + 1);
-  const fine = createValueNoise(64, seed + 2);
-  const veinNoise = createValueNoise(5, seed + 3);
-  const base = new Color(color);
+/**
+ * Worn stone/plaster in grayscale: low-amplitude mottling in tone and roughness, faint veins, a few chips. The color map is a tone
+ * (sRGB, 1.0 = `STONE_TONE_PEAK`/1.2 of white) that each city tints with `material.color`; the other two are linear data.
+ */
+function createStoneTextures(): StoneTextures {
+  const { width, height } = STONE_SIZE;
+  const broad = createValueNoise(6, STONE_SEED);
+  const medium = createValueNoise(18, STONE_SEED + 1);
+  const fine = createValueNoise(64, STONE_SEED + 2);
+  const veinNoise = createValueNoise(5, STONE_SEED + 3);
 
-  const surfaces = [0, 1, 2].map(() => {
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const context = canvas.getContext('2d')!;
-    return { canvas, context, image: context.createImageData(width, height) };
-  });
-  const [colorSurface, roughSurface, bumpSurface] = surfaces;
+  const [tone, rough, bump] = [0, 1, 2].map(() => createSurface(width, height));
+  const toneData = tone.image.data;
+  const roughData = rough.image.data;
+  const bumpData = bump.image.data;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
@@ -66,37 +70,63 @@ export function createStoneTextures({ color, seed, width = 1024, height = 256, r
       const cloud = broad(u, v) * 0.5 + medium(u, v) * 0.3 + fine(u, v) * 0.2;
       // Veins: thin dark bands where a low-frequency field crosses 0.5.
       const vein = Math.max(0, 1 - Math.abs(veinNoise(u, v * 0.6 + 0.3) - 0.5) * 38);
-      const tone = 1 + (cloud - 0.5) * 0.16 - vein * 0.07;
-      const grain = (fine(u * 2, v * 2) - 0.5) * 0.05;
+      const level = 1 + (cloud - 0.5) * 0.16 - vein * 0.07 + (fine(u * 2, v * 2) - 0.5) * 0.05;
       const index = (y * width + x) * 4;
-      const encode = (channel: number) => Math.round(Math.min(1, Math.max(0, (channel * (tone + grain)) ** (1 / 2.2))) * 255);
-      colorSurface.image.data.set([encode(base.r), encode(base.g), encode(base.b), 255], index);
-      const rough = Math.round(Math.min(1, Math.max(0, 0.82 + (medium(u + 0.31, v) - 0.5) * 0.3 - vein * 0.1)) * 255);
-      roughSurface.image.data.set([0, rough, 0, 255], index);
-      const bump = Math.round(Math.min(1, Math.max(0, 0.5 + (fine(u, v) - 0.5) * 0.5 + (medium(u, v) - 0.5) * 0.3 - vein * 0.12)) * 255);
-      bumpSurface.image.data.set([bump, bump, bump, 255], index);
+      const gray = clamp255((level / STONE_TONE_PEAK) ** (1 / 2.2));
+      toneData[index] = toneData[index + 1] = toneData[index + 2] = gray;
+      toneData[index + 3] = 255;
+      roughData[index] = roughData[index + 2] = 0;
+      roughData[index + 1] = clamp255(0.82 + (medium(u + 0.31, v) - 0.5) * 0.3 - vein * 0.1);
+      roughData[index + 3] = 255;
+      const bumpValue = clamp255(0.5 + (fine(u, v) - 0.5) * 0.5 + (medium(u, v) - 0.5) * 0.3 - vein * 0.12);
+      bumpData[index] = bumpData[index + 1] = bumpData[index + 2] = bumpValue;
+      bumpData[index + 3] = 255;
     }
   }
 
-  const textures = surfaces.map(({ canvas, context, image }, kind) => {
+  const [map, roughnessMap, bumpMap] = [tone, rough, bump].map(({ canvas, context, image }, kind) => {
     context.putImageData(image, 0, 0);
     const texture = new CanvasTexture(canvas);
     texture.wrapS = texture.wrapT = RepeatWrapping;
-    texture.repeat.set(...repeat);
+    texture.repeat.set(8, 1);
     texture.minFilter = LinearFilter;
     texture.anisotropy = 4;
     if (kind === 0) texture.colorSpace = SRGBColorSpace;
     return texture;
   });
-  const [map, roughnessMap, bumpMap] = textures;
-  return { map, roughnessMap, bumpMap, dispose: () => textures.forEach((texture) => texture.dispose()) };
+  // Shared by every city: a stage going to sleep must not free them (`disposeObject` skips what is marked).
+  for (const texture of [map, roughnessMap, bumpMap]) texture.userData.shared = true;
+  return { map, roughnessMap, bumpMap };
+}
+
+let sharedStone: StoneTextures | null = null;
+let sharedCookie: CanvasTexture | null = null;
+
+/** The stone every city's pedestal shares (built once, kept for the session: nobody disposes it). */
+export function getStoneTextures(): StoneTextures {
+  return (sharedStone ??= createStoneTextures());
+}
+
+/** The spot cookie every city shares (built once, kept for the session). */
+export function getSoftPoolCookie(): CanvasTexture {
+  return (sharedCookie ??= createSoftPoolCookie(STONE_SEED + 5));
+}
+
+/** Builds both while the globe is on screen, so entering a city finds them ready. */
+export function warmProceduralSurfaces() {
+  const warm = () => {
+    getStoneTextures();
+    getSoftPoolCookie();
+  };
+  if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 4000 });
+  else setTimeout(warm, 1500);
 }
 
 /**
  * Light cookie for a spot: a soft pool whose edge wobbles (low-frequency noise on the radius) and whose center falls off smoothly,
  * so the floor patch reads as gallery light instead of a clean ellipse. 0 outside, 1 at the heart (grayscale, multiplied by the light).
  */
-export function createSoftPoolCookie(seed: number, size = 256): CanvasTexture {
+function createSoftPoolCookie(seed: number, size = 256): CanvasTexture {
   const noise = createValueNoise(4, seed);
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = size;
@@ -115,11 +145,14 @@ export function createSoftPoolCookie(seed: number, size = 256): CanvasTexture {
       const level = t * t * (3 - 2 * t);
       // Falls all the way to 0 at the rim: no floor level, so the pool has no visible ring.
       const value = Math.round(level * 255);
-      image.data.set([value, value, value, 255], (y * size + x) * 4);
+      const index = (y * size + x) * 4;
+      image.data[index] = image.data[index + 1] = image.data[index + 2] = value;
+      image.data[index + 3] = 255;
     }
   }
   context.putImageData(image, 0, 0);
   const texture = new CanvasTexture(canvas);
   texture.colorSpace = SRGBColorSpace;
+  texture.userData.shared = true;
   return texture;
 }

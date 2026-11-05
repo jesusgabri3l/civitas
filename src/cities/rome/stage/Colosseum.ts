@@ -2,7 +2,6 @@ import {
   AdditiveBlending,
   BoxGeometry,
   BufferGeometry,
-  CanvasTexture,
   Color,
   CylinderGeometry,
   Euler,
@@ -11,7 +10,7 @@ import {
   InstancedMesh,
   Matrix4,
   Mesh,
-  MeshBasicMaterial,
+  ShaderMaterial,
   Path,
   PlaneGeometry,
   Quaternion,
@@ -21,6 +20,7 @@ import {
   type Raycaster,
 } from 'three';
 import { SKY_LAYER } from '../../../engine/render/LookPipeline';
+import { yieldToMain } from '../../../engine/utils/yieldToMain';
 import { createRandom, type RandomSource } from '../../../engine/utils/random';
 import { createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
 import { ColosseumVelarium } from './ColosseumVelarium';
@@ -191,18 +191,23 @@ function ringGeometry(outerA: number, outerB: number, innerA: number, innerB: nu
   return geometry;
 }
 
-/** Soft round sheet of mist: white in the middle, transparent at the edge. */
-function createMistTexture() {
-  const canvas = document.createElement('canvas');
-  canvas.width = canvas.height = 256;
-  const context = canvas.getContext('2d')!;
-  const gradient = context.createRadialGradient(128, 128, 0, 128, 128, 128);
-  gradient.addColorStop(0, 'rgba(255,255,255,0.9)');
-  gradient.addColorStop(0.5, 'rgba(255,255,255,0.45)');
-  gradient.addColorStop(1, 'rgba(255,255,255,0)');
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, 256, 256);
-  return new CanvasTexture(canvas);
+/** Soft round sheet of mist, computed per pixel (no texture: iOS Safari tinted canvas textures with color speckles). */
+function createMistMaterial(opacity: number) {
+  return new ShaderMaterial({
+    uniforms: { uColor: { value: new Color(MIST.color) }, uOpacity: { value: opacity } },
+    vertexShader: 'varying vec2 vUv; void main() { vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }',
+    fragmentShader: `
+      uniform vec3 uColor; uniform float uOpacity; varying vec2 vUv;
+      void main() {
+        float d = min(length(vUv - 0.5) * 2.0, 1.0);
+        float falloff = d < 0.5 ? mix(0.9, 0.45, d * 2.0) : mix(0.45, 0.0, (d - 0.5) * 2.0);
+        gl_FragColor = vec4(uColor, falloff * uOpacity);
+      }`,
+    transparent: true,
+    blending: AdditiveBlending,
+    depthWrite: false,
+    fog: false,
+  });
 }
 
 /**
@@ -219,21 +224,32 @@ export class Colosseum implements MonumentModel<ColosseumState> {
   private readonly geometries = {} as Record<SetKey, BufferGeometry>;
   private readonly meshes = {} as Record<SetKey, InstancedMesh>;
   private readonly velarium = new ColosseumVelarium();
-  private readonly mistTexture = createMistTexture();
-  private readonly mist: Mesh<PlaneGeometry, MeshBasicMaterial>[] = [];
+  private readonly mist: Mesh<PlaneGeometry, ShaderMaterial>[] = [];
   private state: ColosseumState = { ...REST };
   private highlight: ColosseumPart | null = null;
 
-  constructor(seed: number) {
+  private constructor(seed: number) {
     this.root.name = 'colosseum';
     this.random = createRandom(seed);
-    this.buildSeating();
-    this.buildArena();
-    this.buildFacade();
-    this.buildInnerRing();
-    this.buildFallenBlocks();
-    this.buildButtresses();
+  }
 
+  /** Builds in slices (the facade is the heavy one), handing the main thread back between them. */
+  static async create(seed: number) {
+    const model = new Colosseum(seed);
+    model.buildSeating();
+    model.buildArena();
+    await yieldToMain();
+    model.buildFacade();
+    await yieldToMain();
+    model.buildInnerRing();
+    model.buildFallenBlocks();
+    model.buildButtresses();
+    await yieldToMain();
+    model.assemble();
+    return model;
+  }
+
+  private assemble() {
     for (const key of SET_KEYS) {
       const mesh = new InstancedMesh(this.geometries[key], this.plaster.material, this.pieces[key].length);
       mesh.name = `colosseum-${key}`;
@@ -431,7 +447,7 @@ export class Colosseum implements MonumentModel<ColosseumState> {
     for (const sheet of [MIST.low, MIST.high]) {
       const mesh = new Mesh(
         new PlaneGeometry(sheet.size, sheet.size).rotateX(-Math.PI / 2),
-        new MeshBasicMaterial({ map: this.mistTexture, color: MIST.color, transparent: true, opacity: sheet.opacity, blending: AdditiveBlending, depthWrite: false, toneMapped: false, fog: false }),
+        createMistMaterial(sheet.opacity),
       );
       mesh.position.y = BASE_Y + sheet.y;
       mesh.layers.set(SKY_LAYER);
@@ -526,7 +542,6 @@ export class Colosseum implements MonumentModel<ColosseumState> {
       sheet.geometry.dispose();
       sheet.material.dispose();
     }
-    this.mistTexture.dispose();
     this.velarium.dispose();
     this.plaster.dispose();
     this.root.removeFromParent();

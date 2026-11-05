@@ -13,8 +13,6 @@ import { cities, type DestinationId } from '../../cities';
 import { stageSky } from '../../data/stageSky';
 import {
   $openTooltip,
-  $touchNudge,
-  claimTouchNudge,
   markInteracted,
   setFocusHandler,
   setAmbientActive,
@@ -79,10 +77,6 @@ const PINCH_RAISE_PER_LOG = 1.3;
 const FOCUS_SECONDS = 0.55;
 /** Dive into a clicked city: camera distance reached (globe radii). The `near` plane (0.1) clips the surface below ~1.12. */
 const DIVE_DISTANCE = 1.15;
-/** Touch nudge: how far the globe swings (radians), how long it takes, and how long it waits after the cities appear. */
-const NUDGE_ANGLE = 10 * (Math.PI / 180);
-const NUDGE_SECONDS = 1.5;
-const NUDGE_DELAY_SECONDS = 1.6;
 /** Wheel: how much of the rest-to-raised range one pixel of delta covers (wide stacked layout). */
 const WHEEL_RAISE_PER_PIXEL = 0.0012;
 /** Other layouts: the zoom scale (1 = the usual framing) the wheel and the pinch may reach, and how fast it follows. */
@@ -143,9 +137,8 @@ export function createStage(host: StageHost): Stage {
   /** The first activation plays the intro; coming back from a city does not repeat it. */
   let introPlayed = false;
   let zoomScaleTarget = 1;
-  /** Seconds into the touch nudge (negative while it waits); null when none is pending. */
-  let nudgeElapsed: number | null = null;
-  let nudgeAngle = 0;
+  /** Seconds of rest the auto-rotation gets for free when the intro ends, so it starts turning right away; any activity drops it. */
+  let introHeadStart = 0;
   let focusTurn: {
     fromYaw: number;
     toYaw: number;
@@ -186,8 +179,6 @@ export function createStage(host: StageHost): Stage {
       tilt = Math.min(MAX_TILT, Math.max(MIN_TILT, tilt + deltaPitch));
     },
     onGrab: () => {
-      nudgeElapsed = null; // the user found it by themselves
-      nudgeAngle = 0;
       spinElapsed = SPIN_SECONDS; // the user takes over: keep the yaw they have
       look.exposure = DEFAULT_PLASTER.exposure;
       markInteracted();
@@ -230,13 +221,13 @@ export function createStage(host: StageHost): Stage {
   }
 
   function applyRotation() {
-    globe.rotation.set(tilt - restTiltOffset(), yaw + nudgeAngle, 0);
+    globe.rotation.set(tilt - restTiltOffset(), yaw, 0);
     globe.updateMatrixWorld(true);
   }
 
   function publishHotspots() {
     if (!active) return;
-    const rotation = rotationMatrix(tilt - restTiltOffset(), yaw + nudgeAngle);
+    const rotation = rotationMatrix(tilt - restTiltOffset(), yaw);
     const introRunning = spinElapsed < SPIN_SECONDS;
     const screens: HotspotScreen[] = [];
     hotspotPoints.forEach((point, id) => {
@@ -244,7 +235,7 @@ export function createStage(host: StageHost): Stage {
       screens.push({ id: id as HotspotScreen['id'], x, y, visible: visible && !introRunning });
     });
     setHotspots(screens);
-    const center = viewCenter(tilt - restTiltOffset(), yaw + nudgeAngle);
+    const center = viewCenter(tilt - restTiltOffset(), yaw);
     setViewCenter(center.lat, center.lon);
   }
 
@@ -257,8 +248,7 @@ export function createStage(host: StageHost): Stage {
     if (interactive || !active || spinElapsed < SPIN_SECONDS || dollyElapsed < DOLLY_SECONDS) return;
     interactive = true;
     controls.attach();
-    const touch = window.matchMedia('(pointer: coarse)').matches;
-    if (touch && !prefersReducedMotion() && claimTouchNudge()) nudgeElapsed = -NUDGE_DELAY_SECONDS;
+    introHeadStart = AUTO_ROTATE.delay;
   }
 
   /** The intro starts a bit farther out than the settled framing and moves in. */
@@ -290,6 +280,7 @@ export function createStage(host: StageHost): Stage {
   };
 
   const wake = () => {
+    introHeadStart = 0;
     lastActivityAt = performance.now();
     host.invalidate();
   };
@@ -327,7 +318,7 @@ export function createStage(host: StageHost): Stage {
 
     const introDone = spinElapsed >= SPIN_SECONDS && dollyElapsed >= DOLLY_SECONDS;
     if (introDone && diveAmount === 0 && !controls.isDragging && !focusTurn && !$openTooltip.get()) {
-      yaw += autoRotationSpeed(idleSeconds, AUTO_ROTATE) * deltaSeconds;
+      yaw += autoRotationSpeed(idleSeconds + introHeadStart, AUTO_ROTATE) * deltaSeconds;
     }
 
     if (policy.shootingStars) {
@@ -387,6 +378,7 @@ export function createStage(host: StageHost): Stage {
       active = true;
       ambientAllowed = !prefersReducedMotion();
       lastActivityAt = performance.now();
+      introHeadStart = 0;
       ambientTime = 0;
       pointer.x = pointer.y = pointer.targetX = pointer.targetY = 0;
       stars.setParallax(0, 0);
@@ -466,17 +458,6 @@ export function createStage(host: StageHost): Stage {
       }
 
       enableInteractionWhenIntroEnds();
-      if (nudgeElapsed !== null) {
-        nudgeElapsed += deltaSeconds;
-        animating = true;
-        if (nudgeElapsed >= 0 && !$touchNudge.get()) $touchNudge.set(true);
-        const progress = Math.min(Math.max(nudgeElapsed / NUDGE_SECONDS, 0), 1);
-        nudgeAngle = NUDGE_ANGLE * Math.sin(progress * Math.PI);
-        if (progress >= 1) {
-          nudgeElapsed = null;
-          nudgeAngle = 0;
-        }
-      }
       if (controls.update(deltaSeconds)) animating = true;
       if (updateAmbient(deltaSeconds)) animating = true;
 
@@ -507,7 +488,7 @@ export function createStage(host: StageHost): Stage {
         const { centerX, centerY } = currentLayout();
         return { centerX, centerY };
       }
-      const { x, y } = projectToScreen(point, rotationMatrix(tilt - restTiltOffset(), yaw + nudgeAngle), camera);
+      const { x, y } = projectToScreen(point, rotationMatrix(tilt - restTiltOffset(), yaw), camera);
       return { centerX: x, centerY: y };
     },
 
@@ -519,8 +500,6 @@ export function createStage(host: StageHost): Stage {
       focusTurn?.done();
       focusTurn = null;
       controls.stopCoasting();
-      nudgeElapsed = null;
-      nudgeAngle = 0;
       introPlayed = true;
       look.exposure = DEFAULT_PLASTER.exposure;
       spinElapsed = SPIN_SECONDS;

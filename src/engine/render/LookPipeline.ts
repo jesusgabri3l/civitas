@@ -2,7 +2,7 @@ import {
   Color,
   DepthTexture,
   DoubleSide,
-  FloatType,
+  Fog,
   HalfFloatType,
   LinearFilter,
   NearestFilter,
@@ -127,7 +127,8 @@ export class LookPipeline {
     this.gbufferTarget = null;
     if (useGBuffer) {
       this.gbufferTarget = new WebGLRenderTarget(width, height, {
-        type: this.supportsFloatTarget ? FloatType : HalfFloatType,
+        // Half is enough: normals in 0..1 and a relative depth test (6% jumps), and it halves the bandwidth of the pass.
+        type: HalfFloatType,
         minFilter: NearestFilter,
         magFilter: NearestFilter,
         generateMipmaps: false,
@@ -135,11 +136,45 @@ export class LookPipeline {
     }
   }
 
+  /**
+   * Draws a stage once off screen (scene and G-buffer passes, no final pass, nothing on the canvas) so its geometry,
+   * textures, shadow map and shader variants are on the GPU before it takes the screen.
+   */
+  warm(scene: Scene, camera: PerspectiveCamera, settings: PlasterSettings) {
+    this.drawScene(scene, camera, settings);
+    this.renderer.setRenderTarget(null);
+  }
+
   render(scene: Scene, camera: PerspectiveCamera, settings: PlasterSettings, transition: TransitionFrame) {
+    const sceneTarget = this.drawScene(scene, camera, settings);
+    const renderer = this.renderer;
+
+    this.look.update({
+      color: sceneTarget.texture,
+      gbuffer: this.gbufferTarget?.texture ?? null,
+      depth: sceneTarget.depthTexture,
+      screenSize: this.screenSize,
+      pixelRatio: renderer.getPixelRatio(),
+      tanHalfFov: Math.tan((camera.fov * Math.PI) / 360),
+      near: camera.near,
+      far: camera.far,
+      fog: scene.fog instanceof Fog ? { near: scene.fog.near, far: scene.fog.far } : null,
+      settings,
+    });
+
+    renderer.setRenderTarget(null);
+    this.quad.material = this.look.material;
+    this.quad.render(renderer);
+
+    if (transition.capture !== null) this.snapshots.capture(transition.capture);
+    if (transition.overlay !== null) this.snapshots.draw(transition.overlay, transition.opacity, transition.scale, transition.center, transition.reveal, transition.revealInside, transition.blur);
+  }
+
+  /** Scene pass and (when the tier allows) the G-buffer pass. Returns the scene target. */
+  private drawScene(scene: Scene, camera: PerspectiveCamera, settings: PlasterSettings): WebGLRenderTarget {
     if (!this.sceneTarget) this.resize();
     const sceneTarget = this.sceneTarget as WebGLRenderTarget;
     const renderer = this.renderer;
-
     renderer.info.reset();
     camera.layers.enable(SKY_LAYER);
     renderer.setRenderTarget(sceneTarget);
@@ -165,24 +200,7 @@ export class LookPipeline {
       renderer.setClearColor(this.clearColor, clearAlpha);
     }
 
-    this.look.update({
-      color: sceneTarget.texture,
-      gbuffer: this.gbufferTarget?.texture ?? null,
-      depth: sceneTarget.depthTexture,
-      screenSize: this.screenSize,
-      pixelRatio: renderer.getPixelRatio(),
-      tanHalfFov: Math.tan((camera.fov * Math.PI) / 360),
-      near: camera.near,
-      far: camera.far,
-      settings,
-    });
-
-    renderer.setRenderTarget(null);
-    this.quad.material = this.look.material;
-    this.quad.render(renderer);
-
-    if (transition.capture !== null) this.snapshots.capture(transition.capture);
-    if (transition.overlay !== null) this.snapshots.draw(transition.overlay, transition.opacity, transition.scale, transition.center, transition.reveal, transition.revealInside, transition.blur);
+    return sceneTarget;
   }
 
   dispose() {

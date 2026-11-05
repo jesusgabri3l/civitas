@@ -2,15 +2,16 @@
 @use '../abstracts/variables' as *;
 @use '../abstracts/mixins' as *;
 
-$globe-in-delay: 1.3s;
-$globe-in-duration: 0.7s;
+// Within the 1.2 s trip home (EXIT_SECONDS). The delay is also when the pieces start to answer (TheOverlay: GLOBE_USABLE_MS).
+$globe-in-delay: 0.8s;
+$globe-in-duration: 0.4s;
 
 // The overlay itself adds no box: every piece is fixed to the viewport.
 .the-overlay {
   display: contents;
 
   // Globe pieces share one wrapper (no box either) so they can come in together when a trip ends on the globe: they fade in
-  // at the end of the closing circle, once it has done its work (the exit lasts 2 s: delay + duration stay under it).
+  // at the end of the closing circle, once it has done its work (the exit lasts 1.2 s: delay + duration stay under it).
   &__globe {
     display: contents;
   }
@@ -24,6 +25,16 @@ $globe-in-duration: 0.7s;
   // own entrance animations (the hint, the coordinates), declared later.
   &__globe.the-overlay__globe-leave-active > * {
     animation: the-overlay-globe-out 0.6s ease-out forwards;
+  }
+}
+
+// Arrived with no trip: no entrance at all.
+.the-overlay__globe--instant,
+.the-overlay__globe--instant * {
+  &,
+  &::before,
+  &::after {
+    animation: none !important;
   }
 }
 

@@ -26,9 +26,18 @@ export function startStoryScroll(): () => void {
   const mountedCity = () => (root.dataset.storyCity as DestinationId | undefined) ?? null;
   const lockScroll = () => (html.dataset.scroll = 'locked');
   const unlockScroll = () => (html.dataset.scroll = 'free');
-  const hideStory = () => delete root!.dataset.visible;
-  const showStory = () => (root!.dataset.visible = '');
+  // Hidden means out of reach too: `inert` takes it out of clicks, hover, focus and text selection while it fades out or waits.
+  const hideStory = () => {
+    delete root!.dataset.visible;
+    root!.inert = true;
+  };
+  const showStory = () => {
+    root!.dataset.visible = '';
+    root!.inert = false;
+  };
   const scrollToTop = () => window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+
+  let mounting = 0;
 
   function killTriggers() {
     building++;
@@ -37,6 +46,7 @@ export function startStoryScroll(): () => void {
   }
 
   function unmount() {
+    mounting++;
     killTriggers();
     root!.replaceChildren();
     delete root!.dataset.storyCity;
@@ -44,8 +54,12 @@ export function startStoryScroll(): () => void {
 
   async function mount(city: DestinationId) {
     unmount();
+    const run = ++mounting;
     try {
-      root!.innerHTML = await loadStoryHtml(city);
+      const html = await loadStoryHtml(city);
+      // A newer mount or an unmount came in while the story loaded.
+      if (run !== mounting) return;
+      root!.innerHTML = html;
       root!.dataset.storyCity = city;
     } catch (error) {
       console.error(`Could not load the story of "${city}".`, error);

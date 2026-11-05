@@ -97,17 +97,6 @@ export async function diveIntoCity(city: DestinationId): Promise<void> {
   await focusCity(city, TURN_OVERLAP_SECONDS);
 }
 
-/** A one-time interaction hint on touch devices (the globe nudges, the "Drag" pill pulses). */
-export const $touchNudge = atom(false);
-let nudgeClaimed = false;
-
-/** true the first time it is asked, false after: the nudge plays once per visit. */
-export function claimTouchNudge(): boolean {
-  if (nudgeClaimed) return false;
-  nudgeClaimed = true;
-  return true;
-}
-
 let hideTimer: ReturnType<typeof setTimeout> | undefined;
 
 export function requestPreload(city: DestinationId) {
@@ -158,7 +147,5 @@ export function resetGlobeStoreForTests() {
   $viewCenter.set({ lat: 43, lon: 13 });
   $ambientActive.set(true);
   $hasInteracted.set(false);
-  $touchNudge.set(false);
-  nudgeClaimed = false;
   $globeLayout.set({ centerX: 0.7, centerY: 0.5, height: 0.9 });
 }

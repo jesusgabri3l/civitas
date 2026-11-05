@@ -48,12 +48,26 @@ function hideCityText() {
 // The globe's own text and controls are mounted as the trip home starts and fade in under the closing circle, so they are
 // already there when it ends. A page that opens on the globe never sets this: it keeps its first-visit entrance.
 const arrivingFromCity = ref(false);
+// Back on a touch screen: the globe is there with no trip, so its pieces skip every entrance (typing, fades).
+const arrivedInstantly = ref(false);
+watch(appState, (next, previous) => {
+  if (next.kind !== 'globe') arrivedInstantly.value = false;
+  else if (previous.kind === 'monument' || previous.kind === 'info') arrivedInstantly.value = true;
+});
 /** Same as `the-overlay-globe-out` in _overlay-brand.scss. */
 const GLOBE_LEAVE_MS = 600;
 const showGlobeContent = computed(() => onGlobe.value || leavingToGlobe.value);
 
+/** Same as `$globe-in-delay` in _overlay-brand.scss: on the way home the globe's pieces answer as soon as they show. */
+const GLOBE_USABLE_MS = 800;
+const usableEarly = ref(false);
+let usableTimer: ReturnType<typeof setTimeout> | undefined;
+
 watch(leavingToGlobe, (leaving) => {
+  clearTimeout(usableTimer);
+  usableEarly.value = false;
   if (leaving) {
+    usableTimer = setTimeout(() => (usableEarly.value = true), GLOBE_USABLE_MS);
     arrivingFromCity.value = true;
     fadeOutCityText();
     return;
@@ -63,9 +77,10 @@ watch(leavingToGlobe, (leaving) => {
   showCityText(); // the trip turned back to the city
 });
 
-// Settled in a city: the next arrival at the globe gets its entrance again.
+// Settled anywhere: the entrance is over. Left on, it replayed (0.8 s hidden + fade) on every piece mounted later, like the
+// index panel opened after coming back from a city.
 watch(onGlobe, (isGlobe) => {
-  if (!isGlobe && !travelling.value) arrivingFromCity.value = false;
+  if (isGlobe || !travelling.value) arrivingFromCity.value = false;
 });
 
 // A tooltip must not wait for us when we come back to the globe.
@@ -83,8 +98,8 @@ watch(onGlobe, (isGlobe) => {
     <Transition name="the-overlay__globe" :duration="{ enter: 0, leave: GLOBE_LEAVE_MS }">
       <div
         v-if="showGlobeContent"
-        :class="['the-overlay__globe', { 'the-overlay__globe--arriving': arrivingFromCity }]"
-        :inert="!onGlobe"
+        :class="['the-overlay__globe', { 'the-overlay__globe--arriving': arrivingFromCity, 'the-overlay__globe--instant': arrivedInstantly }]"
+        :inert="!onGlobe && !usableEarly"
       >
         <TheOverlayHeadline />
         <TheOverlayCoordinates />

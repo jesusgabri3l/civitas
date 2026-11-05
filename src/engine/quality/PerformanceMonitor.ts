@@ -51,13 +51,21 @@ export class PerformanceMonitor {
 
 export type QualityVerdict = 'down' | 'up' | null;
 
+/** Safari in low-power mode locks rAF at 30 fps: a steady ~33 ms interval that no tier can fix. */
+const CAPPED_FRAME_MS = 1000 / 30;
+const nearCap = (frameMs: number) => Math.abs(frameMs - CAPPED_FRAME_MS) < 2.5;
+
 /**
  * Asks for a lower tier after `downWindows` consecutive snapshots below `minFps`, and for a higher one after `upWindows`
  * consecutive snapshots at or above `upFps` (a hitch, a busy tab or a blurred overlay no longer costs the quality for good).
+ * Before dropping a tier the caller tries a lighter render scale (`noteSoftened`): if the frame time then stays at the 30 fps
+ * cap, the screen is capped (not the GPU) and the governor stops asking for lower tiers.
  */
 export class QualityGovernor {
   private slowWindows = 0;
   private fastWindows = 0;
+  private softenedMs = 0;
+  private capped = false;
 
   constructor(
     private readonly minFps = 28,
@@ -66,12 +74,22 @@ export class QualityGovernor {
     private readonly upWindows = 16,
   ) {}
 
-  judge({ fps }: PerformanceSnapshot): QualityVerdict {
-    this.slowWindows = fps < this.minFps ? this.slowWindows + 1 : 0;
+  /** The caller lightened the render scale while frames took `frameMs`: the next slow verdict tells if that helped. */
+  noteSoftened(frameMs: number) {
+    this.softenedMs = frameMs;
+    this.reset();
+  }
+
+  judge({ fps, frameMs }: PerformanceSnapshot): QualityVerdict {
+    // Under a cap only frames clearly slower than it count as slow.
+    const slow = this.capped ? frameMs > CAPPED_FRAME_MS * 1.3 : fps < this.minFps;
+    this.slowWindows = slow ? this.slowWindows + 1 : 0;
     this.fastWindows = fps >= this.upFps ? this.fastWindows + 1 : 0;
     if (this.slowWindows >= this.downWindows) {
+      const stillAtCap = this.softenedMs > 0 && frameMs >= this.softenedMs * 0.9 && nearCap(frameMs);
       this.reset();
-      return 'down';
+      if (stillAtCap) this.capped = true;
+      return stillAtCap ? null : 'down';
     }
     if (this.fastWindows >= this.upWindows) {
       this.reset();
@@ -83,5 +101,12 @@ export class QualityGovernor {
   reset() {
     this.slowWindows = 0;
     this.fastWindows = 0;
+  }
+
+  /** After a tier change everything measured so far is about another setup. */
+  resetAll() {
+    this.reset();
+    this.softenedMs = 0;
+    this.capped = false;
   }
 }

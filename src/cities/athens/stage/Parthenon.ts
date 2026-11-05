@@ -19,6 +19,7 @@ import { createToonPlaster, type MonumentModel } from '../../../engine/stages/sh
 import { ACCENT, BASE_Y, DRUMS, EXPLODE_LIFT, INTACT, PAINT, PARTHENON_MODEL, PLASTER, TINT, type AthensState } from './athensConfig';
 import { deriveDimensions } from './parthenonDimensions';
 import { createRandom } from '../../../engine/utils/random';
+import { yieldToMain } from '../../../engine/utils/yieldToMain';
 
 /** What happens to a piece in the 1687 ruin. */
 type RuinRule =
@@ -122,14 +123,20 @@ export class Parthenon implements MonumentModel<AthensState> {
   /** Part tinted toward the accent (Explore chapter). */
   private highlight: AthensPart | null = null;
 
-  constructor(seed = 7) {
+  private constructor() {
     this.root.name = 'parthenon';
-    this.buildPieces(seed);
-    this.sets.forEach((set, index) => this.root.add(set.build(this.plaster.material, `parthenon-${index}`)));
-    this.setState(INTACT);
   }
 
-  private buildPieces(seed: number) {
+  /** Builds in slices (blocks, drums, pediments), handing the main thread back between them. */
+  static async create(seed = 7) {
+    const model = new Parthenon();
+    await model.buildPieces(seed);
+    model.sets.forEach((set, index) => model.root.add(set.build(model.plaster.material, `parthenon-${index}`)));
+    model.setState(INTACT);
+    return model;
+  }
+
+  private async buildPieces(seed: number) {
     const d = deriveDimensions(PARTHENON_MODEL);
     const rnd = createRandom(seed); // same rubble and broken columns on every visit
     const top = BASE_Y + d.stylobateTop; // stylobate surface
@@ -269,6 +276,7 @@ export class Parthenon implements MonumentModel<AthensState> {
       });
     }
 
+    await yieldToMain();
     // ---------- Column drums: four lathes, one instanced mesh each ----------
     const columns: { x: number; z: number; restorable: boolean; keep: number }[] = [];
     for (const side of [-1, 1]) {
@@ -325,6 +333,7 @@ export class Parthenon implements MonumentModel<AthensState> {
       });
     }
 
+    await yieldToMain();
     // ---------- Pediments: a triangular prism at each end, the tympanum a shade darker ----------
     const triangle = (half: number, height: number) => {
       const shape = new Shape();

@@ -10,7 +10,7 @@ export function createStage(host: StageHost): Stage {
     env: PARIS_ENV,
     track: PARIS_TRACK,
     seed: SEED,
-    createModel: () => new EiffelTower(SEED),
+    createModel: () => EiffelTower.create(SEED),
     rest: REST,
     warmUp: WARM_UP,
     stateFor,

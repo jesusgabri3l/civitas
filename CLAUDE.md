@@ -25,5 +25,6 @@ Astro 5 (estático + adaptador Vercel para `/api/suggest`) · TypeScript · Thre
 - **SEO obligatorio en cada monumento nuevo, como fase aparte**: se hace solo después de que Jesús apruebe la página construida (fase C del checklist, ART-DIRECTION §7): title, description, OG en JPG y presencia en sitemap y JSON-LD. Una ciudad sin eso no está terminada.
 - Colores y fuentes solo desde tokens: `src/styles/abstracts/_variables.scss` (CSS) y `src/engine/stages/globe/palette.ts` (globo). Los colores y fuentes de cada ciudad viven solo en `theme` de `src/cities/<ciudad>/meta.ts`: de ahí salen el CSS (`--city-*`, emitido por `TheLayout`) y el 3D (`stage/<ciudad>Config.ts`).
 - Modelos 3D 100 % en código, con instancing y presupuesto de draw calls (sección 6 de `ART-DIRECTION.md`).
+- Nada se queda pegado entre viajes globo ↔ ciudad: las clases de entrada se quitan al asentar el estado, todo lo que se prende se apaga en `deactivate`/`onBeforeUnmount` y las cargas async llevan token de generación (ART-DIRECTION §6, "Estado y limpieza").
 - La referencia de página y modelo es Atenas (`src/cities/athens/`); el marco común está en `src/engine/stages/shared/monument.ts`. Ver la tabla de la sección 6 de `ART-DIRECTION.md`.
 - "Suggest a monument": formulario + `/api/suggest` (única ruta no prerenderizada). Ya en producción; credenciales y variables en `docs/SUGGEST-SETUP.md`.

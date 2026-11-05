@@ -1,6 +1,11 @@
+<script lang="ts">
+// Module level: the staggered entrance plays once per visit, not on every return to the globe.
+let enteringStarted = false;
+</script>
+
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue';
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, ref, watch } from 'vue';
 import { cities, type DestinationId } from '../cities';
 import { $appState } from '../state/appStore';
 import { navigate } from '../state/router';
@@ -28,7 +33,7 @@ const appState = useStore($appState);
 const travelling = computed(() => appState.value.kind === 'transitioning');
 
 const entering = ref(false);
-let enteringStarted = false;
+let enteringTimer: ReturnType<typeof setTimeout> | undefined;
 // The first time cities become visible they come in one after the other.
 watch(
   hotspots,
@@ -36,10 +41,11 @@ watch(
     if (enteringStarted || !items.some((item) => item.visible)) return;
     enteringStarted = true;
     entering.value = true;
-    setTimeout(() => (entering.value = false), ENTERING_MS);
+    enteringTimer = setTimeout(() => (entering.value = false), ENTERING_MS);
   },
   { immediate: true },
 );
+onBeforeUnmount(() => clearTimeout(enteringTimer));
 
 const isOpen = (id: DestinationId) => openTooltip.value?.city === id;
 const isDimmed = (id: DestinationId) => Boolean(openTooltip.value) && !isOpen(id);

@@ -21,6 +21,7 @@ import {
 } from 'three';
 import { SKY_LAYER } from '../../../engine/render/LookPipeline';
 import { createRandom } from '../../../engine/utils/random';
+import { yieldToMain } from '../../../engine/utils/yieldToMain';
 import { createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
 import { EiffelDrawing } from './EiffelDrawing';
 import {
@@ -140,15 +141,15 @@ export class EiffelTower implements MonumentModel<ParisState> {
   private readonly pieces: Piece[] = [];
   private readonly bulbs: Bulb[] = [];
   private readonly plaster = createToonPlaster(PLASTER.color, PLASTER.bands);
-  private readonly barMesh: InstancedMesh;
-  private readonly bulbMesh: InstancedMesh;
+  private barMesh!: InstancedMesh;
+  private bulbMesh!: InstancedMesh;
   private readonly bulbMaterial = new MeshBasicMaterial({ color: 0xffffff, toneMapped: false, fog: false });
   private readonly bulbGeometry = new IcosahedronGeometry(1, 0);
   private readonly barGeometry = new BoxGeometry(1, 1, 1);
-  private readonly glow: Mesh<PlaneGeometry, MeshBasicMaterial>;
+  private glow!: Mesh<PlaneGeometry, MeshBasicMaterial>;
   private readonly glowTexture = createGlowTexture();
-  private readonly stars: Points<BufferGeometry, PointsMaterial>;
-  private readonly drawing: EiffelDrawing;
+  private stars!: Points<BufferGeometry, PointsMaterial>;
+  private drawing!: EiffelDrawing;
   private readonly parisMinute = new Intl.DateTimeFormat('en-GB', { timeZone: TIME_ZONE, minute: 'numeric' });
   private state: ParisState = { ...REST };
   private highlight: EiffelPart | null = null;
@@ -160,13 +161,24 @@ export class EiffelTower implements MonumentModel<ParisState> {
   private windowOpen = false;
   private hourTimer: number | null = null;
 
-  constructor(seed = SEED) {
+  private constructor() {
     this.root.name = 'eiffel-tower';
-    this.buildLattice();
-    this.buildPlatforms();
-    this.buildArches();
-    this.buildMast();
+  }
 
+  /** Builds in slices (lattice, then arches and mast, then meshes and drawing), handing the main thread back between them. */
+  static async create(seed = SEED) {
+    const model = new EiffelTower();
+    model.buildLattice();
+    await yieldToMain();
+    model.buildPlatforms();
+    model.buildArches();
+    model.buildMast();
+    await yieldToMain();
+    model.assemble(seed);
+    return model;
+  }
+
+  private assemble(seed: number) {
     this.barMesh = new InstancedMesh(this.barGeometry, this.plaster.material, this.pieces.length);
     this.barMesh.name = 'eiffel-iron';
     this.barMesh.castShadow = true;

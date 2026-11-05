@@ -3,13 +3,13 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { monumentIndex, REGIONS, type Region } from '../data/monumentIndex';
 import { searchMonuments } from '../data/monumentSearch';
 import type { DestinationId } from '../cities';
-import { diveIntoCity, hideTooltip } from '../state/globeStore';
+import { diveIntoCity, hideTooltip, requestPreload } from '../state/globeStore';
 import { navigate } from '../state/router';
 import { track } from '../state/track';
 import TheOverlaySuggest from './TheOverlaySuggest.vue';
 
 /**
- * The monument index: a way into every monument without spinning the globe. Button top right (also ⌘K / Ctrl+K), side panel with
+ * The monument index: a way into every monument without spinning the globe. Button top right, side panel with
  * search, region filter and the list, oldest first. The search is `searchMonuments` (accent- and case-insensitive; matches monument,
  * city, country, region, date and the `keywords` of each meta). Keyboard: up/down move the active row, Enter opens it, Esc closes.
  * The focus stays in the search box; the active row is announced with aria-activedescendant.
@@ -32,6 +32,14 @@ const rowId = (i: number) => `the-overlay-index-row-${i}`;
 watch([query, region], () => {
   activeIndex.value = 0;
 });
+
+// Warms the city of the row the visitor lingers on (hover or keyboard), so the click finds it ready.
+let preloadTimer: ReturnType<typeof setTimeout> | undefined;
+function preloadAfterPause(city: DestinationId | undefined) {
+  clearTimeout(preloadTimer);
+  if (city) preloadTimer = setTimeout(() => requestPreload(city), 200);
+}
+watch(activeIndex, (i) => preloadAfterPause(results.value[i]?.destination));
 
 function clearFilters() {
   query.value = '';
@@ -64,14 +72,15 @@ function onSearchKeydown(event: KeyboardEvent) {
   visit(destination);
 }
 
-let openedByShortcut = false;
+const panel = ref<HTMLElement | null>(null);
 
-async function show(byShortcut = false) {
-  openedByShortcut = byShortcut;
+async function show() {
   hideTooltip();
   open.value = true;
   await nextTick();
-  search.value?.focus();
+  // Touch: focusing the search would pop the keyboard over the list; the panel takes the focus instead.
+  if (window.matchMedia('(pointer: fine)').matches) search.value?.focus();
+  else panel.value?.focus();
 }
 
 function close() {
@@ -83,35 +92,41 @@ function close() {
 async function visit(city: DestinationId) {
   open.value = false;
   await diveIntoCity(city);
-  track('city_open', { city, from: openedByShortcut ? 'shortcut' : 'index' });
+  track('city_open', { city, from: 'index' });
   navigate(city);
 }
 
 function onKeydown(event: KeyboardEvent) {
-  if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-    event.preventDefault();
-    if (open.value) close();
-    else show(true);
-  } else if (event.key === 'Escape' && open.value) {
+  if (event.key === 'Escape' && open.value) {
     if (suggesting.value) suggesting.value = false;
     else close();
   }
 }
 
 onMounted(() => document.addEventListener('keydown', onKeydown));
-onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown));
+onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onKeydown);
+  clearTimeout(preloadTimer);
+});
 </script>
 
 <template>
   <button ref="trigger" type="button" class="the-overlay-index__trigger" aria-haspopup="dialog" :aria-expanded="open" @click="show()">
     <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="4.5" /><path d="M9.4 9.4 13 13" /></svg>
     <span>Index · {{ monumentIndex.length }} monuments</span>
-    <kbd class="the-overlay-index__kbd">⌘K</kbd>
   </button>
 
   <Transition name="the-overlay-index">
-    <div v-if="open" class="the-overlay-index" @click.self="close">
-      <aside class="the-overlay-index__panel" role="dialog" aria-modal="true" aria-labelledby="the-overlay-index-title">
+    <!-- wheel.stop: the globe listens to the wheel on the window; inside the index it only scrolls the list. -->
+    <div v-if="open" class="the-overlay-index" @click.self="close" @wheel.stop>
+      <aside
+        ref="panel"
+        class="the-overlay-index__panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="the-overlay-index-title"
+        tabindex="-1"
+      >
         <template v-if="!suggesting">
           <header class="the-overlay-index__head">
             <h2 id="the-overlay-index-title" class="the-overlay-index__title">Index</h2>
@@ -152,7 +167,6 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown));
           <p class="the-overlay-index__meta">
             <span v-if="isFiltering">{{ results.length }} of {{ monumentIndex.length }} shown</span>
             <span v-else>{{ openCount }} open · {{ monumentIndex.length - openCount }} soon</span>
-            <span>Oldest first ↓</span>
           </p>
 
           <ol v-if="results.length" id="the-overlay-index-list" class="the-overlay-index__list" role="listbox" aria-label="Monuments">
@@ -167,6 +181,7 @@ onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown));
                 :aria-selected="i === activeIndex"
                 :aria-disabled="!entry.destination"
                 @click="entry.destination && visit(entry.destination)"
+                @pointerenter="preloadAfterPause(entry.destination)"
               >
                 <span class="the-overlay-index__number">{{ pad(rankOf(entry)) }}</span>
                 <span class="the-overlay-index__names">

@@ -85,7 +85,8 @@ export class EiffelDrawing {
   private readonly front: LineSet;
   private readonly back: LineSet;
   private readonly sheet = new Group();
-  private readonly paperMaterial = new MeshBasicMaterial({ color: DRAWING.paper, transparent: true, toneMapped: false, fog: false });
+  // No depth: the light cone crosses the sheet, and with depth it showed a hard line where it cut through the paper.
+  private readonly paperMaterial = new MeshBasicMaterial({ color: DRAWING.paper, transparent: true, depthWrite: false, toneMapped: false, fog: false });
   private readonly gridMaterial = new LineBasicMaterial({ color: DRAWING.grid, transparent: true, toneMapped: false, fog: false });
 
   constructor(pieces: Piece[]) {
@@ -131,7 +132,8 @@ export class EiffelDrawing {
     this.sheet.add(paper, grid);
     this.sheet.position.copy(normal).multiplyScalar(-offset).setY(BASE_Y + 0.5);
     this.sheet.rotation.y = Math.atan2(normal.x, normal.z);
-    this.sheet.traverse((object) => object.layers.set(SKY_LAYER));
+    // The grid is air; the paper is a shape: out of the shape pass, the AO and ink of the floor behind it showed through the sheet.
+    grid.layers.set(SKY_LAYER);
   }
 
   setState(state: ParisState) {

@@ -40,9 +40,15 @@ export function urlFor(stage: StageId, info = false): string {
 
 let infoPushedByUs = false;
 
-function applyLocation({ stage, info }: RouteLocation) {
+const isTouchScreen = () => window.matchMedia?.('(pointer: coarse)').matches ?? false;
+
+function applyLocation({ stage, info }: RouteLocation, instant = false) {
   const current = $appState.get();
   if (stageOf(current) === stage && current.kind !== 'transitioning') {
+    setSettledState(stage, info);
+    return;
+  }
+  if (instant && current.kind !== 'transitioning') {
     setSettledState(stage, info);
     return;
   }
@@ -73,7 +79,9 @@ export function closeInfo(city: DestinationId) {
 function onPopState() {
   infoPushedByUs = false;
   trackPageview();
-  applyLocation(parseLocation(location.pathname, location.hash));
+  const next = parseLocation(location.pathname, location.hash);
+  // Touch back (iOS swipe or the browser button, indistinguishable): the OS already animated it, so the globe appears at once.
+  applyLocation(next, next.stage === 'globe' && isTouchScreen());
 }
 
 function onClick(event: MouseEvent) {

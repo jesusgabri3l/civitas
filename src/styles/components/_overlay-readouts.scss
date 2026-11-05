@@ -21,14 +21,6 @@
   pointer-events: none;
 }
 
-// The key word lights up once when the touch nudge plays.
-@keyframes the-overlay-hint-nudge {
-  40% {
-    color: $color-text;
-    transform: translateX(3px);
-  }
-}
-
 // Controls: a quiet list in the bottom-left corner, no pills, so the globe stays free to grab. Amber key, muted action.
 // They quiet down after a few seconds of use and come back at full strength when the user goes idle.
 .the-overlay-hint {
@@ -58,10 +50,6 @@
     display: inline-block;
     min-width: 4.2em;
     color: $color-amber;
-
-    &--nudge {
-      animation: the-overlay-hint-nudge 1.2s ease-in-out 1;
-    }
   }
 
   &--dimmed {
@@ -85,9 +73,5 @@
   .the-overlay-hint {
     animation: none;
     transition: none;
-  }
-
-  .the-overlay-hint__key--nudge {
-    animation: none;
   }
 }

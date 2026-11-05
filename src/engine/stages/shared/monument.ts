@@ -26,7 +26,7 @@ import { BeamDust } from './BeamDust';
 import { ContactShadow } from './ContactShadow';
 import { Exhibit } from './Exhibit';
 import { ExploreOrbit, type OrbitLimits } from './ExploreOrbit';
-import { createSoftPoolCookie } from './proceduralSurfaces';
+import { getSoftPoolCookie } from './proceduralSurfaces';
 import { StoryCamera, type CameraTrack } from './StoryCamera';
 
 /**
@@ -111,7 +111,8 @@ export interface MonumentDefinition<S extends Record<string, number>> {
   env: MonumentEnvironment;
   track: CameraTrack;
   seed: number;
-  createModel(): MonumentModel<S>;
+  /** Async: the model builds in slices, handing the main thread back between them. */
+  createModel(): Promise<MonumentModel<S>>;
   /** State at rest (the hero) and the state the shaders are compiled in (every kind of piece and color on screen). */
   rest: S;
   warmUp: S;
@@ -268,7 +269,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       const aimDistance = new Vector3(...lamp.position).distanceTo(new Vector3(...lamp.target));
       const spot = new SpotLight(lamp.color, lamp.intensity * aimDistance ** lamp.decay, 0, toRadians(lamp.angle), lamp.penumbra, lamp.decay);
       if (lamp.cookie && shadowsOn) {
-        cookie = createSoftPoolCookie(seed + 5);
+        cookie = getSoftPoolCookie();
         spot.map = cookie;
       }
       spot.position.set(...lamp.position);
@@ -287,7 +288,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
         scene.add(rim, rim.target);
       }
 
-      exhibit = new Exhibit(env, seed + 41);
+      exhibit = new Exhibit(env);
       scene.add(exhibit.mesh);
       if (env.contact) {
         contact = new ContactShadow(0x000000, env.contact.opacity, env.contact.width, env.contact.depth);
@@ -296,7 +297,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       }
       await yieldToMain();
 
-      model = definition.createModel();
+      model = await definition.createModel();
       model.bind?.(() => {
         if (active) wake();
       });
@@ -417,7 +418,6 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       model?.dispose();
       exhibit?.dispose();
       contact?.dispose();
-      cookie?.dispose();
       scene.clear();
       model = exhibit = contact = dust = cookie = null;
       shadowsOn = false;

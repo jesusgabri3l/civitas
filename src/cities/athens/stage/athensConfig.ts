@@ -46,7 +46,7 @@ export const ATHENS_ENV: MonumentEnvironment = {
   shadows: true,
   bias: -0.0003,
   normalBias: 0.05,
-  look: { exposure: 1.05, aoStrength: 0.6, aoRadius: 2.4, grain: 0.03, warmth: 0.15, vignette: 0.28, filmic: 0.2, outline: 0.55, outlineWidth: 1, outlineColor: 0x1b1a17 },
+  look: { exposure: 1.05, aoStrength: 0.6, aoRadius: 2.4, grain: 0.015, warmth: 0.15, vignette: 0.28, filmic: 0.2, outline: 0.55, outlineWidth: 1, outlineColor: 0x1b1a17 },
   framingX: 0.24,
 };
 

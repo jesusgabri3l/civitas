@@ -10,7 +10,7 @@ export function createStage(host: StageHost): Stage {
     env: ATHENS_ENV,
     track: ATHENS_TRACK,
     seed: SEED,
-    createModel: () => new Parthenon(SEED),
+    createModel: () => Parthenon.create(SEED),
     rest: INTACT,
     warmUp: WARM_UP,
     stateFor,

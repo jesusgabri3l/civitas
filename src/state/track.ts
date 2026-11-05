@@ -1,6 +1,6 @@
 /** Umami custom events. Safe when the script is not there (dev, blocked by an extension): it just does nothing. */
 export interface TrackEvents {
-  city_open: { city: string; from: 'globe' | 'index' | 'shortcut' | 'url' };
+  city_open: { city: string; from: 'globe' | 'index' | 'url' };
   chapter_reached: { city: string; chapter: number };
   explore_view: { city: string; view: string };
   piece_open: { city: string; piece: string };

@@ -53,6 +53,9 @@ $hit-area: 3.5rem;
 .the-overlay-hotspots {
   position: fixed;
   inset: 0;
+  // Same box as the canvas (`_stage.scss`): on iOS the canvas is 100lvh, taller than the screen while the address bar shows.
+  bottom: auto;
+  height: 100lvh;
   // Below the tooltip card (z-index 4); the card has no pointer events with a mouse, so it never blocks a neighbor.
   z-index: 3;
   pointer-events: none;

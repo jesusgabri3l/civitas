@@ -8,7 +8,7 @@ const textureKeys = [
 export function disposeMaterial(material: Material, disposedTextures: Set<Texture> = new Set()) {
   for (const key of textureKeys) {
     const texture = (material as unknown as Record<string, Texture | null | undefined>)[key];
-    if (texture instanceof Texture && !disposedTextures.has(texture)) {
+    if (texture instanceof Texture && !texture.userData.shared && !disposedTextures.has(texture)) {
       disposedTextures.add(texture);
       texture.dispose();
     }

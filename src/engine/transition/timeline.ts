@@ -26,8 +26,8 @@ export interface TransitionSample {
 }
 
 /** Whole trip lengths. Tuned by eye. */
-export const ENTER_SECONDS = 2.0;
-export const EXIT_SECONDS = 2.0;
+export const ENTER_SECONDS = 1.2;
+export const EXIT_SECONDS = 1.2;
 export const FADE_SECONDS = 0.3;
 
 /** Progress at which the city takes the screen. The globe is still diving; its snapshot carries on from here. */

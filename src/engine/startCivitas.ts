@@ -10,6 +10,7 @@ import { preloadStory } from '../story/storyContent';
 import { startStoryScroll } from '../story/storyScroll';
 import type { QualityTier } from './quality/qualityTier';
 import { Engine } from './Engine';
+import { warmProceduralSurfaces } from './stages/shared/proceduralSurfaces';
 
 const tiers: QualityTier[] = ['low', 'medium', 'high'];
 
@@ -65,6 +66,7 @@ export async function startCivitas(canvas: HTMLCanvasElement) {
     return;
   }
   root?.classList.add('the-stage--ready');
+  warmProceduralSurfaces();
 
   // Opening a globe card (or focusing a city in the list) warms that city's stage before the user commits.
   bindPreload((city) => Promise.all([engine.preload(city), preloadStory(city)]));
@@ -104,7 +106,9 @@ export async function startCivitas(canvas: HTMLCanvasElement) {
   $targetStage.subscribe((target) => {
     if (target === shownStage) return;
     shownStage = target;
-    void engine.goTo(target).then((completed) => {
+    // A target that changed while nothing is "transitioning" was a jump (back on a touch screen): no trip.
+    const jump = $appState.get().kind !== 'transitioning';
+    void engine.goTo(target, jump).then((completed) => {
       if (completed) settleTransition(target);
     });
   });

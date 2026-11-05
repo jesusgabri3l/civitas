@@ -16,7 +16,7 @@ export interface AutoRotateOptions {
   ramp: number;
 }
 
-export const AUTO_ROTATE: AutoRotateOptions = { speed: 0.008, delay: 5, ramp: 2 };
+export const AUTO_ROTATE: AutoRotateOptions = { speed: 0.017, delay: 5, ramp: 2 };
 
 /** Auto-rotation speed after `restSeconds` without interaction: zero, then a smooth ramp. */
 export function autoRotationSpeed(restSeconds: number, { speed, delay, ramp }: AutoRotateOptions = AUTO_ROTATE): number {

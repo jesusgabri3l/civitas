@@ -164,6 +164,14 @@ opuesto. Contenido del sitio en inglés; datos históricos verificados con fuent
 - Tiers de calidad (`qualityTier.ts`): `low` sin sombras ni polvo; `medium` sombras 1024; `high` sombras 2048 y MSAA.
 - Render bajo demanda; sombras estáticas que se redibujan solo cuando algo se mueve.
 - Carga partida con `yieldToMain` y todo compilado antes de `activate` (el estado `warmUp` pone en pantalla cada tipo de pieza y color para que nada recompile después).
+- **La maqueta se construye por partes**: `createModel` es async y el modelo expone `static async create` con `await yieldToMain()` entre grupos de piezas (copiar `Colosseum.ts`, `Parthenon.ts` o `EiffelTower.ts`). Un modelo que se arma de un tirón congela el hover y el índice mientras carga, sobre todo en móvil. Las texturas procedurales comunes (piedra, cookie) ya están cacheadas y compartidas en `proceduralSurfaces.ts`: no generar otras por ciudad sin cachearlas igual.
+
+### Estado y limpieza (nada se queda pegado)
+
+Reglas nacidas de un bug real (nov 2026: la clase `--arriving` se quedaba puesta al volver al globo y retrasaba 1-2 s cada panel que se abría después).
+
+- **Clases de entrada**: una clase de entrada (`--arriving`, `--entering`) con selectores amplios (`> *`, `:not()`, `*`) se quita en cuanto el estado se asienta; si no, su animación se repite en cada hijo que se monte después. Un "solo la primera vez" que debe sobrevivir a que el componente se desmonte vive a nivel de módulo, no en el componente.
+- **Lo que se prende, se apaga**: todo lo que un stage o componente enciende (listener, timer, `requestAnimationFrame`, ScrollTrigger, suscripción, clase o atributo en el DOM compartido) se apaga en su `deactivate` / `onBeforeUnmount`. Toda carga async que escribe en el DOM o en el estado lleva un token de generación, para que una respuesta vieja no pise a una nueva.
 
 ### Momentos compartibles
 
@@ -207,7 +215,7 @@ construida (el SEO se hace solo después de ese tercero).
 
 7. **Carpeta de la ciudad**: `src/cities/<ciudad>/` con `meta.ts` (datos, `theme`, fecha y región del índice; `title`, `description` y `ogImage` provisionales hasta la fase C), `story.ts`, `fonts.ts` (fuente de títulos con `@fontsource`) y `stage/` (`<ciudad>Config.ts` leyendo `meta.theme`, la maqueta y `<ciudad>Stage.ts`). Copiar la forma de Atenas o París. Añadir la fila a la tabla de la sección 4. Si `stage/` importa un módulo de `three/examples/jsm/...` o de `gsap/...` que ninguna otra ciudad usa, añadirlo a `optimizeDeps.include` en `astro.config.mjs`. Si no, `npm run dev` falla con 504 (Outdated Optimize Dep) la primera vez que se entra a la ciudad.
 8. **Registro**: una línea en `src/cities/index.ts` (`cities` y `cityStageLoaders`) y otra en `src/cities/server.ts` (historia y fuentes). Quitar la fila de `soon` en `src/data/monumentIndex.ts`. La ruta, el globo, el índice (y su buscador), el tema CSS y el cielo salen solos; para que el buscador lo encuentre por nombre local o alias, añadir `keywords` en su `meta.ts` (p. ej. nombre local, otras grafías). `tests/monumentIndex.test.ts` comprueba que quedó indexada.
-9. **Revisar**: `npm run check`, `npm test`, `npm run build`; probar en escritorio, laptop (1366×768) y móvil (390×844), `prefers-reduced-motion` y teclado. Rendimiento: con la ciudad en pantalla, `__civitas.info().tier` sigue en el nivel inicial tras recorrer todos los capítulos (si baja, la maqueta se pasa del presupuesto de §6); revisar los draw calls de los 7 capítulos con `renderer.info.render.calls`; sin WebGL (Chrome con `--disable-3d-apis`), la historia se lee completa como texto sobre el fondo de la ciudad. Cambiar el brief a `construido`.
+9. **Revisar**: `npm run check`, `npm test`, `npm run build`; probar en escritorio, laptop (1366×768) y móvil (390×844), `prefers-reduced-motion` y teclado. Rendimiento: con la ciudad en pantalla, `__civitas.info().tier` sigue en el nivel inicial tras recorrer todos los capítulos (si baja, la maqueta se pasa del presupuesto de §6); revisar los draw calls de los 7 capítulos con `renderer.info.render.calls`; sin WebGL (Chrome con `--disable-3d-apis`), la historia se lee completa como texto sobre el fondo de la ciudad. Estado: ir y volver al globo 2 o 3 veces (con "← Globe", con el logo y con atrás) y comprobar que el índice abre al instante y que no quedan clases, timers ni listeners de la ciudad (§6, "Estado y limpieza"). Cambiar el brief a `construido`.
 10. **Parar y presentar la página.** ⏸ **Aprobación 3**: Jesús prueba la página con `npm run dev` y la aprueba. Hasta entonces no se toca el SEO.
 
 ### Fase C · SEO (obligatorio, después de la aprobación 3; ninguna ciudad sale sin esto)

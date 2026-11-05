@@ -1,4 +1,4 @@
-import { Vector2, WebGLRenderer } from 'three';
+import { Vector2, WebGLRenderer, type Object3D, type Scene } from 'three';
 import type { StageId } from '../state/appStore';
 import { PerformanceMonitor, QualityGovernor } from './quality/PerformanceMonitor';
 import {
@@ -19,7 +19,11 @@ import { LookPipeline, type TransitionFrame } from './render/LookPipeline';
 import type { Stage, StageHost } from './stage/Stage';
 import { StageManager } from './stage/StageManager';
 import { stageLoaders } from './stages';
+import { yieldToMain } from './utils/yieldToMain';
 import { sampleFor, secondsFor, swapAtFor, type TransitionMode, type TransitionSample } from './transition/timeline';
+
+/** Render scale tried before a tier drop. */
+const SOFT_RENDER_SCALE = 0.85;
 
 /**
  * One trip between two stages. `progress` runs 0..1 from `from` to `to`; `direction` says where it is heading now, so
@@ -113,6 +117,8 @@ export class Engine {
     const detected = isSoftwareRenderer(this.renderer.getContext()) ? 'low' : detectQualityTier(signals);
     this.tierCeiling = tierOverride ?? detected;
     this.quality = settingsForTier(this.tierCeiling, this.mobile);
+    // Shader error logs (getProgramInfoLog and friends) force a synchronous link wait: dev only.
+    this.renderer.debug.checkShaderErrors = import.meta.env.DEV;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.quality.maxPixelRatio));
     // On once for the whole app: stages that light with shadows compile with it, and the globe has no shadow light to pay for.
     this.renderer.shadowMap.enabled = true;
@@ -136,7 +142,7 @@ export class Engine {
         this.invalidate();
       },
       select: (id) => this.selectListener?.(id),
-      compile: (stage) => this.renderer.compileAsync(stage.scene, stage.camera).then(() => {}),
+      compile: (stage) => this.prepareForScreen(stage),
     };
     this.manager = new StageManager(stageLoaders, host, this.quality.maxWarmStages);
     this.manager.pin('globe'); // the hub is always one click (or Back) away: it never sleeps
@@ -171,14 +177,15 @@ export class Engine {
   /**
    * Goes to a stage. From the globe into a city (and back) the camera crosses the halo; otherwise it is a plain fade.
    * Resolves false if a newer request superseded this one. A request made mid-way turns the trip around from where it is.
+   * `instant` swaps with no trip (when nothing is travelling); a trip already under way ignores it.
    */
-  goTo(target: StageId): Promise<boolean> {
+  goTo(target: StageId, instant = false): Promise<boolean> {
     if (this.disposed) return Promise.resolve(false);
     this.waiter?.resolve(false);
     const result = new Promise<boolean>((resolve) => {
       this.waiter = { target, resolve };
     });
-    this.steerTo(target);
+    this.steerTo(target, instant);
     return result;
   }
 
@@ -197,8 +204,9 @@ export class Engine {
     this.manager.active?.setStory?.(chapter, t);
   }
 
+  /** Interest, not commitment (hover): warms the stage only if that does not put another one to sleep. */
   preload(id: StageId) {
-    return this.manager.preload(id);
+    return this.manager.preload(id, { speculative: true });
   }
 
   /** Asks for one more frame (render on demand). */
@@ -219,11 +227,32 @@ export class Engine {
     this.renderer.dispose();
   }
 
-  private steerTo(target: StageId) {
+  /** Compiles the shaders and then draws the stage once off screen, so the swap frame of a trip has nothing left to upload. */
+  private async prepareForScreen(stage: Stage) {
+    await this.renderer.compileAsync(stage.scene, stage.camera);
+    await yieldToMain();
+    if (this.disposed || this.contextLost) return;
+    const { shadowMap } = this.renderer;
+    const pendingShadowUpdate = shadowMap.needsUpdate;
+    // Draw this stage's own shadow map even if the stage on screen keeps its shadows static.
+    shadowMap.needsUpdate = true;
+    // Real aspect first: with the default one, frustum culling would skip objects that then upload at the swap.
+    stage.resize(this.aspect());
+    const restoreHidden = revealHidden(stage.scene);
+    try {
+      this.pipeline.warm(stage.scene, stage.camera, stage.look);
+    } finally {
+      restoreHidden();
+    }
+    shadowMap.needsUpdate = pendingShadowUpdate;
+  }
+
+  private steerTo(target: StageId, instant: boolean) {
     const tween = this.tween;
     if (!tween) {
       const shown = this.manager.active?.id;
       if (!shown || shown === target) return this.settleWaiter(shown);
+      if (instant) return void this.jumpTo(target);
       return this.beginTrip(shown, target);
     }
     tween.queued = null;
@@ -256,10 +285,17 @@ export class Engine {
     this.invalidate();
   }
 
-  /** Hidden tabs do not render: swap without animation. */
+  /** Swaps without animation (hidden tab, or a back gesture that already animated). The stage arrives at rest, as a trip would leave it. */
   private async jumpTo(target: StageId) {
+    const from = this.manager.active?.id;
     try {
-      this.showStage(await this.manager.activate(target));
+      const stage = await this.manager.activate(target);
+      if (from && from !== target) {
+        if (target === 'globe') stage.restFor?.(from);
+        stage.setExit?.(0, from);
+        stage.setEntry?.(1, from);
+      }
+      this.showStage(stage);
     } catch (error) {
       console.error(`Could not load the "${target}" scene.`, error);
     }
@@ -335,7 +371,9 @@ export class Engine {
     const tween = this.tween;
     if (!tween) return false;
 
-    const step = tween.primed ? (tween.direction * delta * this.tripTimeScale) / secondsFor(tween.mode) : 0;
+    // Entering: the dive does not start until the city is ready, so the visible frames never carry its loading work.
+    const waitingForCity = tween.mode === 'enter' && tween.direction === 1 && tween.progress === 0 && !this.manager.isReady(tween.to);
+    const step = tween.primed && !waitingForCity ? (tween.direction * delta * this.tripTimeScale) / secondsFor(tween.mode) : 0;
     tween.primed = true;
     let next = Math.min(1, Math.max(0, this.scrubTo ?? tween.progress + step));
     this.scrubTo = null;
@@ -457,7 +495,14 @@ export class Engine {
     if (!snapshot || this.tween || this.tierLocked) return;
     const verdict = this.governor.judge(snapshot);
     const { tier } = this.quality;
-    if (verdict === 'down' && tier !== 'low') {
+    if (verdict === 'down' && tier !== 'low' && this.quality.renderScale > SOFT_RENDER_SCALE) {
+      // Cheaper than a tier: a lighter render scale first. If frames do not improve the governor reads the cap.
+      this.governor.noteSoftened(snapshot.frameMs);
+      this.monitor.reset();
+      this.quality = { ...this.quality, renderScale: SOFT_RENDER_SCALE };
+      this.pipeline.setQuality(this.quality);
+      this.applySize(true);
+    } else if (verdict === 'down' && tier !== 'low') {
       // A climb that could not hold: stay below it from now on, so the quality does not swing back and forth.
       if (this.climbed) this.tierCeiling = lowerTier(tier);
       this.climbed = false;
@@ -470,7 +515,7 @@ export class Engine {
 
   private applyQuality(tier: QualityTier) {
     this.monitor.reset();
-    this.governor.reset();
+    this.governor.resetAll();
     this.quality = settingsForTier(tier, this.mobile);
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.quality.maxPixelRatio));
     this.manager.setMaxWarmStages(this.quality.maxWarmStages);
@@ -533,4 +578,24 @@ export class Engine {
     target.addEventListener(type, handler);
     this.cleanups.push(() => target.removeEventListener(type, handler));
   }
+}
+
+/**
+ * Shows, for one warm-up draw, the objects that start hidden (the globe's arcs, shooting star and city dots) and stops them
+ * from being culled. Otherwise their shaders compile the first time they appear, on the main thread, in the middle of the
+ * visitor's first interactions. Returns the function that puts everything back.
+ */
+function revealHidden(scene: Scene): () => void {
+  const undo: Array<() => void> = [];
+  scene.traverse((object: Object3D) => {
+    if (object.visible) return;
+    const { frustumCulled } = object;
+    object.visible = true;
+    object.frustumCulled = false;
+    undo.push(() => {
+      object.visible = false;
+      object.frustumCulled = frustumCulled;
+    });
+  });
+  return () => undo.forEach((restore) => restore());
 }

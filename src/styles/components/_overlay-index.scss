@@ -21,6 +21,8 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
   color: $color-text;
   cursor: pointer;
   pointer-events: auto;
+  // No pinch here: it would zoom the whole page (the globe only owns the gestures on its canvas).
+  touch-action: none;
   backdrop-filter: blur(6px);
   transition: border-color 0.2s ease;
 
@@ -42,16 +44,6 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
   }
 }
 
-.the-overlay-index__kbd {
-  padding: 0.1rem 0.35rem;
-  border: 1px solid rgba($color-text, 0.24);
-  border-radius: 4px;
-  color: $color-text-muted;
-  font-family: $font-mono;
-  font-size: 0.625rem;
-  letter-spacing: 0.04em;
-}
-
 @if $layout == 'stacked' {
   @media (min-aspect-ratio: 6/5) {
     .the-overlay-index__trigger {
@@ -69,8 +61,7 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
     width: $touch-target;
     justify-content: center;
 
-    span,
-    .the-overlay-index__kbd {
+    span {
       display: none;
     }
   }
@@ -88,6 +79,8 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
   z-index: 20;
   background: rgba(6, 6, 9, 0.55);
   pointer-events: auto;
+  // Only vertical scroll of the list: a pinch would zoom the whole page and leave the hub stuck zoomed in after closing.
+  touch-action: pan-y;
 
   &__panel {
     position: absolute;
@@ -106,6 +99,11 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
     background: #121218;
     color: $color-text;
     text-align: left;
+
+    // Focused on open on touch screens (see `show`): no ring for a focus nobody moved.
+    &:focus {
+      outline: none;
+    }
   }
 
   &__head {
@@ -164,6 +162,11 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
 
     &::placeholder {
       color: #8e897f;
+    }
+
+    // iOS zooms the page into any field under 16px when it is tapped, and the zoom stays after the keyboard closes.
+    @media (pointer: coarse) {
+      font-size: 1rem;
     }
 
     &:focus-visible {
@@ -414,6 +417,36 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
     &:disabled {
       opacity: 0.45;
       cursor: not-allowed;
+    }
+  }
+}
+
+// Narrow / touch: Send stays pinned at the bottom of the scrolling form, and the form is tighter.
+@media (max-aspect-ratio: 6/5), (pointer: coarse) {
+  .the-overlay-suggest {
+    gap: 0.75rem;
+
+    &__intro {
+      font-size: 0.75rem;
+      line-height: 1.45;
+    }
+
+    &__area {
+      height: 4.5rem;
+      min-height: 4.5rem;
+    }
+
+    &__check {
+      min-height: 0;
+    }
+
+    &__send {
+      position: sticky;
+      bottom: 0;
+      z-index: 1;
+      flex-shrink: 0;
+      // Panel background behind it (extended up/down) so fields never show through.
+      box-shadow: 0 -0.75rem 0 #121218, 0 0.75rem 0 #121218;
     }
   }
 }
