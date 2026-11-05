@@ -1,5 +1,12 @@
 # Suggest a monument: puesta en marcha
 
+> **Estado (4 nov 2026): ya está hecho y en producción.** Esta guía queda como referencia para rotar claves o rehacer el setup. Lo que existe:
+> - GCP `civitas-513317`: Sheets API activa, cuenta de servicio `civitas-suggest@civitas-513317.iam.gserviceaccount.com` (clave JSON id `375b4f91…`; el JSON se borró tras copiarlo a `.env.local`). Revocar: `gcloud iam service-accounts keys delete 375b4f91fadd583c67a111d2744f77f27d137387 --iam-account civitas-suggest@civitas-513317.iam.gserviceaccount.com --project civitas-513317`.
+> - Sheet `1oQpHq1sLs2szruBRJHQNjAw2a-ugX0Jajg9JbafXtRU`, compartido con la cuenta de servicio como Editor.
+> - Cloudflare Turnstile: widget con `visitcivitas.com` y `localhost`, site key `0x4AAAAAAF0D1Kx0Vt9KBlDj` (la secret solo está en Vercel).
+> - Vercel (Production): las 5 variables. `PUBLIC_TURNSTILE_SITE_KEY` como tipo `config` (Vercel la frena si se añade como secret con prefijo `PUBLIC_`).
+> - `.env.local`: Google reales + claves de **prueba** de Turnstile.
+
 Flujo: formulario (`TheOverlaySuggest.vue`) → `POST /api/suggest` (función de Vercel, `src/pages/api/suggest.ts`) → verifica Cloudflare Turnstile → añade una fila a un Google Sheet. Variables en `.env.example`.
 
 ## 1. Google Sheet y cuenta de servicio

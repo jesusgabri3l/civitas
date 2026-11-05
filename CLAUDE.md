@@ -7,11 +7,11 @@ maqueta con el scroll.
 
 - **Lee `docs/ART-DIRECTION.md` primero.** Es la fuente de verdad del diseño: capas compartidas y por ciudad, tokens, plantilla de página, dirección de arte de los modelos 3D y el checklist para añadir un monumento.
 - Si te piden "implementa <monumento>", sigue el checklist de la sección 7 de ese archivo. **Nunca elijas la identidad (fuente, colores, motivo, momento) ni la historia por tu cuenta**: propón 2 o 3 opciones en un brief (`docs/briefs/_PLANTILLA.md`) y espera la aprobación de Jesús antes de escribir código. Hay tres aprobaciones: identidad, brief completo y página construida.
-- Arquitectura y fases: `docs/PLAN.md`. Estado y pendientes: `docs/STATUS.md`. Si chocan con `ART-DIRECTION.md`, gana `ART-DIRECTION.md`.
+- **Lee `docs/STATUS.md` antes de proponer trabajo**: ahí está lo hecho (deploy, dominio, Suggest, analítica) y lo pendiente. No pidas ni rehagas lo que figura como hecho. Arquitectura y fases: `docs/PLAN.md`. Si chocan con `ART-DIRECTION.md`, gana `ART-DIRECTION.md`.
 
 ## Stack y comandos
 
-Astro 5 (estático) · TypeScript · Three · GSAP · Sass (7-1) · nanostores · isla Vue para el overlay del hub.
+Astro 5 (estático + adaptador Vercel para `/api/suggest`) · TypeScript · Three · GSAP · Sass (7-1) · nanostores · isla Vue para el overlay del hub.
 
 - `npm run dev`, `npm run check`, `npm test`, `npm run build`, `npm run preview`.
 - Imágenes OG: `npm run build && npm run og && npm run build` (el momento de cada ciudad está en `MOMENTS` de `scripts/build-og.mjs`).
@@ -26,4 +26,4 @@ Astro 5 (estático) · TypeScript · Three · GSAP · Sass (7-1) · nanostores �
 - Colores y fuentes solo desde tokens: `src/styles/abstracts/_variables.scss` (CSS) y `src/engine/stages/globe/palette.ts` (globo). Los colores y fuentes de cada ciudad viven solo en `theme` de `src/cities/<ciudad>/meta.ts`: de ahí salen el CSS (`--city-*`, emitido por `TheLayout`) y el 3D (`stage/<ciudad>Config.ts`).
 - Modelos 3D 100 % en código, con instancing y presupuesto de draw calls (sección 6 de `ART-DIRECTION.md`).
 - La referencia de página y modelo es Atenas (`src/cities/athens/`); el marco común está en `src/engine/stages/shared/monument.ts`. Ver la tabla de la sección 6 de `ART-DIRECTION.md`.
-- "Suggest a monument": formulario + `/api/suggest` (única ruta no prerenderizada). Puesta en marcha en `docs/SUGGEST-SETUP.md`.
+- "Suggest a monument": formulario + `/api/suggest` (única ruta no prerenderizada). Ya en producción; credenciales y variables en `docs/SUGGEST-SETUP.md`.

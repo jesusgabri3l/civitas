@@ -6,10 +6,10 @@ armando, desarmando y transformando su maqueta. El diseño (tipografía, color, 
 
 ## Decisiones
 
-- Astro 5 estático + TypeScript, Three r170, GSAP (ScrollTrigger), Sass (7-1), nanostores.
+- Astro 5 (estático, con adaptador `@astrojs/vercel` solo para `/api/suggest`) + TypeScript, Three r170, GSAP (ScrollTrigger), Sass (7-1), nanostores.
 - Una isla Vue para el overlay del hub (logo, titular, tooltip, controles, coordenadas, índice). Motor 3D en TS imperativo, sin R3F.
 - Rutas estáticas `/` y `/<ciudad>`: cada página prerenderiza su historia (SEO, enlaces directos) y monta la misma app. La navegación interna es SPA (pushState/popstate): al ir de una ciudad a otra el cliente trae la historia prerenderizada de la ruta y la cachea.
-- Hosting objetivo: Vercel, dominio visitcivitas.com (pendiente de crear el repo remoto y el deploy).
+- Hosting: Vercel, dominio visitcivitas.com (publicado; auto-deploy en cada push a `main`).
 - Idioma: el contenido del sitio en inglés (`<html lang="en">`, metas, aria-labels); la documentación en español.
 - Datos históricos verificados con fuente antes de publicar.
 
@@ -29,12 +29,12 @@ armando, desarmando y transformando su maqueta. El diseño (tipografía, color, 
 
 0. **Setup** — hecho.
 1. **Núcleo** (StageManager, router/store, pipeline, tiers) — hecho.
-2. **Globo** — hecho (Home con tipografía Fraunces 600, halo ámbar, índice de monumentos con UI pendiente de conectar).
+2. **Globo** — hecho (Home con tipografía Fraunces 600, halo ámbar, índice de monumentos).
 3. **Transición** globo ↔ ciudad — hecha.
-4. **Atenas** — hecha: maqueta del Partenón, 7 capítulos (despiece, armado y policromía, 1687, los mármoles, restauración) y Explore (órbita, vistas, fichas). Falta verificar los datos históricos con fuentes.
+4. **Atenas** — hecha: maqueta del Partenón, 7 capítulos (despiece, armado y policromía, 1687, los mármoles, restauración) y Explore (órbita, vistas, fichas). Datos verificados con fuentes.
 5. **Roma** — hecha: Coliseo (ART-DIRECTION §4: Cinzel, pizarra fría, rojo pompeyano; momento: el anillo completo frente a la ruina).
 6. **París** — hecha: Torre Eiffel de noche (Bodoni Moda, noche violeta, champaña; momento: el centelleo a la hora en punto con `Intl`).
-7. **Índice y comunidad** — conectar buscador y filtros del índice; backend de "Suggest a monument".
-8. **Pulido y lanzamiento** — móviles reales, deploy.
+7. **Índice y comunidad** — hecho: buscador y filtros del índice conectados; "Suggest a monument" en producción (Turnstile + Google Sheets).
+8. **Pulido y lanzamiento** — deploy hecho; faltan móviles reales, Lighthouse y las revisiones a ojo de STATUS.
 
 Después: más monumentos con el checklist de ART-DIRECTION §7 (Chichén Itzá, Machu Picchu…).
