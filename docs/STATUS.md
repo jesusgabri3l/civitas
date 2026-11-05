@@ -32,5 +32,5 @@ Fecha: 4 de noviembre de 2026. Fases en [PLAN.md](PLAN.md); diseño en [ART-DIRE
 - Ajuste visual detectado en la revisión del 4 nov 2026 (Jesús lo describe en el chat que lo corrija).
 - Globo: agrupar hotspots cercanos cuando haya muchos monumentos; girar hasta una ciudad enfocada con teclado en la cara oculta.
 - Lanzamiento: probar en móviles reales.
-- Rendimiento: ya está publicado; falta correr Lighthouse sobre el deploy en Desktop y Mobile, en `/`, `/athens`, `/rome` y `/paris`. Anotar LCP, TBT, CLS y el puntaje. Referencia (31 oct 2026, build local con CPU 6x y Slow 4G): globo listo en 3,5 s, Roma en 4,7 s; JS en gzip: globo ~213 KB (three 131 KB), ciudad ~250 KB.
+- Rendimiento y SEO (Lighthouse, PSI, auditoría): **fuera de este STATUS**, lo lleva el workflow de SEO (`seo-workflow/PLAN.md`, fase 5 Civitas). No proponerlo aquí. Referencia local (31 oct 2026, CPU 6x y Slow 4G): globo listo en 3,5 s, Roma en 4,7 s; JS gzip: globo ~213 KB (three 131 KB), ciudad ~250 KB.
 - `npm run smoke` necesita Chromium de Playwright instalado localmente.

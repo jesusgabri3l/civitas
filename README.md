@@ -21,6 +21,6 @@ Astro 5 (estático) · TypeScript · Three · GSAP · Sass (7-1) · nanostores �
 
 ## Estado
 
-Publicado en [visitcivitas.com](https://visitcivitas.com): globo, transición, Atenas, Roma, París, índice y Suggest a monument. Faltan móviles reales y Lighthouse. Detalle en [docs/STATUS.md](docs/STATUS.md).
+Publicado en [visitcivitas.com](https://visitcivitas.com): globo, transición, Atenas, Roma, París, índice y Suggest a monument. Falta probar en móviles reales. Detalle en [docs/STATUS.md](docs/STATUS.md).
 
 Para añadir un monumento: checklist de la sección 7 de [docs/ART-DIRECTION.md](docs/ART-DIRECTION.md).

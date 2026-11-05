@@ -35,6 +35,6 @@ armando, desarmando y transformando su maqueta. El diseño (tipografía, color, 
 5. **Roma** — hecha: Coliseo (ART-DIRECTION §4: Cinzel, pizarra fría, rojo pompeyano; momento: el anillo completo frente a la ruina).
 6. **París** — hecha: Torre Eiffel de noche (Bodoni Moda, noche violeta, champaña; momento: el centelleo a la hora en punto con `Intl`).
 7. **Índice y comunidad** — hecho: buscador y filtros del índice conectados; "Suggest a monument" en producción (Turnstile + Google Sheets).
-8. **Pulido y lanzamiento** — deploy hecho; revisado a ojo en desktop y responsive; faltan móviles reales y Lighthouse.
+8. **Pulido y lanzamiento** — deploy hecho; revisado a ojo en desktop y responsive; faltan móviles reales (Lighthouse/SEO lo lleva `seo-workflow`).
 
 Después: más monumentos con el checklist de ART-DIRECTION §7 (Chichén Itzá, Machu Picchu…).
