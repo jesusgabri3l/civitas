@@ -165,6 +165,7 @@ opuesto. Contenido del sitio en inglés; datos históricos verificados con fuent
 - Render bajo demanda; sombras estáticas que se redibujan solo cuando algo se mueve.
 - Carga partida con `yieldToMain` y todo compilado antes de `activate` (el estado `warmUp` pone en pantalla cada tipo de pieza y color para que nada recompile después).
 - **La maqueta se construye por partes**: `createModel` es async y el modelo expone `static async create` con `await yieldToMain()` entre grupos de piezas (copiar `Colosseum.ts`, `Parthenon.ts` o `EiffelTower.ts`). Un modelo que se arma de un tirón congela el hover y el índice mientras carga, sobre todo en móvil. Las texturas procedurales comunes (piedra, cookie) ya están cacheadas y compartidas en `proceduralSurfaces.ts`: no generar otras por ciudad sin cachearlas igual.
+- **Aire fuera del pase de tinta**: lo que es luz o aire (haz, rejillas, líneas de dibujo, neblina) va en `SKY_LAYER`; si entra al pase de forma, la tinta y el AO le dibujan bordes duros (pasó con el haz y la rejilla del boceto de París). Lo que es superficie (la hoja de papel) sí entra, con `depthWrite: false` si es transparente. Degradados como la neblina de Roma se hacen en shader, no con `CanvasTexture` (en iOS dejaba manchas).
 
 ### Estado y limpieza (nada se queda pegado)
 
