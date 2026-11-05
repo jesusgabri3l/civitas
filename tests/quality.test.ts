@@ -33,6 +33,22 @@ describe('PerformanceMonitor / QualityGovernor', () => {
     expect(monitor.recordFrame(5016)).toBeNull();
   });
 
+  it('reads long frames of a continuous run as slow, not idle', () => {
+    const monitor = new PerformanceMonitor();
+    monitor.recordFrame(1000, true);
+    const snapshot = monitor.recordFrame(1600, true);
+    expect(snapshot?.fps).toBeCloseTo(1.7, 1);
+    expect(monitor.recordFrame(5000, true)).toBeNull(); // a hidden tab still resets
+  });
+
+  it('goes straight to the floor when the device crawls', () => {
+    const governor = new QualityGovernor(30, 3, 55, 4);
+    const crawl = { fps: 2, frameMs: 600 };
+    governor.judge(crawl);
+    governor.judge(crawl);
+    expect(governor.judge(crawl)).toBe('floor');
+  });
+
   it('downgrades only after sustained slow windows', () => {
     const governor = new QualityGovernor(30, 3, 55, 4);
     const slow = { fps: 20, frameMs: 50 };

@@ -14,11 +14,18 @@ export class PerformanceMonitor {
   private lastFrameAt = 0;
   private snapshot: PerformanceSnapshot = { fps: 0, frameMs: 0 };
 
-  constructor(private readonly idleGapMs = 250) {}
+  constructor(
+    private readonly idleGapMs = 250,
+    private readonly stallGapMs = 2000,
+  ) {}
 
-  /** Returns a fresh snapshot when a window closes, otherwise null. */
-  recordFrame(now: number): PerformanceSnapshot | null {
-    if (this.lastFrameAt === 0 || now - this.lastFrameAt > this.idleGapMs) {
+  /**
+   * Returns a fresh snapshot when a window closes, otherwise null. `continuous`: the previous frame asked for this one, so a long
+   * gap is a slow frame (a saturated GPU), not rest; only a gap past `stallGapMs` (hidden tab) still resets.
+   */
+  recordFrame(now: number, continuous = false): PerformanceSnapshot | null {
+    const maxGap = continuous ? this.stallGapMs : this.idleGapMs;
+    if (this.lastFrameAt === 0 || now - this.lastFrameAt > maxGap) {
       this.reset();
       this.windowStart = now;
       this.lastFrameAt = now;
@@ -49,7 +56,11 @@ export class PerformanceMonitor {
   }
 }
 
-export type QualityVerdict = 'down' | 'up' | null;
+/** 'floor': so slow that stepping down one tier at a time would leave the visitor stuck for seconds. */
+export type QualityVerdict = 'down' | 'floor' | 'up' | null;
+
+/** Below this the governor goes straight to the lowest tier. */
+const FLOOR_FPS = 10;
 
 /** Safari in low-power mode locks rAF at 30 fps: a steady ~33 ms interval that no tier can fix. */
 const CAPPED_FRAME_MS = 1000 / 30;
@@ -89,7 +100,8 @@ export class QualityGovernor {
       const stillAtCap = this.softenedMs > 0 && frameMs >= this.softenedMs * 0.9 && nearCap(frameMs);
       this.reset();
       if (stillAtCap) this.capped = true;
-      return stillAtCap ? null : 'down';
+      if (stillAtCap) return null;
+      return fps < FLOOR_FPS ? 'floor' : 'down';
     }
     if (this.fastWindows >= this.upWindows) {
       this.reset();

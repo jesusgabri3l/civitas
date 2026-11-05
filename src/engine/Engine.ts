@@ -474,7 +474,8 @@ export class Engine {
     const stage = this.manager.active;
     if (!stage || this.disposed || this.contextLost || document.hidden) return;
 
-    const delta = this.lastFrameAt ? Math.min((now - this.lastFrameAt) / 1000, 0.1) : 1 / 60;
+    const continuous = this.lastFrameAt !== 0;
+    const delta = continuous ? Math.min((now - this.lastFrameAt) / 1000, 0.1) : 1 / 60;
     this.lastFrameAt = now;
     const tripAnimating = this.advanceTrip(delta);
     // The trip may have swapped stages: render the one on screen now.
@@ -483,19 +484,23 @@ export class Engine {
 
     this.pipeline.render(shown.scene, shown.camera, shown.look, this.transition);
     this.framesRendered += 1;
-    this.watchPerformance(now);
+    this.watchPerformance(now, continuous);
 
     if (stageAnimating || tripAnimating) this.invalidate();
     else this.lastFrameAt = 0;
   };
 
-  private watchPerformance(now: number) {
-    const snapshot = this.monitor.recordFrame(now);
+  private watchPerformance(now: number, continuous: boolean) {
+    const snapshot = this.monitor.recordFrame(now, continuous);
     // Swapping stages hitches on purpose (uploads, compiles): the governor must not read it as a slow device.
     if (!snapshot || this.tween || this.tierLocked) return;
     const verdict = this.governor.judge(snapshot);
     const { tier } = this.quality;
-    if (verdict === 'down' && tier !== 'low' && this.quality.renderScale > SOFT_RENDER_SCALE) {
+    if (verdict === 'floor' && tier !== 'low') {
+      // A saturated GPU (another app): no time to try each step. The governor climbs back up when it frees.
+      this.climbed = false;
+      this.applyQuality('low');
+    } else if (verdict === 'down' && tier !== 'low' && this.quality.renderScale > SOFT_RENDER_SCALE) {
       // Cheaper than a tier: a lighter render scale first. If frames do not improve the governor reads the cap.
       this.governor.noteSoftened(snapshot.frameMs);
       this.monitor.reset();
