@@ -80,13 +80,11 @@ function createLines(polylines: ReturnType<typeof coastlines>, radius: number, c
   return lines;
 }
 
-/** Coastlines (amber-ish, readable) and a faint graticule, both riding on the globe. */
-export function createGlobeLines(): LineSegments[] {
-  return [
-    createLines(graticule(30), 1.001, PALETTE.text, 0.1, 'globe-graticule'),
-    createLines(coastlines(), 1.002, PALETTE.text, 0.6, 'globe-coastlines'),
-  ];
-}
+/** Faint graticule riding on the globe. */
+export const createGraticule = () => createLines(graticule(30), 1.001, PALETTE.text, 0.1, 'globe-graticule');
+
+/** Coastlines (amber-ish, readable). Built apart from the graticule: the stage yields to the main thread between the two. */
+export const createCoastlines = () => createLines(coastlines(), 1.002, PALETTE.text, 0.6, 'globe-coastlines');
 
 /** The atmosphere shell is this many globe radii wide; it is thin and hugs the limb. */
 export const HALO_RADIUS = 1.09;

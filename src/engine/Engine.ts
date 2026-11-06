@@ -22,6 +22,9 @@ import { stageLoaders } from './stages';
 import { yieldToMain } from './utils/yieldToMain';
 import { sampleFor, secondsFor, swapAtFor, type TransitionMode, type TransitionSample } from './transition/timeline';
 
+/** The globe intro lasts 1.6 s; the first-load tier ramp waits this long after the first frame. */
+const INTRO_RAMP_MS = 1800;
+
 /** Render scale tried before a tier drop. */
 const SOFT_RENDER_SCALE = 0.85;
 
@@ -75,6 +78,9 @@ export class Engine {
   /** The last change was a climb: if it drops again, the ceiling stays below it. */
   private climbed = false;
   private quality: QualitySettings;
+  /** Mobile first paint: the intro runs at the low tier and this is the tier it climbs to once the intro is over (null = no ramp pending). */
+  private introRampTier: QualityTier | null = null;
+  private introRampAt = 0;
   private readonly transition: TransitionFrame = {
     capture: null,
     overlay: null,
@@ -116,7 +122,9 @@ export class Engine {
     this.renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
     const detected = isSoftwareRenderer(this.renderer.getContext()) ? 'low' : detectQualityTier(signals);
     this.tierCeiling = tierOverride ?? detected;
-    this.quality = settingsForTier(this.tierCeiling, this.mobile);
+    // The intro is the heaviest stretch of the first load: on a phone it starts cheap and the real tier comes after it.
+    if (this.mobile && !this.tierLocked && this.tierCeiling !== 'low') this.introRampTier = this.tierCeiling;
+    this.quality = settingsForTier(this.introRampTier ? 'low' : this.tierCeiling, this.mobile);
     // Shader error logs (getProgramInfoLog and friends) force a synchronous link wait: dev only.
     this.renderer.debug.checkShaderErrors = import.meta.env.DEV;
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this.quality.maxPixelRatio));
@@ -128,10 +136,10 @@ export class Engine {
       canvas,
       invalidate: () => this.invalidate(),
       ambient: () => {
-        const policy = ambientPolicyFor(this.quality.tier, this.mobile);
+        const policy = ambientPolicyFor(this.introRampTier ?? this.quality.tier, this.mobile);
         return this.ambientIdleSeconds === undefined ? policy : { ...policy, idleSeconds: this.ambientIdleSeconds };
       },
-      tier: () => this.quality.tier,
+      tier: () => this.introRampTier ?? this.quality.tier,
       pixelRatio: () => this.renderer.getPixelRatio() * this.quality.renderScale,
       useStaticShadows: (enabled) => {
         this.renderer.shadowMap.autoUpdate = !enabled;
@@ -232,6 +240,8 @@ export class Engine {
     await this.renderer.compileAsync(stage.scene, stage.camera);
     await yieldToMain();
     if (this.disposed || this.contextLost) return;
+    // First stage: nothing to swap yet, and its first real frame uploads everything anyway. Warming it would be the same work twice.
+    if (!this.manager.active) return;
     const { shadowMap } = this.renderer;
     const pendingShadowUpdate = shadowMap.needsUpdate;
     // Draw this stage's own shadow map even if the stage on screen keeps its shadows static.
@@ -477,6 +487,7 @@ export class Engine {
     const continuous = this.lastFrameAt !== 0;
     const delta = continuous ? Math.min((now - this.lastFrameAt) / 1000, 0.1) : 1 / 60;
     this.lastFrameAt = now;
+    this.climbAfterIntro(now);
     const tripAnimating = this.advanceTrip(delta);
     // The trip may have swapped stages: render the one on screen now.
     const shown = this.manager.active ?? stage;
@@ -490,10 +501,20 @@ export class Engine {
     else this.lastFrameAt = 0;
   };
 
+  /** Once the intro has played (and a trip has not started), the phone gets its detected tier back. */
+  private climbAfterIntro(now: number) {
+    if (!this.introRampTier) return;
+    if (!this.introRampAt) this.introRampAt = now + INTRO_RAMP_MS;
+    if (now < this.introRampAt && !this.tween) return;
+    const tier = this.introRampTier;
+    this.introRampTier = null;
+    this.applyQuality(tier);
+  }
+
   private watchPerformance(now: number, continuous: boolean) {
     const snapshot = this.monitor.recordFrame(now, continuous);
     // Swapping stages hitches on purpose (uploads, compiles): the governor must not read it as a slow device.
-    if (!snapshot || this.tween || this.tierLocked) return;
+    if (!snapshot || this.tween || this.tierLocked || this.introRampTier) return;
     const verdict = this.governor.judge(snapshot);
     const { tier } = this.quality;
     if (verdict === 'floor' && tier !== 'low') {

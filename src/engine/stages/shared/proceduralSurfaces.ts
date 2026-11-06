@@ -114,12 +114,17 @@ export function getSoftPoolCookie(): CanvasTexture {
 
 /** Builds both while the globe is on screen, so entering a city finds them ready. */
 export function warmProceduralSurfaces() {
-  const warm = () => {
-    getStoneTextures();
-    getSoftPoolCookie();
+  // One long task per texture instead of both in a row: each runs in its own idle slot.
+  const steps = [getStoneTextures, getSoftPoolCookie];
+  const runNext = () => {
+    steps.shift()?.();
+    if (steps.length) schedule();
   };
-  if ('requestIdleCallback' in window) window.requestIdleCallback(warm, { timeout: 4000 });
-  else setTimeout(warm, 1500);
+  const schedule = () => {
+    if ('requestIdleCallback' in window) window.requestIdleCallback(runNext, { timeout: 4000 });
+    else setTimeout(runNext, 1500);
+  };
+  schedule();
 }
 
 /**

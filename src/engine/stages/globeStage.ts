@@ -48,7 +48,8 @@ import {
 import {
   HALO_EXTENT,
   HALO_RADIUS,
-  createGlobeLines,
+  createCoastlines,
+  createGraticule,
   createGlobeMaterial,
   createGlowMaterial,
   createLimbMaterial,
@@ -56,6 +57,7 @@ import {
 import { ShootingStar } from './globe/ShootingStar';
 import { StarField } from './globe/StarField';
 import { ZoomModel } from './globe/ZoomModel';
+import { yieldToMain } from '../utils/yieldToMain';
 
 /** Intro on load: the globe comes up out of black, already almost in place (tuned to land with the headline typing). */
 const SPIN_SECONDS = 1.6;
@@ -367,7 +369,12 @@ export function createStage(host: StageHost): Stage {
 
     async load() {
       scene.background = new Color(stageSky.globe.skyColor);
-      globe.add(new Mesh(new SphereGeometry(1, 96, 64), createGlobeMaterial()), ...createGlobeLines(), arcs.group, markers.group);
+      globe.add(new Mesh(new SphereGeometry(1, 96, 64), createGlobeMaterial()), arcs.group, markers.group);
+      await yieldToMain();
+      globe.add(createGraticule());
+      await yieldToMain();
+      globe.add(createCoastlines());
+      await yieldToMain();
       globe.add(await createOceanLabels());
       scene.add(globe, glow, limb, ...stars.layers, shootingStar.mesh);
       applyRotation();
