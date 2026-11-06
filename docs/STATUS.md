@@ -36,5 +36,5 @@ Fecha: 4 de noviembre de 2026. Fases en [PLAN.md](PLAN.md); diseño en [ART-DIRE
 - Español: validar el middleware en un Preview de Vercel (cookie `lang=es`, VPN, `/es` y `/es/` sin bucle) y revisar a ojo que el español (más largo) quepa en la maqueta; tests de `/es` en router y búsqueda sin escribir.
 - Globo: agrupar hotspots cercanos cuando haya muchos monumentos; girar hasta una ciudad enfocada con teclado en la cara oculta.
 - Lanzamiento: probar en móviles reales.
-- Rendimiento y SEO (Lighthouse, PSI, auditoría): **fuera de este STATUS**, lo lleva el workflow de SEO (`seo-workflow/PLAN.md`, fase 5 Civitas). No proponerlo aquí. Referencia local (31 oct 2026, CPU 6x y Slow 4G): globo listo en 3,5 s, Roma en 4,7 s; JS gzip: globo ~213 KB (three 131 KB), ciudad ~250 KB.
+- Rendimiento y SEO: fase 5 del workflow de SEO **cerrada el 2026-11-06** (PSI 75/74, a11y 100; detalle en `seo-workflow/PLAN.md`). Solo queda la medición de prod del 2026-11-30. No proponerlo aquí. Referencia local (31 oct 2026, CPU 6x y Slow 4G): globo listo en 3,5 s, Roma en 4,7 s; JS gzip: globo ~213 KB (three 131 KB), ciudad ~250 KB.
 - `npm run smoke` necesita Chromium de Playwright instalado localmente.
