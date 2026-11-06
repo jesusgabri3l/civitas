@@ -14,11 +14,11 @@ Antes del lanzamiento también hace falta **agrupar los hotspots del globo** (Eu
 | 3 | Europa | Torre Eiffel | París | Hecho |
 | 4 | EE. UU. (este) | Estatua de la Libertad | Nueva York | Elegido |
 | 5 | EE. UU. (oeste) | Golden Gate | San Francisco | Elegido |
-| 6 | Sudamérica | Machu Picchu | Cusco (Perú) | Elegido; falta decidir cómo encaja en el estilo (abajo) |
+| 6 | Sudamérica | Machu Picchu | Cusco (Perú) | Elegido; maqueta topográfica aprobada (excepción en ART-DIRECTION §6) |
 | 7 | África (noreste) | Gran Pirámide | Guiza (Egipto) | Elegido |
-| 8 | África (otro punto) | Por decidir: Gran Mezquita de Djenné (oeste) o Gran Zimbabue (sur) | — | Abierto |
+| 8 | África (oeste) | Gran Mezquita de Djenné | Djenné (Malí) | Elegido |
 | 9 | Asia (sur) | Taj Mahal | Agra (India) | Elegido |
-| 10 | Asia (este) | Ciudad Prohibida | Pekín | Elegido; falta decidir cómo encaja en el estilo (abajo) |
+| 10 | Asia (este) | Ciudad Prohibida | Pekín | Elegido; enfoque propuesto: solo el eje central (abajo) |
 
 Por qué esta mezcla: EE. UU. queda en dos costas, Sudamérica va al sur para que México no quede pegado a EE. UU., y África y Asia tienen cada una dos puntos separados.
 
@@ -40,7 +40,7 @@ El problema es que su identidad es la montaña, y ART-DIRECTION prohíbe el pais
 - El terreno se corta en el borde de la maqueta, sobre el pedestal, y no hay horizonte, así que se sigue viendo como un objeto bajo el foco.
 - Desarmar tiene sentido: los muros de sillería encajados sin mortero, piedra por piedra; las terrazas como obra de ingeniería (drenaje bajo el cultivo); los vanos trapezoidales.
 - Presupuesto: terrazas y capas fusionadas en pocas geometrías, y casas, muros y vanos con instancing.
-- **Requiere una excepción en ART-DIRECTION §6:** permitir "terreno cuando el terreno es el monumento, como maqueta topográfica de capas sobre el pedestal". Decide Jesús.
+- **Excepción aprobada por Jesús el 2026-11-06** y escrita en ART-DIRECTION §6 (Variaciones permitidas).
 
 ### Ciudad Prohibida
 
@@ -61,4 +61,4 @@ El problema es que son unos 980 edificios en 72 hectáreas, imposible de modelar
   - Momento: el *Crépissage*, la fiesta anual en que la comunidad recubre la mezquita con barro nuevo.
 - **Gran Zimbabue (sur):** muros de piedra seca sin mortero y la torre cónica. Llena el sur del mapa, pero es menos reconocible.
 
-Recomendación: Djenné.
+**Elegida: Djenné** (2026-11-06).

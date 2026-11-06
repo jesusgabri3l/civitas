@@ -149,12 +149,13 @@ opuesto. Contenido del sitio en inglés; datos históricos verificados con fuent
 - Color del fondo y temperatura de la luz (sección 4).
 - Un efecto atmosférico propio (neblina en Roma, estrellas y luces propias en París).
 - Más detalle donde la identidad lo pide (el enrejado de la Eiffel, los arcos del Coliseo).
+- **Terreno cuando el terreno es el monumento** (aprobado 2026-11-06 para Machu Picchu): maqueta topográfica de capas de yeso apiladas (curvas de nivel extruidas), cortada en el borde sobre el pedestal, sin horizonte ni vegetación. Nunca como fondo o paisaje alrededor.
 - Color histórico **solo como capítulo** (por ejemplo, la policromía del Partenón), nunca como estado normal.
 
 ### Nunca
 
 - Texturas fotográficas, PBR realista o materiales de colores.
-- Muros de sala, línea de horizonte dura o paisaje (montañas, ciudad, vegetación).
+- Muros de sala, línea de horizonte dura o paisaje (montañas, ciudad, vegetación). Única excepción: el terreno que *es* el monumento (ver Variaciones).
 - Más de un color de acento en la escena.
 - Efectos que no cuentan nada (rotaciones decorativas, partículas por todas partes).
 
