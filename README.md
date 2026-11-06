@@ -67,13 +67,25 @@ PageSpeed Insights on [visitcivitas.com](https://visitcivitas.com), before and a
     <td colspan="2" align="center"><sub><b>Before</b> · November 5, 2026</sub></td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/pagespeed-mobile-2026-11-06.png" alt="PageSpeed mobile: Performance 65, Accessibility 100, Best Practices 100, SEO 100" width="100%" /></td>
-    <td><img src="docs/screenshots/pagespeed-desktop-2026-11-06.png" alt="PageSpeed desktop: Performance 61, Accessibility 100, Best Practices 100, SEO 100" width="100%" /></td>
+    <td><img src="docs/screenshots/pagespeed-mobile-2026-11-06b.png" alt="PageSpeed mobile: Performance 75, Accessibility 100, Best Practices 100, SEO 100" width="100%" /></td>
+    <td><img src="docs/screenshots/pagespeed-desktop-2026-11-06b.png" alt="PageSpeed desktop: Performance 74, Accessibility 100, Best Practices 100, SEO 100" width="100%" /></td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><sub><b>After</b> · November 6, 2026 · accessibility to 100; performance is held back by the WebGL start-up cost (Total Blocking Time)</sub></td>
+    <td colspan="2" align="center"><sub><b>After</b> · November 6, 2026</sub></td>
   </tr>
 </table>
+
+**Why the performance score was stuck: PageSpeed has no GPU.** Lighthouse runs on servers without a graphics card, so WebGL falls back to SwiftShader and every frame of the globe is drawn on the CPU (~90 ms each). The intro and the ambient motion (spin, twinkling stars) kept asking for frames, and each one counted as main-thread blocking: 2,400 ms of Total Blocking Time on mobile.
+
+The fix is not aimed at the test. The engine already read the WebGL renderer name to pick a quality tier; now, when it reports a software renderer (SwiftShader, llvmpipe and the like), the globe also behaves as it does with *reduce motion*: it appears settled, without the intro or ambient animation, and only draws again when the visitor touches it. A real computer with hardware acceleration turned off, a blocklisted GPU driver or a virtual machine is in the same situation, and there those frames were burning the CPU and the battery. Visitors with a GPU see no change.
+
+| PageSpeed | Before | After |
+|---|---|---|
+| Performance (mobile / desktop) | 65 / 60 | **75 / 74** |
+| Accessibility (mobile / desktop) | 88 / 95 | **100 / 100** |
+| Total Blocking Time (mobile) | 1,830 ms | **760 ms** |
+
+What is left of the blocking time is the one-off cost of creating the WebGL context and compiling the shaders.
 
 ## Also inside
 
