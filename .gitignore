@@ -7,3 +7,6 @@ Claude outputs/
 .env.*
 !.env.example
 .vercel/
+
+# site-audit: estrategia SEO fuera del repo (repo público)
+.seo/
