@@ -5,6 +5,7 @@ export interface TrackEvents {
   explore_view: { city: string; view: string };
   piece_open: { city: string; piece: string };
   suggest_sent: undefined;
+  web_vital: { name: string; value: number; rating: string; path: string };
 }
 
 interface UmamiTracker {
@@ -19,6 +20,22 @@ export function track<N extends keyof TrackEvents>(name: N, ...[data]: TrackEven
   } catch {
     // Analytics must never break the app.
   }
+}
+
+/** RUM: LCP, INP and CLS of this load, read by hand in Umami (Events → web_vital). Production only, loaded off the critical path. */
+export function startWebVitals() {
+  if (!import.meta.env.PROD) return;
+  void import('web-vitals')
+    .then(({ onLCP, onINP, onCLS }) => {
+      const send = ({ name, value, rating }: { name: string; value: number; rating: string }) =>
+        track('web_vital', { name, value: name === 'CLS' ? Math.round(value * 1000) / 1000 : Math.round(value), rating, path: location.pathname });
+      onLCP(send);
+      onINP(send);
+      onCLS(send);
+    })
+    .catch(() => {
+      // Analytics must never break the app.
+    });
 }
 
 /** Umami hooks pushState/replaceState on its own; back and forward (popstate) it does not see, so those count here. */

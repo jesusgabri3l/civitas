@@ -3,7 +3,7 @@ import { $ambientActive, bindPreload } from '../state/globeStore';
 import { startPageMeta } from '../state/pageMeta';
 import { startRouter } from '../state/router';
 import { $explorePart, $exploreView, $story } from '../state/storyStore';
-import { track } from '../state/track';
+import { startWebVitals, track } from '../state/track';
 import { startExploreUi } from '../story/exploreUi';
 import { startTimelineUi } from '../story/timelineUi';
 import { preloadStory } from '../story/storyContent';
@@ -41,6 +41,7 @@ function startWithoutStage(root: Element | null, started: boolean) {
 
 /** Connects the URL/state machine to the 3D engine. */
 export async function startCivitas(canvas: HTMLCanvasElement) {
+  startWebVitals();
   const root = canvas.closest('.the-stage');
   let engine: Engine;
   try {
