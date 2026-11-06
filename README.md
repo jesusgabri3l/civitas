@@ -9,7 +9,7 @@ Spin a globe, pick a monument and scroll through its history while its scale mod
 
 <br />
 
-<img src="docs/screenshots/desktop-hub.jpg" alt="Civitas hub on desktop: a dark globe with an amber halo, monument hotspots over Europe and the headline 'Every landmark tells a story.'" width="100%" />
+<img src="docs/screenshots/desktop-hub-v2.jpg" alt="Civitas hub on desktop: a dark globe with an amber halo, monument hotspots over Europe and the headline 'Every landmark tells a story.'" width="100%" />
 
 </div>
 
@@ -19,10 +19,10 @@ A visual wiki of world monuments. The home page is a 3D globe: click a landmark 
 
 <table>
   <tr>
-    <td align="center" width="25%"><img src="docs/screenshots/mobile-hub.jpg" alt="Hub on a phone: the globe with Paris, Rome and Athens hotspots" width="100%" /><br /><sub>The globe</sub></td>
-    <td align="center" width="25%"><img src="docs/screenshots/mobile-athens.jpg" alt="Parthenon page on a phone" width="100%" /><br /><sub>Athens</sub></td>
-    <td align="center" width="25%"><img src="docs/screenshots/mobile-rome.jpg" alt="Colosseum page on a phone" width="100%" /><br /><sub>Rome</sub></td>
-    <td align="center" width="25%"><img src="docs/screenshots/mobile-paris.jpg" alt="Eiffel Tower page on a phone" width="100%" /><br /><sub>Paris</sub></td>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-hub-v2.jpg" alt="Hub on a phone: the globe with Paris, Rome and Athens hotspots" width="100%" /><br /><sub>The globe</sub></td>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-athens-v2.jpg" alt="Parthenon page on a phone" width="100%" /><br /><sub>Athens</sub></td>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-rome-v2.jpg" alt="Colosseum page on a phone" width="100%" /><br /><sub>Rome</sub></td>
+    <td align="center" width="25%"><img src="docs/screenshots/mobile-paris-v2.jpg" alt="Eiffel Tower page on a phone" width="100%" /><br /><sub>Paris</sub></td>
   </tr>
 </table>
 
