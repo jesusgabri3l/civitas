@@ -44,7 +44,7 @@ export const story: MonumentStory = {
       kicker: 'III · 72 d. C.',
       title: 'Construido en ocho años',
       paragraphs: [
-        'Hacia el año 72 d. C. el emperador Vespasiano empezó el anfiteatro donde había estado el lago artificial de Nerón, devolviendo al pueblo un lugar que Nerón había tomado para su palacio. Su hijo Tito lo inauguró en el 80 d. C. y Domiciano lo terminó.',
+        'Hacia el año 72 d. C. el emperador Vespasiano empezó el anfiteatro donde había estado el lago artificial de Nerón: un lugar para los juegos públicos en un terreno que Nerón había tomado para su palacio, probablemente pagado con el botín de la guerra de Judea. Su hijo Tito lo inauguró en el 80 d. C. y Domiciano lo terminó.',
         'Se alza en cuatro niveles: tres arcadas de ochenta arcos cada una, bajo un ático macizo. Las semicolumnas cambian de nivel en nivel: toscanas, jónicas y corintias.',
       ],
       facts: [

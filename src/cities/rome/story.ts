@@ -47,7 +47,7 @@ export const story: MonumentStory = {
       kicker: 'III · AD 72',
       title: 'Built in eight years',
       paragraphs: [
-        'Around AD 72 the emperor Vespasian began the amphitheatre where Nero’s artificial lake had been, giving back to the people a place Nero had taken for his palace. His son Titus opened it in AD 80, and Domitian finished it.',
+        'Around AD 72 the emperor Vespasian began the amphitheatre where Nero’s artificial lake had been: a place for public games on land Nero had taken for his palace, probably paid for with the spoils of the Jewish War. His son Titus opened it in AD 80, and Domitian finished it.',
         'It rises in four levels: three arcades of eighty arches each, under a solid attic. The half columns change from level to level, Tuscan, Ionic and Corinthian.',
       ],
       facts: [

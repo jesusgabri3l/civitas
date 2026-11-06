@@ -60,7 +60,7 @@ export const story: MonumentStory = {
       kicker: '04 — 1889',
       title: 'La puerta de la exposición',
       paragraphs: [
-        'La torre fue la entrada de la Exposición Universal de 1889, cien años después de la Revolución francesa. Con sus 300 m era la estructura más alta del mundo y conservó el título hasta 1930.',
+        'Se construyó como la entrada de la Exposición Universal de 1889, cien años después de la Revolución francesa. Con sus 300 m era la estructura más alta del mundo y conservó el título hasta 1930.',
         'De noche la iluminaban lámparas de gas a lo largo de sus aristas y un faro en la cima.',
       ],
       facts: [
@@ -76,8 +76,8 @@ export const story: MonumentStory = {
       kicker: '05 — 1909',
       title: 'Hecha para durar veinte años',
       paragraphs: [
-        'El permiso era por veinte años, así que en 1909 la ciudad habría podido derribar la torre. Para entonces ya tenía un segundo oficio: los experimentos de telegrafía sin hilos desde su cima habían crecido hasta convertirse en una estación de radio.',
-        'La antena la hizo demasiado útil para quitarla. Su mástil se ha reemplazado varias veces; el actual, instalado en 2022, deja la torre en 330 m de altura.',
+        'Iba a ser temporal: el permiso de Eiffel era por veinte años, así que en 1909 la ciudad habría podido derribarla. Para entonces ya tenía un segundo oficio: los experimentos de telegrafía sin hilos desde su cima habían crecido hasta convertirse en una estación de radio.',
+        'La antena la hizo demasiado útil para quitarla, y en 1910 el permiso se prorrogó setenta años. Su mástil se ha reemplazado varias veces; el actual, instalado en 2022, deja la torre en 330 m de altura.',
       ],
       facts: [
         { label: 'Permiso', value: '20 años' },

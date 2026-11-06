@@ -62,7 +62,7 @@ export const story: MonumentStory = {
       kicker: '04 — 1889',
       title: 'The gate of the fair',
       paragraphs: [
-        'The tower was the entrance of the 1889 Exposition Universelle, a hundred years after the French Revolution. At 300 m it was the tallest structure in the world, and it kept the title until 1930.',
+        'It was built as the entrance of the 1889 Exposition Universelle, a hundred years after the French Revolution. At 300 m it was the tallest structure in the world, and it kept the title until 1930.',
         'At night it was lit by gas lamps along its edges and a beacon at the summit.',
       ],
       facts: [
@@ -78,8 +78,8 @@ export const story: MonumentStory = {
       kicker: '05 — 1909',
       title: 'Meant to last twenty years',
       paragraphs: [
-        'The permit was for twenty years, so in 1909 the city could have torn the tower down. By then it had a second job: wireless experiments from its top had grown into a radio station.',
-        'The antenna made it too useful to remove. Its mast has been replaced several times; today’s, installed in 2022, makes the tower 330 m tall.',
+        'It was meant to be temporary: Eiffel’s permit ran for twenty years, so in 1909 the city could have torn it down. By then it had a second job: wireless experiments from its top had grown into a radio station.',
+        'The antenna made it too useful to remove, and in 1910 the permit was extended for seventy years. Its mast has been replaced several times; today’s, installed in 2022, makes the tower 330 m tall.',
       ],
       facts: [
         { label: 'Permit', value: '20 years' },

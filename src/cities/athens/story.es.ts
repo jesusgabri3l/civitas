@@ -45,7 +45,7 @@ export const story: MonumentStory = {
       title: 'Levantado en quince años',
       paragraphs: [
         'Bajo Pericles, los arquitectos Ictino y Calícrates trazaron el templo y Fidias dirigió su escultura. Cada una de las 46 columnas exteriores es una pila de tambores de mármol.',
-        'Se consagró en 438 a. C. y sus esculturas estaban terminadas en 432 a. C. Y no era blanco: los triglifos, las molduras y las figuras estaban pintados con colores intensos.',
+        'Se consagró en 438 a. C. y sus esculturas estaban terminadas en 432 a. C. No era blanco: como otros templos griegos, sus detalles estaban pintados, y en 2023 se hallaron restos de azul egipcio en los ropajes de las figuras del frontón.',
       ],
       facts: [
         { label: 'Arquitectos', value: 'Ictino · Calícrates' },

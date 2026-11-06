@@ -45,7 +45,7 @@ export const story: MonumentStory = {
       title: 'Raised in fifteen years',
       paragraphs: [
         'Under Pericles, the architects Ictinus and Callicrates laid out the temple and Phidias directed its sculpture. Each of the 46 outer columns is a stack of marble drums.',
-        'It was dedicated in 438 BC and its sculptures were finished by 432 BC. And it was not white: triglyphs, mouldings and figures were painted in strong colors.',
+        'It was dedicated in 438 BC and its sculptures were finished by 432 BC. It was not white: like other Greek temples, its details were painted, and in 2023 traces of Egyptian blue were found on the garments of its pediment figures.',
       ],
       facts: [
         { label: 'Architects', value: 'Ictinus · Callicrates' },
