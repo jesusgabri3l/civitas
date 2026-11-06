@@ -117,7 +117,7 @@ onBeforeUnmount(() => {
 <template>
   <!-- The trigger and the language switch share one column, so the switch takes the trigger's width. -->
   <div class="the-overlay-index__corner">
-    <button ref="trigger" type="button" class="the-overlay-index__trigger" aria-haspopup="dialog" :aria-expanded="open" @click="show()">
+    <button ref="trigger" type="button" class="the-overlay-index__trigger" :aria-label="text.index.trigger(monumentIndex.length)" aria-haspopup="dialog" :aria-expanded="open" @click="show()">
       <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="4.5" /><path d="M9.4 9.4 13 13" /></svg>
       <span>{{ text.index.trigger(monumentIndex.length) }}</span>
     </button>

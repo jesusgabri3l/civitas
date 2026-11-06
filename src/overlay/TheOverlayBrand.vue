@@ -21,7 +21,7 @@ const arriving = computed(() => travelling.value && toGlobe.value);
   <a
     :class="['the-overlay-brand', { 'the-overlay-brand--docked': docked, 'the-overlay-brand--hidden': hidden, 'the-overlay-brand--arriving': arriving }]"
     :href="withLang(lang, '/')"
-    :aria-label="text.brand.label"
+    :aria-label="docked ? text.brand.label : `Civitas, ${text.brand.tagline}`"
     :inert="hidden || undefined"
   >
     <span class="the-overlay-brand__name">Civitas</span><svg class="the-overlay-brand__globe" viewBox="0 0 16 16" aria-hidden="true" focusable="false">

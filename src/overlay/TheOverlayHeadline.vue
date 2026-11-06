@@ -34,14 +34,16 @@ const lastSubtitleIndex = subtitleLetterCount - 1;
 
 <template>
   <div class="the-overlay-headline" :class="{ 'the-overlay-headline--typed': alreadyTyped }" data-headline :style="{ '--letter-count': letterCount, '--subtitle-letter-count': subtitleLetterCount }">
-    <p class="the-overlay-headline__title" :aria-label="headlineLines.join(' ')">
+    <p class="the-overlay-headline__title">
+      <span class="visually-hidden">{{ headlineLines.join(' ') }}</span>
       <span v-for="(words, lineIndex) in lines" :key="lineIndex" class="the-overlay-headline__line" aria-hidden="true">
         <span v-for="(word, wordIndex) in words" :key="wordIndex" class="the-overlay-headline__word">
           <span v-for="{ letter, index } in word" :key="index" class="the-overlay-headline__letter" :style="{ '--letter-index': index }">{{ letter }}</span>
         </span>
       </span>
     </p>
-    <p class="the-overlay-headline__subtitle" :aria-label="headlineSubtitle">
+    <p class="the-overlay-headline__subtitle">
+      <span class="visually-hidden">{{ headlineSubtitle }}</span>
       <span v-for="(word, wordIndex) in subtitleWords" :key="wordIndex" class="the-overlay-headline__subtitle-word" aria-hidden="true">
         <span
           v-for="{ letter, index } in word"
