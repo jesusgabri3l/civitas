@@ -6,7 +6,7 @@ export const meta = {
   path: '/paris',
   name: 'Paris',
   monument: 'Eiffel Tower',
-  title: 'The Eiffel Tower in 3D, Paris — Civitas',
+  title: 'How the Eiffel Tower Was Built, in Interactive 3D — Civitas',
   description: 'Explore the Eiffel Tower in interactive 3D by night, from the first sketch to its hourly sparkle.',
   ogImage: '/og/paris.jpg',
   ogImageAlt: 'The Eiffel Tower in Paris by night, its lights sparkling.',
@@ -22,7 +22,7 @@ export const meta = {
   es: {
     name: 'París',
     monument: 'Torre Eiffel',
-    title: 'La Torre Eiffel en 3D, París — Civitas',
+    title: 'Cómo se construyó la Torre Eiffel, en 3D — Civitas',
     description: 'Explora la Torre Eiffel en 3D interactivo de noche, desde el primer boceto hasta su destello cada hora.',
     ogImageAlt: 'La Torre Eiffel de París de noche, con sus luces destellando.',
     intro: 'París, una noche ámbar alrededor de la Torre Eiffel.',

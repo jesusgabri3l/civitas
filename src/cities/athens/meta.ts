@@ -6,7 +6,7 @@ export const meta = {
   path: '/athens',
   name: 'Athens',
   monument: 'Parthenon',
-  title: 'The Parthenon in 3D, Athens — Civitas',
+  title: 'How the Parthenon Looked Originally, in 3D — Civitas',
   description: 'Explore the Parthenon in interactive 3D: take it apart, see it in its original colors and follow it through 1687 and the restoration.',
   ogImage: '/og/athens.jpg',
   ogImageAlt: 'The Parthenon in Athens, painted in its original colors.',
@@ -22,7 +22,7 @@ export const meta = {
   es: {
     name: 'Atenas',
     monument: 'Partenón',
-    title: 'El Partenón en 3D, Atenas — Civitas',
+    title: 'El Partenón con sus colores originales, en 3D — Civitas',
     description: 'Explora el Partenón en 3D interactivo: desármalo, míralo con sus colores originales y sigue su historia a través de 1687 y la restauración.',
     ogImageAlt: 'El Partenón de Atenas, pintado con sus colores originales.',
     intro: 'Atenas, el Partenón reconstruido pieza por pieza.',
