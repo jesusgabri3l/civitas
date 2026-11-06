@@ -34,7 +34,10 @@ Fecha: 4 de noviembre de 2026. Fases en [PLAN.md](PLAN.md); diseño en [ART-DIRE
 ## Pendiente
 
 - **Lanzamiento (decisión 2026-11-06):** Civitas NO se lanza todavía. Se lanza con 8-10 monumentos repartidos por el mundo: a los 3 actuales (Atenas, Roma, París) se suman 2 de EE. UU., 1 de Latinoamérica, 2 de África y 2 de Asia. Lista y estado de cada uno en `docs/monumentos-lanzamiento.md` (nada empezado). Cada uno sigue el checklist de ART-DIRECTION §7 (identidad y brief aprobados por Jesús antes de código).
-- Globo, necesario antes del lanzamiento: agrupar hotspots cercanos (con 10 ciudades, Europa se amontona); girar hasta una ciudad enfocada con teclado en la cara oculta.
+- Globo, necesario antes del lanzamiento (hacerlo junto):
+  - Agrupar hotspots cercanos (con 10 ciudades, Europa y el norte de África se amontonan, sobre todo en móvil).
+  - Arranque en la región del visitante (decidido 2026-11-06): hoy siempre enfoca `EUROPE` (`globe/geo.ts`). Longitud aproximada desde la zona horaria del navegador (`Intl.DateTimeFormat().resolvedOptions().timeZone`, sin permisos ni servicios externos) → girar al monumento más cercano en longitud y ajustar la inclinación a su latitud. Sin zona horaria: Europa. Misma lógica en desktop y móvil; la rotación automática muestra el resto. Con test de la función zona horaria → longitud. Descartado: alejar para "ver todo" (una esfera muestra medio mundo) y rotar de región en cada visita.
+  - Girar hasta una ciudad enfocada con teclado en la cara oculta.
 - Barra de monumento: logo centrado con "← Globe / Explore / EN" (2026-11-06, probado por Jesús y en main; medido con Playwright: logo y enlaces centrados a 42 px en 360, 390 y 1440 px).
 - Español: middleware y textos validados por Jesús (2026-11-06). Opcional: tests de `/es` en router y buscador.
 - Rendimiento y SEO: fase 5 del workflow de SEO **cerrada el 2026-11-06** (PSI 75/74, a11y 100; detalle en `seo-workflow/PLAN.md`). Solo queda la medición de prod del 2026-11-30. No proponerlo aquí. Referencia local (31 oct 2026, CPU 6x y Slow 4G): globo listo en 3,5 s, Roma en 4,7 s; JS gzip: globo ~213 KB (three 131 KB), ciudad ~250 KB.
