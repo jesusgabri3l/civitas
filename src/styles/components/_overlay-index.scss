@@ -445,8 +445,9 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
     overflow: hidden;
   }
 
-  &__check {
-    min-height: 65px;
+  // Empty unless Turnstile asks for a click (appearance: interaction-only): then it takes its own height.
+  &__check:empty {
+    display: none;
   }
 
   &__error {
@@ -486,10 +487,6 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
     &__area {
       height: 4.5rem;
       min-height: 4.5rem;
-    }
-
-    &__check {
-      min-height: 0;
     }
 
     &__send {

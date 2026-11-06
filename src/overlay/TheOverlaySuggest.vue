@@ -63,6 +63,11 @@ async function mountWidget() {
     widgetId = turnstile()?.render(widget.value, {
       sitekey: SITE_KEY,
       theme: 'dark',
+      // Invisible unless Cloudflare needs the visitor to click: the checkbox box no longer sits behind Send on phones.
+      appearance: 'interaction-only',
+      size: 'flexible',
+      // When it does show up, bring it into view: on phones the pinned Send button could cover it.
+      'before-interactive-callback': () => requestAnimationFrame(() => widget.value?.scrollIntoView({ block: 'center', behavior: 'smooth' })),
       callback: (value: string) => (token.value = value),
       'expired-callback': () => (token.value = ''),
       'error-callback': () => (token.value = ''),
