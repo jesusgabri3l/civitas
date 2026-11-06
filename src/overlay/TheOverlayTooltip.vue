@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { useStore } from '@nanostores/vue';
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue';
-import { cities } from '../cities';
 import { $hotspots, $openTooltip, diveIntoCity, hideTooltip } from '../state/globeStore';
 import { navigate } from '../state/router';
 import { track } from '../state/track';
 import { isTooltipShown, placementFor } from './tooltip';
+import { useUi } from './useUi';
 
+const { text, cities } = useUi();
 const openTooltip = useStore($openTooltip);
 const hotspots = useStore($hotspots);
 
@@ -69,7 +70,7 @@ onBeforeUnmount(() => {
       <div class="the-overlay-tooltip__label" @click="visit">
         <span class="the-overlay-tooltip__name">{{ destination.name }}, {{ destination.country }}</span>
         <span class="the-overlay-tooltip__monument">{{ destination.monument }}</span>
-        <span class="the-overlay-tooltip__visit">{{ onTouch ? 'Tap to visit' : 'Click to visit' }}</span>
+        <span class="the-overlay-tooltip__visit">{{ onTouch ? text.tooltip.tap : text.tooltip.click }}</span>
       </div>
     </div>
   </Transition>

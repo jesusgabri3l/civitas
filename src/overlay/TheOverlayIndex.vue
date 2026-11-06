@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { monumentIndex, REGIONS, type Region } from '../data/monumentIndex';
+import TheOverlayLang from './TheOverlayLang.vue';
+import { monumentIndexFor, REGIONS, type Region } from '../data/monumentIndex';
 import { searchMonuments } from '../data/monumentSearch';
 import type { DestinationId } from '../cities';
 import { diveIntoCity, hideTooltip, requestPreload } from '../state/globeStore';
 import { navigate } from '../state/router';
 import { track } from '../state/track';
 import TheOverlaySuggest from './TheOverlaySuggest.vue';
+import { useUi } from './useUi';
 
 /**
  * The monument index: a way into every monument without spinning the globe. Button top right, side panel with
@@ -14,6 +16,8 @@ import TheOverlaySuggest from './TheOverlaySuggest.vue';
  * city, country, region, date and the `keywords` of each meta). Keyboard: up/down move the active row, Enter opens it, Esc closes.
  * The focus stays in the search box; the active row is announced with aria-activedescendant.
  */
+const { lang, text } = useUi();
+const monumentIndex = monumentIndexFor(lang);
 const open = ref(false);
 const suggesting = ref(false);
 const query = ref('');
@@ -23,7 +27,7 @@ const search = ref<HTMLInputElement | null>(null);
 const trigger = ref<HTMLButtonElement | null>(null);
 const pad = (n: number) => String(n).padStart(2, '0');
 const openCount = monumentIndex.filter((entry) => entry.destination).length;
-const results = computed(() => searchMonuments(query.value, region.value));
+const results = computed(() => searchMonuments(query.value, region.value, lang));
 const isFiltering = computed(() => query.value.trim() !== '' || region.value !== null);
 // The number of a row is its place in the full list, so it does not change while filtering.
 const rankOf = (entry: (typeof monumentIndex)[number]) => monumentIndex.indexOf(entry) + 1;
@@ -111,10 +115,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <button ref="trigger" type="button" class="the-overlay-index__trigger" aria-haspopup="dialog" :aria-expanded="open" @click="show()">
-    <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="4.5" /><path d="M9.4 9.4 13 13" /></svg>
-    <span>Index · {{ monumentIndex.length }} monuments</span>
-  </button>
+  <!-- The trigger and the language switch share one column, so the switch takes the trigger's width. -->
+  <div class="the-overlay-index__corner">
+    <button ref="trigger" type="button" class="the-overlay-index__trigger" aria-haspopup="dialog" :aria-expanded="open" @click="show()">
+      <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><circle cx="6" cy="6" r="4.5" /><path d="M9.4 9.4 13 13" /></svg>
+      <span>{{ text.index.trigger(monumentIndex.length) }}</span>
+    </button>
+    <TheOverlayLang />
+  </div>
 
   <Transition name="the-overlay-index">
     <!-- wheel.stop: the globe listens to the wheel on the window; inside the index it only scrolls the list. -->
@@ -129,18 +137,18 @@ onBeforeUnmount(() => {
       >
         <template v-if="!suggesting">
           <header class="the-overlay-index__head">
-            <h2 id="the-overlay-index-title" class="the-overlay-index__title">Index</h2>
-            <button type="button" class="the-overlay-index__close" aria-label="Close the index" @click="close">×</button>
+            <h2 id="the-overlay-index-title" class="the-overlay-index__title">{{ text.index.title }}</h2>
+            <button type="button" class="the-overlay-index__close" :aria-label="text.index.close" @click="close">×</button>
           </header>
 
           <label class="the-overlay-index__label">
-            Search monuments
+            {{ text.index.searchLabel }}
             <input
               ref="search"
               v-model="query"
               class="the-overlay-index__search"
               type="search"
-              placeholder="Name, city or century"
+              :placeholder="text.index.placeholder"
               role="combobox"
               aria-expanded="true"
               aria-controls="the-overlay-index-list"
@@ -150,8 +158,8 @@ onBeforeUnmount(() => {
             />
           </label>
 
-          <div class="the-overlay-index__regions" role="group" aria-label="Region">
-            <button type="button" class="the-overlay-index__chip" :aria-pressed="region === null" @click="region = null">All</button>
+          <div class="the-overlay-index__regions" role="group" :aria-label="text.index.regionLabel">
+            <button type="button" class="the-overlay-index__chip" :aria-pressed="region === null" @click="region = null">{{ text.index.all }}</button>
             <button
               v-for="name in REGIONS"
               :key="name"
@@ -160,16 +168,16 @@ onBeforeUnmount(() => {
               :aria-pressed="region === name"
               @click="region = name"
             >
-              {{ name }}
+              {{ text.regions[name] }}
             </button>
           </div>
 
           <p class="the-overlay-index__meta">
-            <span v-if="isFiltering">{{ results.length }} of {{ monumentIndex.length }} shown</span>
-            <span v-else>{{ openCount }} open · {{ monumentIndex.length - openCount }} soon</span>
+            <span v-if="isFiltering">{{ text.index.shown(results.length, monumentIndex.length) }}</span>
+            <span v-else>{{ text.index.openSoon(openCount, monumentIndex.length - openCount) }}</span>
           </p>
 
-          <ol v-if="results.length" id="the-overlay-index-list" class="the-overlay-index__list" role="listbox" aria-label="Monuments">
+          <ol v-if="results.length" id="the-overlay-index-list" class="the-overlay-index__list" role="listbox" :aria-label="text.index.listLabel">
             <li v-for="(entry, i) in results" :key="entry.monument" role="presentation">
               <button
                 :id="rowId(i)"
@@ -188,18 +196,18 @@ onBeforeUnmount(() => {
                   <span class="the-overlay-index__monument">{{ entry.monument }}</span>
                   <span class="the-overlay-index__place">{{ entry.place }} · {{ entry.date }}</span>
                 </span>
-                <span class="the-overlay-index__status">{{ entry.destination ? 'Open' : 'Soon' }}</span>
+                <span class="the-overlay-index__status">{{ entry.destination ? text.index.open : text.index.soon }}</span>
               </button>
             </li>
           </ol>
 
           <div v-else class="the-overlay-index__empty" role="status">
-            <p class="the-overlay-index__empty-title">No monuments found</p>
-            <p class="the-overlay-index__empty-text">Nothing matches that yet. Try a city, a country or a century.</p>
-            <button type="button" class="the-overlay-index__empty-clear" @click="clearFilters">Clear search</button>
+            <p class="the-overlay-index__empty-title">{{ text.index.emptyTitle }}</p>
+            <p class="the-overlay-index__empty-text">{{ text.index.emptyText }}</p>
+            <button type="button" class="the-overlay-index__empty-clear" @click="clearFilters">{{ text.index.clear }}</button>
           </div>
 
-          <button type="button" class="the-overlay-index__suggest" @click="suggesting = true">Suggest a monument →</button>
+          <button type="button" class="the-overlay-index__suggest" @click="suggesting = true">{{ text.index.suggest }}</button>
         </template>
 
         <TheOverlaySuggest v-else @back="suggesting = false" @close="close" />

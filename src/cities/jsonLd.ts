@@ -1,10 +1,12 @@
-import { cities } from './index';
+import { citiesFor } from './index';
 import type { CityMeta, PageMeta } from './types';
+import { ui } from '../i18n/ui';
+import type { Lang } from '../i18n/lang';
 
 const SITE_NAME = 'Civitas';
 
-/** Structured data of the hub: the site and the list of its monuments (from the registry, so a new city joins on its own). */
-export function websiteJsonLd(site: URL, home: PageMeta) {
+/** Structured data of the hub: the site and the list of its monuments (from the registry, so a new city joins on its own). `home` comes localized. */
+export function websiteJsonLd(site: URL, home: PageMeta, lang: Lang) {
   return [
     {
       '@context': 'https://schema.org',
@@ -12,12 +14,14 @@ export function websiteJsonLd(site: URL, home: PageMeta) {
       name: SITE_NAME,
       url: new URL(home.path, site).href,
       description: home.description,
+      inLanguage: lang,
     },
     {
       '@context': 'https://schema.org',
       '@type': 'ItemList',
-      name: `${SITE_NAME} monuments`,
-      itemListElement: cities.map((city, index) => ({
+      name: ui[lang].monumentsListName,
+      inLanguage: lang,
+      itemListElement: citiesFor(lang).map((city, index) => ({
         '@type': 'ListItem',
         position: index + 1,
         name: `${city.monument}, ${city.name}`,
@@ -27,8 +31,8 @@ export function websiteJsonLd(site: URL, home: PageMeta) {
   ];
 }
 
-/** Structured data of a city page: the monument and the breadcrumb Civitas › City. Everything comes from its `meta`. */
-export function cityJsonLd(site: URL, home: PageMeta, city: CityMeta) {
+/** Structured data of a city page: the monument and the breadcrumb Civitas › City. `home` and `city` come localized. */
+export function cityJsonLd(site: URL, home: PageMeta, city: CityMeta, lang: Lang) {
   const url = new URL(city.path, site).href;
   return [
     {
@@ -37,6 +41,7 @@ export function cityJsonLd(site: URL, home: PageMeta, city: CityMeta) {
       name: city.monument,
       description: city.description,
       url,
+      inLanguage: lang,
       image: new URL(city.ogImage, site).href,
       geo: { '@type': 'GeoCoordinates', latitude: city.coordinates.lat, longitude: city.coordinates.lon },
       address: { '@type': 'PostalAddress', addressLocality: city.name, addressCountry: city.country },

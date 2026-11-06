@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { onBeforeUnmount, onMounted, reactive, ref } from 'vue';
 import { track } from '../state/track';
+import { useUi } from './useUi';
 
 /**
  * "Suggest a monument", inside the index panel. POST /api/suggest (JSON) → the server checks Turnstile and appends a row to a Google Sheet.
  * `website` is the honeypot: hidden from people, bots tend to fill it.
  */
 defineEmits<{ back: []; close: [] }>();
+const { text } = useUi();
+const t = text.suggest;
 
 type Status = 'idle' | 'sending' | 'sent' | 'error';
 
@@ -33,11 +36,11 @@ function problemWith(): string | null {
   const monument = form.monument.trim();
   const place = form.place.trim();
   const email = form.email.trim();
-  if (!monument || !place) return 'Add the monument and its city and country.';
-  if (monument.length > LIMITS.short || place.length > LIMITS.short) return `Keep the name and the place under ${LIMITS.short} characters.`;
-  if (form.why.trim().length > LIMITS.long) return `Keep the story under ${LIMITS.long} characters.`;
-  if (email && (!EMAIL.test(email) || email.length > LIMITS.short)) return 'That email does not look right.';
-  if (SITE_KEY && !token.value) return 'Confirm you are human first. The check is just above the button.';
+  if (!monument || !place) return t.missingFields;
+  if (monument.length > LIMITS.short || place.length > LIMITS.short) return t.shortTooLong(LIMITS.short);
+  if (form.why.trim().length > LIMITS.long) return t.longTooLong(LIMITS.long);
+  if (email && (!EMAIL.test(email) || email.length > LIMITS.short)) return t.badEmail;
+  if (SITE_KEY && !token.value) return t.confirmHuman;
   return null;
 }
 
@@ -90,7 +93,7 @@ async function send() {
     track('suggest_sent');
   } catch {
     status.value = 'error';
-    message.value = 'Something went wrong and nothing was sent. Please try again in a moment.';
+    message.value = t.failed;
     token.value = '';
     turnstile()?.reset(widgetId);
   }
@@ -103,42 +106,42 @@ onBeforeUnmount(() => widgetId && turnstile()?.remove(widgetId));
 <template>
   <div v-if="status === 'sent'" class="the-overlay-suggest">
     <header class="the-overlay-index__head">
-      <button type="button" class="the-overlay-index__close" aria-label="Back to the index" @click="$emit('back')">←</button>
-      <h2 id="the-overlay-index-title" class="the-overlay-index__title">Suggest a monument</h2>
-      <button type="button" class="the-overlay-index__close" aria-label="Close" @click="$emit('close')">×</button>
+      <button type="button" class="the-overlay-index__close" :aria-label="t.back" @click="$emit('back')">←</button>
+      <h2 id="the-overlay-index-title" class="the-overlay-index__title">{{ t.title }}</h2>
+      <button type="button" class="the-overlay-index__close" :aria-label="t.close" @click="$emit('close')">×</button>
     </header>
-    <p class="the-overlay-suggest__intro" role="status">Thank you. Your suggestion is in: we read every one.</p>
+    <p class="the-overlay-suggest__intro" role="status">{{ t.thanks }}</p>
   </div>
 
   <form v-else class="the-overlay-suggest" novalidate @submit.prevent="send">
     <header class="the-overlay-index__head">
-      <button type="button" class="the-overlay-index__close" aria-label="Back to the index" @click="$emit('back')">←</button>
-      <h2 id="the-overlay-index-title" class="the-overlay-index__title">Suggest a monument</h2>
-      <button type="button" class="the-overlay-index__close" aria-label="Close" @click="$emit('close')">×</button>
+      <button type="button" class="the-overlay-index__close" :aria-label="t.back" @click="$emit('back')">←</button>
+      <h2 id="the-overlay-index-title" class="the-overlay-index__title">{{ t.title }}</h2>
+      <button type="button" class="the-overlay-index__close" :aria-label="t.close" @click="$emit('close')">×</button>
     </header>
 
-    <p class="the-overlay-suggest__intro">Which landmark should Civitas rebuild next? Tell us what it is and why its story is worth telling.</p>
+    <p class="the-overlay-suggest__intro">{{ t.intro }}</p>
 
     <label class="the-overlay-index__label">
-      Monument
-      <input v-model="form.monument" class="the-overlay-index__search" type="text" placeholder="e.g. Angkor Wat" required :maxlength="LIMITS.short" autocomplete="off" />
+      {{ t.monument }}
+      <input v-model="form.monument" class="the-overlay-index__search" type="text" :placeholder="t.monumentPlaceholder" required :maxlength="LIMITS.short" autocomplete="off" />
     </label>
     <label class="the-overlay-index__label">
-      City and country
-      <input v-model="form.place" class="the-overlay-index__search" type="text" placeholder="e.g. Siem Reap, Cambodia" required :maxlength="LIMITS.short" autocomplete="off" />
+      {{ t.place }}
+      <input v-model="form.place" class="the-overlay-index__search" type="text" :placeholder="t.placePlaceholder" required :maxlength="LIMITS.short" autocomplete="off" />
     </label>
     <label class="the-overlay-index__label">
-      Why this one
-      <textarea v-model="form.why" class="the-overlay-index__search the-overlay-suggest__area" rows="4" placeholder="A moment of its history you would like to see" :maxlength="LIMITS.long"></textarea>
+      {{ t.why }}
+      <textarea v-model="form.why" class="the-overlay-index__search the-overlay-suggest__area" rows="4" :placeholder="t.whyPlaceholder" :maxlength="LIMITS.long"></textarea>
     </label>
     <label class="the-overlay-index__label">
-      Email (optional)
-      <input v-model="form.email" class="the-overlay-index__search" type="email" placeholder="We’ll tell you when it’s live" :maxlength="LIMITS.short" autocomplete="email" />
+      {{ t.email }}
+      <input v-model="form.email" class="the-overlay-index__search" type="email" :placeholder="t.emailPlaceholder" :maxlength="LIMITS.short" autocomplete="email" />
     </label>
 
     <!-- Honeypot: out of sight and out of the tab order. -->
     <div class="the-overlay-suggest__trap" aria-hidden="true">
-      <label>Website <input v-model="form.website" type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+      <label>{{ t.website }} <input v-model="form.website" type="text" name="website" tabindex="-1" autocomplete="off" /></label>
     </div>
 
     <div v-if="SITE_KEY" ref="widget" class="the-overlay-suggest__check"></div>
@@ -146,7 +149,7 @@ onBeforeUnmount(() => widgetId && turnstile()?.remove(widgetId));
     <p v-if="status === 'error'" class="the-overlay-suggest__error" role="alert">{{ message }}</p>
 
     <button type="submit" class="the-overlay-suggest__send" :disabled="status === 'sending'" :aria-busy="status === 'sending'">
-      {{ status === 'sending' ? 'Sending…' : 'Send suggestion' }}
+      {{ status === 'sending' ? t.sending : t.send }}
     </button>
   </form>
 </template>

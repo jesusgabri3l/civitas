@@ -1,5 +1,7 @@
 ---
 import type { MonumentStory } from '../cities/types';
+import { LANGS, LANG_NAMES, langFrom, withLang } from '../i18n/lang';
+import { ui } from '../i18n/ui';
 
 interface Props {
   story: MonumentStory;
@@ -11,14 +13,23 @@ interface Props {
 const { story } = Astro.props;
 const { hero, chapters, label } = story;
 const all = [hero, ...chapters];
+const lang = langFrom(Astro.currentLocale);
+const text = ui[lang].story;
+const globeHref = withLang(lang, '/');
+// The selector reloads on the equivalent route (computed at click time by i18n/switch.ts); this href is the no-JS fallback.
 ---
 
 <header class="monument-bar" data-story-chrome>
   <span class="monument-bar__brand-space" aria-hidden="true"></span>
   <p class="monument-bar__city">{story.city} · <span lang={story.cityLocalLang}>{story.cityLocal}</span></p>
-  <nav class="monument-bar__nav" aria-label="Page">
-    <a href="/">← Globe</a>
-    <a href={`#chapter-${chapters[chapters.length - 1].id}`} data-scroll-to={all.length - 1}>Explore</a>
+  <nav class="monument-bar__nav" aria-label={text.page}>
+    <a href={globeHref}>{text.globe}</a>
+    <a href={`#chapter-${chapters[chapters.length - 1].id}`} data-scroll-to={all.length - 1}>{text.explore}</a>
+    <div class="lang-switch" role="group" aria-label={ui[lang].language}>
+      {LANGS.map((option) => option === lang
+        ? <span class="lang-switch__option" lang={option} aria-current="true"><span class="lang-switch__name">{LANG_NAMES[option]}</span><span class="lang-switch__code" aria-hidden="true">{option}</span></span>
+        : <a class="lang-switch__option" href={withLang(option, Astro.url.pathname)} hreflang={option} lang={option} data-lang-switch={option}><span class="lang-switch__name">{LANG_NAMES[option]}</span><span class="lang-switch__code" aria-hidden="true">{option}</span></a>)}
+    </div>
   </nav>
 </header>
 
@@ -59,10 +70,10 @@ const all = [hero, ...chapters];
     {hero.paragraphs.map((text) => <p class="monument-chapter__lead">{text}</p>)}
     <div class="monument-chapter__actions">
       <a class="monument-chapter__cta" href={`#chapter-${chapters[0].id}`} data-scroll-to="1">{hero.cta}</a>
-      <span class="monument-chapter__hint" aria-hidden="true">Or scroll ↓</span>
+      <span class="monument-chapter__hint" aria-hidden="true">{text.orScroll}</span>
     </div>
   </div>
-  <aside class="monument-label" aria-label="Museum label">
+  <aside class="monument-label" aria-label={text.museumLabel}>
     <p class="monument-label__name" lang={label.nameLang}>{label.name}</p>
     <p class="monument-label__caption">{label.caption}</p>
     <p class="monument-label__lines">{label.lines.map((line) => <span>{line}</span>)}</p>
@@ -94,14 +105,14 @@ const all = [hero, ...chapters];
         {chapter.explore && (
           <div class="monument-explore">
             <p class="monument-explore__hint">{chapter.explore.hint}</p>
-            <div class="monument-explore__views" role="group" aria-label="View of the maquette">
+            <div class="monument-explore__views" role="group" aria-label={text.viewLabel}>
               {chapter.explore.views.map((view, viewIndex) => (
                 <button type="button" class="monument-explore__view" data-explore-view={view.id} aria-pressed={viewIndex === 0 ? 'true' : 'false'}>
                   {view.label}
                 </button>
               ))}
             </div>
-            <div class="monument-explore__parts" role="group" aria-label="Parts of the monument">
+            <div class="monument-explore__parts" role="group" aria-label={text.partsLabel}>
               {chapter.explore.parts.map((part) => (
                 <button type="button" class="monument-explore__part" data-explore-part={part.id} aria-pressed="false">
                   {part.name}
@@ -112,15 +123,15 @@ const all = [hero, ...chapters];
               <div class="monument-explore__card" data-explore-card={part.id} role="region" aria-label={part.name} hidden>
                 <p class="monument-explore__card-name">{part.name}</p>
                 <p class="monument-explore__card-text">{part.text}</p>
-                <button type="button" class="monument-explore__close" data-explore-close aria-label={`Close ${part.name}`}>×</button>
+                <button type="button" class="monument-explore__close" data-explore-close aria-label={text.close(part.name)}>×</button>
               </div>
             ))}
           </div>
         )}
         {index === chapters.length - 1 && (
           <div class="monument-chapter__actions">
-            <a class="monument-chapter__cta" href="/">Back to the globe</a>
-            <a class="monument-chapter__hint" href={`#chapter-${hero.id}`} data-scroll-to="0">Back to the top ↑</a>
+            <a class="monument-chapter__cta" href={globeHref}>{text.backToGlobe}</a>
+            <a class="monument-chapter__hint" href={`#chapter-${hero.id}`} data-scroll-to="0">{text.backToTop}</a>
           </div>
         )}
       </div>
@@ -128,7 +139,7 @@ const all = [hero, ...chapters];
   ))
 }
 
-<nav class="monument-timeline" data-story-chrome aria-label="Chapters">
+<nav class="monument-timeline" data-story-chrome aria-label={text.chapters}>
   <ol class="monument-timeline__list" style={`--chapters: ${all.length}`}>
     {
       all.map((chapter, index) => (

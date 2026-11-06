@@ -19,6 +19,17 @@ export const meta = {
   year: 80,
   region: 'Europe',
   keywords: ['Roma', 'Colosseo', 'Flavian Amphitheatre', 'Amphitheatrum Flavium', 'Roman'],
+  es: {
+    name: 'Roma',
+    monument: 'Coliseo',
+    title: 'El Coliseo en 3D, Roma — Civitas',
+    description: 'Explora el Coliseo en 3D interactivo al amanecer: su anillo exterior completo frente a la ruina de hoy.',
+    ogImageAlt: 'El Coliseo de Roma en el año 80 d. C., con su anillo exterior entero.',
+    intro: 'Roma, un amanecer frío sobre el Coliseo.',
+    country: 'Italia',
+    glimpse: 'El Coliseo en un amanecer frío: el anillo exterior completo frente a la ruina de hoy.',
+    date: '80 d. C.',
+  },
   theme: {
     ground: '#141a22',
     accent: '#db5f45',

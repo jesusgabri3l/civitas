@@ -19,6 +19,17 @@ export const meta = {
   year: -447,
   region: 'Europe',
   keywords: ['Athína', 'Αθήνα', 'Παρθενώνας', 'Acropolis', 'Greek', 'Hellas'],
+  es: {
+    name: 'Atenas',
+    monument: 'Partenón',
+    title: 'El Partenón en 3D, Atenas — Civitas',
+    description: 'Explora el Partenón en 3D interactivo: desármalo, míralo con sus colores originales y sigue su historia a través de 1687 y la restauración.',
+    ogImageAlt: 'El Partenón de Atenas, pintado con sus colores originales.',
+    intro: 'Atenas, el Partenón reconstruido pieza por pieza.',
+    country: 'Grecia',
+    glimpse: 'El Partenón como maqueta de yeso: desarmado, pintado, volado en 1687 y restaurado.',
+    date: '447 a. C.',
+  },
   theme: {
     ground: '#0f1a2a',
     accent: '#c8673e',

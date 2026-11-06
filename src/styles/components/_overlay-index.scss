@@ -4,12 +4,20 @@
 $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the logo
 
 // "Index · N monuments" (top right of the globe) and the side panel it opens. The panel also hosts "Suggest a monument".
-.the-overlay-index__trigger {
-  @include label-mono;
+// The corner stacks the trigger and the language switch, both as wide as the trigger.
+.the-overlay-index__corner {
   position: fixed;
   z-index: 5;
   top: max(#{$overlay-inset}, env(safe-area-inset-top));
   right: max(#{$overlay-inset}, env(safe-area-inset-right));
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.the-overlay-index__trigger {
+  @include label-mono;
   display: inline-flex;
   align-items: center;
   gap: 0.75rem;
@@ -46,7 +54,7 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
 
 @if $layout == 'stacked' {
   @media (min-aspect-ratio: 6/5) {
-    .the-overlay-index__trigger {
+    .the-overlay-index__corner {
       top: calc(#{$stacked-headline-top} + #{$brand-line} * #{$stacked-headline-font} - #{$touch-target} / 2);
     }
   }
@@ -54,9 +62,13 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
 
 // Narrow screens: the logo is centered on top, the trigger goes to the bottom right, icon only.
 @media (max-aspect-ratio: 6/5) {
-  .the-overlay-index__trigger {
+  .the-overlay-index__corner {
     top: auto;
     bottom: max(#{$overlay-inset}, env(safe-area-inset-bottom));
+    flex-direction: column-reverse;
+  }
+
+  .the-overlay-index__trigger {
     padding: 0;
     width: $touch-target;
     justify-content: center;
@@ -69,6 +81,46 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
   // The coordinates make room for it.
   .the-overlay-coordinates {
     bottom: calc(max(#{$overlay-inset}, env(safe-area-inset-bottom)) + #{$touch-target} + 0.75rem);
+  }
+}
+
+// Language selector (English | Español): under the trigger, same width. Narrow screens: only the other code (EN/ES), round, above
+// the icon-only trigger.
+.the-overlay-lang {
+  @include label-mono;
+  display: flex;
+  border-color: rgba($color-text, 0.24);
+  background: rgba($color-ink, 0.55);
+  color: $color-text;
+  backdrop-filter: blur(6px);
+
+  .lang-switch__option {
+    flex: 1;
+    justify-content: center;
+  }
+}
+
+@media (max-aspect-ratio: 6/5) {
+  .the-overlay-lang {
+    padding: 0;
+
+    .lang-switch__option {
+      min-height: calc(#{$touch-target} - 2px);
+      padding: 0;
+      opacity: 1;
+
+      &[aria-current] {
+        display: none;
+      }
+    }
+
+    .lang-switch__name {
+      @include visually-hidden;
+    }
+
+    .lang-switch__code {
+      display: inline;
+    }
   }
 }
 

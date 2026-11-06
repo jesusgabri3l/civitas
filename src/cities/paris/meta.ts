@@ -19,6 +19,17 @@ export const meta = {
   year: 1889,
   region: 'Europe',
   keywords: ['Tour Eiffel', 'La Dame de Fer', 'Iron Lady', 'Champ de Mars', 'French'],
+  es: {
+    name: 'París',
+    monument: 'Torre Eiffel',
+    title: 'La Torre Eiffel en 3D, París — Civitas',
+    description: 'Explora la Torre Eiffel en 3D interactivo de noche, desde el primer boceto hasta su destello cada hora.',
+    ogImageAlt: 'La Torre Eiffel de París de noche, con sus luces destellando.',
+    intro: 'París, una noche ámbar alrededor de la Torre Eiffel.',
+    country: 'Francia',
+    glimpse: 'La Torre Eiffel de noche, viga por viga, con su destello cada hora.',
+    date: '1889',
+  },
   theme: {
     ground: '#121022',
     accent: '#e9c46a',

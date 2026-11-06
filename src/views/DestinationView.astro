@@ -3,7 +3,8 @@ import TheLayout from '../layouts/TheLayout.astro';
 import TheMonumentStory from '../components/TheMonumentStory.astro';
 import TheStage from '../components/TheStage.astro';
 import { monumentStories } from '../cities/server';
-import type { City } from '../cities';
+import { localCity, type City } from '../cities';
+import { langFrom } from '../i18n/lang';
 
 interface Props {
   destination: City;
@@ -11,8 +12,9 @@ interface Props {
 
 // A monument page: the stage of the city and, once its story exists, the chapters prerendered for search engines and deep links
 // (the client fetches the same markup on SPA navigation).
-const { destination } = Astro.props;
-const story = monumentStories[destination.id];
+const lang = langFrom(Astro.currentLocale);
+const destination = localCity(Astro.props.destination, lang);
+const story = monumentStories[lang][destination.id];
 ---
 
 <TheLayout {...destination}>

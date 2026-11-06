@@ -2,6 +2,7 @@
 import { useStore } from '@nanostores/vue';
 import { computed, ref, watch } from 'vue';
 import { $appState, seedAppState, stateFor, type StageId } from '../state/appStore';
+import type { Lang } from '../i18n/lang';
 import { hideTooltip } from '../state/globeStore';
 import TheOverlayBrand from './TheOverlayBrand.vue';
 import TheOverlayCityList from './TheOverlayCityList.vue';
@@ -11,8 +12,10 @@ import TheOverlayHint from './TheOverlayHint.vue';
 import TheOverlayHotspots from './TheOverlayHotspots.vue';
 import TheOverlayIndex from './TheOverlayIndex.vue';
 import TheOverlayTooltip from './TheOverlayTooltip.vue';
+import { provideUi } from './useUi';
 
-const props = defineProps<{ initialState: StageId }>();
+const props = defineProps<{ initialState: StageId; lang: Lang }>();
+provideUi(props.lang);
 seedAppState(stateFor(props.initialState, false));
 const appState = useStore($appState);
 const onGlobe = computed(() => appState.value.kind === 'globe');

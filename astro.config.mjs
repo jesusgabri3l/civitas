@@ -7,7 +7,9 @@ export default defineConfig({
   site: 'https://visitcivitas.com',
   // Everything stays prerendered; only `src/pages/api/suggest.ts` runs as a function.
   adapter: vercel(),
-  integrations: [vue(), sitemap({ serialize: (item) => ({ ...item, url: item.url.replace(/(.)\/$/, '$1') }) })],
+  // English at the root, Spanish under /es (slugs stay in English: /es/rome). Docs: docs/i18n-plan.md.
+  i18n: { locales: ['en', 'es'], defaultLocale: 'en', routing: { prefixDefaultLocale: false } },
+  integrations: [vue(), sitemap({ i18n: { defaultLocale: 'en', locales: { en: 'en', es: 'es' } }, serialize: (item) => ({ ...item, url: item.url.replace(/(.)\/$/, '$1') }) })],
   devToolbar: { enabled: false },
   vite: {
     // The cities load on demand: without this, dev discovers these deep imports on the first trip, re-optimizes mid-session

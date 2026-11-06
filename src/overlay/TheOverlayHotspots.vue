@@ -10,6 +10,7 @@ import { cities, type DestinationId } from '../cities';
 import { $appState } from '../state/appStore';
 import { navigate } from '../state/router';
 import { track } from '../state/track';
+import { useUi } from './useUi';
 import {
   $ambientActive,
   $hotspots,
@@ -25,6 +26,7 @@ const ENTER_STAGGER_SECONDS = 0.15;
 /** The entrance styles stay on this long after the first city shows up, then give way to the steady pulse. */
 const ENTERING_MS = 2400;
 
+const { cities: localCities } = useUi();
 const hotspots = useStore($hotspots);
 const openTooltip = useStore($openTooltip);
 const ambientActive = useStore($ambientActive);
@@ -53,7 +55,7 @@ const isDimmed = (id: DestinationId) => Boolean(openTooltip.value) && !isOpen(id
 const indexOf = (id: DestinationId) => cities.findIndex((destination) => destination.id === id);
 const pulseDelay = (id: DestinationId) => `${-indexOf(id) * PULSE_STAGGER_SECONDS}s`;
 const enterDelay = (id: DestinationId) => `${indexOf(id) * ENTER_STAGGER_SECONDS}s`;
-const nameOf = (id: DestinationId) => cities.find((destination) => destination.id === id)?.name ?? id;
+const nameOf = (id: DestinationId) => localCities.find((destination) => destination.id === id)?.name ?? id;
 // Labels sit to the right of their dot, unless that would run off the screen.
 const labelOnLeft = (x: number) => x > 0.78;
 const percent = (fraction: number) => `${(fraction * 100).toFixed(2)}%`;
@@ -107,7 +109,7 @@ async function onClick(event: MouseEvent, id: DestinationId) {
       }"
       :style="{ left: percent(hotspot.x), top: percent(hotspot.y), '--pulse-delay': pulseDelay(hotspot.id), '--enter-delay': enterDelay(hotspot.id) }"
       :data-hotspot="hotspot.id"
-      :aria-label="hotspot.id"
+      :aria-label="nameOf(hotspot.id)"
       @pointerenter="onPointerEnter($event, hotspot.id)"
       @pointerleave="onPointerLeave"
       @click="onClick($event, hotspot.id)"

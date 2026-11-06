@@ -3,12 +3,14 @@ import '@fontsource/fraunces/latin-600.css';
 import '@fontsource/jetbrains-mono/latin-400.css';
 import fraunces from '@fontsource/fraunces/files/fraunces-latin-600-normal.woff2?url';
 import jetbrainsMono from '@fontsource/jetbrains-mono/files/jetbrains-mono-latin-400-normal.woff2?url';
-import { cities } from '../cities';
+import { citiesFor } from '../cities';
 import { fontPreloads } from '../cities/server';
 import '../styles/main.scss';
 import { cityThemeCss } from '../cities/themeCss';
 import { cityJsonLd, websiteJsonLd } from '../cities/jsonLd';
-import { home } from '../data/home';
+import { localHome } from '../data/home';
+import { alternateUrls, langFrom, otherLang } from '../i18n/lang';
+import { ui } from '../i18n/ui';
 
 interface Props {
   title: string;
@@ -23,22 +25,28 @@ interface Props {
 }
 
 const { title, description, ogImage, ogImageAlt, path, id, noindex = false } = Astro.props;
-const cityFonts = cities.find((city) => city.id === id) ? fontPreloads[id as keyof typeof fontPreloads] : [];
-const themeCss = cityThemeCss(cities);
-const city = cities.find((candidate) => candidate.id === id);
-const jsonLd = city ? cityJsonLd(Astro.site!, home, city) : websiteJsonLd(Astro.site!, home);
+const lang = langFrom(Astro.currentLocale);
+const city = citiesFor(lang).find((candidate) => candidate.id === id);
+const cityFonts = city ? fontPreloads[city.id] : [];
+const themeCss = cityThemeCss(citiesFor(lang));
+const home = localHome(lang);
+const jsonLd = city ? cityJsonLd(Astro.site!, home, city, lang) : websiteJsonLd(Astro.site!, home, lang);
+// Reciprocal hreflang, self-referencing, plus x-default (English). Pages that only feed the client (404) have none.
+const alternates = noindex ? [] : alternateUrls(Astro.site!, path);
+const ogLocale = { en: 'en_US', es: 'es_ES' };
 const canonical = new URL(path, Astro.site).href;
 const ogUrl = new URL(ogImage, Astro.site).href;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{title}</title>
     <meta name="description" content={description} />
     <link rel="canonical" href={canonical} />
+    {alternates.map(({ hreflang, href }) => <link rel="alternate" hreflang={hreflang} href={href} />)}
     {noindex && <meta name="robots" content="noindex" />}
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#0b0b0e" />
@@ -48,7 +56,8 @@ const ogUrl = new URL(ogImage, Astro.site).href;
     <style is:inline set:html={themeCss}></style>
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Civitas" />
-    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale" content={ogLocale[lang]} />
+    <meta property="og:locale:alternate" content={ogLocale[otherLang(lang)]} />
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
@@ -66,7 +75,11 @@ const ogUrl = new URL(ogImage, Astro.site).href;
     <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />
   </head>
   <body>
-    <a class="skip-link" href="#main">Skip to content</a>
+    <a class="skip-link" href="#main">{ui[lang].skipToContent}</a>
     <slot />
   </body>
 </html>
+
+<script>
+  import '../i18n/switch';
+</script>

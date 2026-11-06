@@ -1,6 +1,8 @@
 ---
 import TheOverlay from '../overlay/TheOverlay.vue';
-import { cities, type DestinationId } from '../cities';
+import { citiesFor, type DestinationId } from '../cities';
+import { langFrom, withLang } from '../i18n/lang';
+import { ui } from '../i18n/ui';
 import type { StageId } from '../state/appStore';
 
 interface Props {
@@ -12,6 +14,8 @@ interface Props {
 }
 
 const { heading, intro, state, storyCity } = Astro.props;
+const lang = langFrom(Astro.currentLocale);
+const text = ui[lang];
 // On the globe (and on a city with a story, where the first chapter opens the page) the title and intro stay for search engines
 // and screen readers only.
 const onGlobe = state === 'globe';
@@ -23,11 +27,11 @@ const textHidden = onGlobe || Boolean(storyCity);
   <div class="the-stage__content">
     <h1 class:list={['the-stage__title', { 'visually-hidden': textHidden }]}>{heading}</h1>
     <p class:list={['the-stage__intro', { 'visually-hidden': textHidden }]}>{intro}</p>
-    <TheOverlay client:load initialState={state} />
+    <TheOverlay client:load initialState={state} {lang} />
     <!-- Out of sight until a keyboard user reaches it. -->
-    <nav class="the-stage__nav" aria-label="Destinations">
-      <a href="/">Globe</a>
-      {cities.map(({ path, name }) => <a href={path}>{name}</a>)}
+    <nav class="the-stage__nav" aria-label={text.destinations}>
+      <a href={withLang(lang, '/')}>{text.globe}</a>
+      {citiesFor(lang).map(({ path, name }) => <a href={path}>{name}</a>)}
     </nav>
   </div>
   <div class="the-stage__story" data-story-root data-story-city={storyCity}>

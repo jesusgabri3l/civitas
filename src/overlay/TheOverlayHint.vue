@@ -2,9 +2,11 @@
 import { useStore } from '@nanostores/vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { $ambientActive, $hasInteracted } from '../state/globeStore';
+import { useUi } from './useUi';
 
 const DIM_AFTER_MS = 4000;
 
+const { text } = useUi();
 const hasInteracted = useStore($hasInteracted);
 const ambientActive = useStore($ambientActive);
 const onTouch = ref(false);
@@ -32,13 +34,13 @@ const dimmed = computed(() => settled.value && ambientActive.value);
 <template>
   <div class="the-overlay-hint" :class="{ 'the-overlay-hint--dimmed': dimmed }" aria-hidden="true" data-hint>
     <p class="the-overlay-hint__item">
-      <span class="the-overlay-hint__key">Drag</span>Rotate
+      <span class="the-overlay-hint__key">{{ text.hint.drag }}</span>{{ text.hint.rotate }}
     </p>
     <p class="the-overlay-hint__item">
-      <span class="the-overlay-hint__key">{{ onTouch ? 'Pinch' : 'Scroll' }}</span>Zoom
+      <span class="the-overlay-hint__key">{{ onTouch ? text.hint.pinch : text.hint.scroll }}</span>{{ text.hint.zoom }}
     </p>
     <p class="the-overlay-hint__item">
-      <span class="the-overlay-hint__key">{{ onTouch ? 'Tap' : 'Click' }}</span>Visit
+      <span class="the-overlay-hint__key">{{ onTouch ? text.hint.tap : text.hint.click }}</span>{{ text.hint.visit }}
     </p>
   </div>
 </template>

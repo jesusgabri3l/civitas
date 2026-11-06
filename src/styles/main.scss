@@ -2,6 +2,8 @@
 @use 'base/typography';
 @use 'base/utilities';
 @use 'layout/stage';
+// Before its hosts (overlay-index, monument-story), so their overrides win at equal specificity.
+@use 'components/lang-switch';
 @use 'components/overlay-brand';
 @use 'components/overlay-headline';
 @use 'components/overlay-hotspots';

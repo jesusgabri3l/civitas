@@ -1,11 +1,15 @@
 ---
 import TheLayout from '../layouts/TheLayout.astro';
 import { home } from '../data/home';
+import { ui } from '../i18n/ui';
+
+// Vercel serves one 404 for the whole site, so it greets in both languages.
+const { en, es } = ui;
 ---
 
 <TheLayout
-  title="Page not found · Civitas"
-  description="This page does not exist."
+  title={en.notFound.title}
+  description={en.notFound.description}
   ogImage={home.ogImage}
   ogImageAlt={home.ogImageAlt}
   path="/404"
@@ -13,7 +17,7 @@ import { home } from '../data/home';
 >
   <main id="main" class="not-found">
     <!-- Same logo as the globe (TheOverlayBrand.vue); its global styles fix it to a corner, .not-found__brand puts it back in the flow. -->
-    <a class="the-overlay-brand not-found__brand" href="/" aria-label="Civitas, back to the globe">
+    <a class="the-overlay-brand not-found__brand" href="/" aria-label={en.brand.label}>
       <span class="the-overlay-brand__name">Civitas</span><svg class="the-overlay-brand__globe" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
         <circle cx="8" cy="8" r="6.5" />
         <ellipse cx="8" cy="8" rx="2.6" ry="6.5" />
@@ -21,8 +25,10 @@ import { home } from '../data/home';
       </svg>
     </a>
     <p class="not-found__code">404</p>
-    <h1>This place is not on the map.</h1>
-    <a class="not-found__home" href="/">Back to the globe</a>
+    <h1>{en.notFound.heading}</h1>
+    <a class="not-found__home" href="/">{en.notFound.back}</a>
+    <p class="not-found__es" lang="es">{es.notFound.heading}</p>
+    <a class="not-found__home" href="/es" lang="es">{es.notFound.back}</a>
   </main>
 </TheLayout>
 
@@ -50,6 +56,12 @@ import { home } from '../data/home';
     margin: 0;
     font-family: $font-mono;
     color: $color-amber;
+  }
+
+  .not-found__es {
+    margin: 0.5rem 0 0;
+    color: $color-text;
+    opacity: 0.7;
   }
 
   .not-found__home {

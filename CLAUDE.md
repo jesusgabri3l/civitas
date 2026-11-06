@@ -18,10 +18,11 @@ Astro 5 (estático + adaptador Vercel para `/api/suggest`) · TypeScript · Thre
 
 ## Convenciones
 
-- Contenido del sitio en inglés (textos, metas, aria-labels). Documentación y comentarios de diseño en español.
+- Contenido del sitio en inglés y español (textos, metas, aria-labels): inglés en la raíz y español en `/es/...` (slugs en inglés, `/es/rome`). Textos fijos en `src/i18n/ui.ts`; por ciudad, `meta.es` y `story.es.ts`. Español neutro con tú. Plan y decisiones: `docs/i18n-plan.md`. Documentación y comentarios de diseño en español.
 - En el contenido de la página nunca se habla de la técnica (ni "3D", "built in code", "real-time", "WebGL", "low-poly"…): solo del monumento y lo que el visitante hace con él. En el SEO (title, meta description, OG) se permite solo "3D" / "interactive 3D" como palabra de búsqueda; el resto sigue prohibido (ART-DIRECTION §5, "Voz del contenido").
 - Datos históricos verificados con fuente antes de publicar.
 - **Regla: toda página de monumento nueva queda indexada en el buscador del índice.** El índice sale solo del registro (`src/cities/index.ts` → `src/data/monumentIndex.ts`); al crear la ciudad: quitar su fila de `soon` en `monumentIndex.ts` y añadir `keywords` (nombre local, alias) en su `meta.ts`. `tests/monumentIndex.test.ts` falla si la ciudad no aparece, está duplicada o no se encuentra por monumento y ciudad.
+- **Regla: toda ciudad nueva sale en inglés y español.** Además de `meta.ts` y `story.ts`, lleva `meta.es` (mismos campos de texto) y `story.es.ts` (misma forma), y su fila de `soon` en `monumentIndex.ts` ya tiene `es`. Una ciudad sin la versión en español no está terminada; el SEO de la fase C se hace en los dos idiomas (title, description y `ogImageAlt`).
 - **SEO obligatorio en cada monumento nuevo, como fase aparte**: se hace solo después de que Jesús apruebe la página construida (fase C del checklist, ART-DIRECTION §7): title, description, OG en JPG y presencia en sitemap y JSON-LD. Una ciudad sin eso no está terminada.
 - Colores y fuentes solo desde tokens: `src/styles/abstracts/_variables.scss` (CSS) y `src/engine/stages/globe/palette.ts` (globo). Los colores y fuentes de cada ciudad viven solo en `theme` de `src/cities/<ciudad>/meta.ts`: de ahí salen el CSS (`--city-*`, emitido por `TheLayout`) y el 3D (`stage/<ciudad>Config.ts`).
 - Modelos 3D 100 % en código, con instancing y presupuesto de draw calls (sección 6 de `ART-DIRECTION.md`).

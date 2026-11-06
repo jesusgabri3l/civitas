@@ -148,9 +148,13 @@ Umami runs only in production (`src/state/track.ts`). Besides page views, it rec
 | `piece_open` | A piece of the model is clicked to open its card |
 | `suggest_sent` | A monument suggestion is sent |
 
+## Languages
+
+The site is in English and Spanish. English lives at the root (`/rome`) and Spanish under `/es` (`/es/rome`), with reciprocal `hreflang`, a canonical per language and both versions in the sitemap. On the home page, visitors from Spain and Latin America are sent to `/es` by a Vercel middleware that reads their country; the **English | Español** switch overrides it and remembers the choice in a cookie. Fixed texts live in `src/i18n/ui.ts`; each city has its Spanish copy in `meta.ts` (`es`) and `story.es.ts`.
+
 ## Adding a monument
 
-The atlas keeps growing. Every new monument follows the same checklist: propose two or three identities (typeface, color, motif, moment), write and fact-check a brief, build the model and its chapters, and only then add its SEO. The checklist is in [docs/ART-DIRECTION.md §7](docs/ART-DIRECTION.md) *(Spanish)*, and new pages are indexed in the search automatically from the city registry.
+The atlas keeps growing. Every new monument follows the same checklist: propose two or three identities (typeface, color, motif, moment), write and fact-check a brief, build the model and its chapters in English and Spanish, and only then add its SEO. The checklist is in [docs/ART-DIRECTION.md §7](docs/ART-DIRECTION.md) *(Spanish)*, and new pages are indexed in the search automatically from the city registry.
 
 ## Development
 

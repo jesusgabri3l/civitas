@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { cities, type DestinationId } from '../cities';
+import type { DestinationId } from '../cities';
 import { $openTooltip, hideTooltip, showTooltip } from '../state/globeStore';
+import { useUi } from './useUi';
+
+const { text, cities } = useUi();
 
 const reveal = (id: DestinationId) => showTooltip(id, true);
 const conceal = (id: DestinationId) => {
@@ -11,7 +14,7 @@ const conceal = (id: DestinationId) => {
 <template>
   <!-- Hidden from sight, not from keyboards or screen readers. Focusing an item shows its tooltip on the globe. -->
   <section class="the-overlay-cities visually-hidden" aria-labelledby="the-overlay-cities-title">
-    <h2 id="the-overlay-cities-title">Destinations</h2>
+    <h2 id="the-overlay-cities-title">{{ text.destinations }}</h2>
     <ul class="the-overlay-cities__list">
       <li v-for="destination in cities" :key="destination.id" class="the-overlay-cities__item">
         <a

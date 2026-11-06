@@ -8,6 +8,7 @@ import {
   stateFor,
   type StageId,
 } from './appStore';
+import { currentLang, langOfPath, stripLang, withLang } from '../i18n/lang';
 import { track, trackPageview } from './track';
 
 const cityIds = new Set<string>(cities.map(({ id }) => id));
@@ -19,7 +20,7 @@ export interface RouteLocation {
 }
 
 function slugOf(pathname: string): string {
-  return pathname.replace(/^\/+|\/+$/g, '').toLowerCase();
+  return stripLang(pathname).replace(/^\/+|\/+$/g, '').toLowerCase();
 }
 
 export function parseLocation(pathname: string, hash = ''): RouteLocation {
@@ -34,8 +35,7 @@ export function isKnownPath(pathname: string): boolean {
 }
 
 export function urlFor(stage: StageId, info = false): string {
-  if (stage === 'globe') return '/';
-  return `/${stage}${info ? INFO_HASH : ''}`;
+  return withLang(currentLang(), stage === 'globe' ? '/' : `/${stage}`) + (stage !== 'globe' && info ? INFO_HASH : '');
 }
 
 let infoPushedByUs = false;
@@ -91,6 +91,8 @@ function onClick(event: MouseEvent) {
   if (!anchor || anchor.target || anchor.hasAttribute('download')) return;
   const url = new URL(anchor.href, location.href);
   if (url.origin !== location.origin || !isKnownPath(url.pathname)) return;
+  // Another language is another document: the browser loads it (the language selector relies on this).
+  if (langOfPath(url.pathname) !== currentLang()) return;
   event.preventDefault();
   const next = parseLocation(url.pathname, url.hash);
   navigate(next.stage, next.info);

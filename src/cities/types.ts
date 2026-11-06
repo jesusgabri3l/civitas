@@ -27,6 +27,9 @@ export interface CityTheme {
   displayWeight?: number;
 }
 
+/** What changes with the language in a city's meta: the Spanish copy lives in `meta.es` (ids, coordinates, theme and keywords are shared). */
+export type CityTexts = Pick<CityMeta, 'name' | 'monument' | 'title' | 'description' | 'ogImageAlt' | 'intro' | 'country' | 'glimpse' | 'date'>;
+
 /**
  * The light, client-safe description of a city (no three, no story): globe, tooltip, index, router, SEO and theme. Each city has
  * one in `cities/<id>/meta.ts`; the list in `cities/index.ts` is what registers it.
@@ -50,13 +53,15 @@ export interface CityMeta extends PageMeta {
   /** Extra words the index search matches (local names, aliases, other spellings). Optional: name, monument, country and region are already searched. */
   keywords?: readonly string[];
   theme: CityTheme;
+  /** The texts above in Spanish. Each new city needs it, and its `story.es.ts`. */
+  es: CityTexts;
   /** Cities that read as related: the globe prefers them for this city's arcs on hover. */
   related?: readonly DestinationId[];
 }
 
 /**
  * The story of a monument page (docs/ART-DIRECTION.md §5): a hero and six chapters, each one a state of the maquette (`stateFor` in
- * the stage config of the city, same order). Rendered by components/TheMonumentStory.astro. Site content in English.
+ * the stage config of the city, same order). Rendered by components/TheMonumentStory.astro. Site content in English (`story.ts`) and Spanish (`story.es.ts`, same shape).
  */
 export interface StoryChapter {
   id: string;

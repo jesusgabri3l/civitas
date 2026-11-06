@@ -5,7 +5,11 @@ let headlineAlreadyTyped = false;
 
 <script setup lang="ts">
 import { onMounted } from 'vue';
-import { headlineLines, headlineSubtitle } from '../data/headline';
+import { useUi } from './useUi';
+
+const { text } = useUi();
+const headlineLines = text.headline.lines;
+const headlineSubtitle = text.headline.subtitle;
 
 const alreadyTyped = headlineAlreadyTyped;
 // Only on the client (onMounted never runs during SSR), so the prerendered HTML always types.

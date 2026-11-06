@@ -102,10 +102,17 @@
 
   &__nav {
     display: flex;
+    align-items: center;
     gap: 2rem;
+    // Each link on one line: "← Globe" broke in two once the language link joined the bar on phones.
+    white-space: nowrap;
     pointer-events: auto;
 
-    a {
+    .lang-switch {
+      color: var(--city-soft);
+    }
+
+    > a {
       padding: 0.6rem 0;
       color: var(--city-soft);
       text-decoration: none;
@@ -129,7 +136,31 @@
     }
 
     &__nav {
-      gap: 1.25rem;
+      gap: 1rem;
+    }
+
+    // Phones: only the other language's code, as a plain nav link (the pill doesn't fit); the full name stays for screen readers.
+    .lang-switch {
+      padding: 0;
+      border: 0;
+    }
+
+    .lang-switch__option {
+      min-height: 0;
+      padding: 0.6rem 0;
+      opacity: 1;
+
+      &[aria-current] {
+        display: none;
+      }
+    }
+
+    .lang-switch__name {
+      @include visually-hidden;
+    }
+
+    .lang-switch__code {
+      display: inline;
     }
   }
 }

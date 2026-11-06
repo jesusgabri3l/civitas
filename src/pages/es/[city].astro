@@ -1,0 +1,13 @@
+---
+import { cities } from '../../cities';
+import DestinationView from '../../views/DestinationView.astro';
+
+// Same routes as `pages/[city].astro` under /es; the view reads the language from `Astro.currentLocale`.
+export function getStaticPaths() {
+  return cities.map((destination) => ({ params: { city: destination.id }, props: { destination } }));
+}
+
+const { destination } = Astro.props;
+---
+
+<DestinationView {destination} />
