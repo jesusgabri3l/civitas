@@ -33,8 +33,9 @@ Fecha: 4 de noviembre de 2026. Fases en [PLAN.md](PLAN.md); diseño en [ART-DIRE
 
 ## Pendiente
 
-- Español: validar el middleware en un Preview de Vercel (cookie `lang=es`, VPN, `/es` y `/es/` sin bucle) y revisar a ojo que el español (más largo) quepa en la maqueta; tests de `/es` en router y búsqueda sin escribir.
-- Globo: agrupar hotspots cercanos cuando haya muchos monumentos; girar hasta una ciudad enfocada con teclado en la cara oculta.
-- Lanzamiento: probar en móviles reales.
+- **Lanzamiento (decisión 2026-11-06):** Civitas NO se lanza todavía. Se lanza con 8-10 monumentos repartidos por el mundo: a los 3 actuales (Atenas, Roma, París) se suman 2 de EE. UU., 1 de Latinoamérica, 2 de África y 2 de Asia. Cuáles: por decidir (candidatos propuestos en el chat del 2026-11-06: Estatua de la Libertad, Golden Gate / Puente de Brooklyn, Chichén Itzá, Gran Pirámide de Guiza, Abu Simbel / Gran Mezquita de Djenné / Lalibela, Taj Mahal, Angkor Wat / Borobudur). Cada uno sigue el checklist de ART-DIRECTION §7 (identidad y brief aprobados por Jesús antes de código).
+- Globo, necesario antes del lanzamiento: agrupar hotspots cercanos (con 10 ciudades, Europa se amontona); girar hasta una ciudad enfocada con teclado en la cara oculta.
+- Probar en móviles reales (Jesús, pendiente). Barra de monumento: logo centrado con "← Globe / Explore / EN" (2026-11-06, sin commit hasta que Jesús lo pruebe; medido con Playwright: logo y enlaces centrados a 42 px en 360, 390 y 1440 px).
+- Español: middleware y textos validados por Jesús (2026-11-06). Opcional: tests de `/es` en router y buscador.
 - Rendimiento y SEO: fase 5 del workflow de SEO **cerrada el 2026-11-06** (PSI 75/74, a11y 100; detalle en `seo-workflow/PLAN.md`). Solo queda la medición de prod del 2026-11-30. No proponerlo aquí. Referencia local (31 oct 2026, CPU 6x y Slow 4G): globo listo en 3,5 s, Roma en 4,7 s; JS gzip: globo ~213 KB (three 131 KB), ciudad ~250 KB.
 - `npm run smoke` necesita Chromium de Playwright instalado localmente.
