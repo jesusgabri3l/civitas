@@ -52,7 +52,7 @@ Live site, Chrome on Intel integrated graphics, 1440 × 900, cold cache, median 
 
 ## PageSpeed
 
-PageSpeed Insights on [visitcivitas.com](https://visitcivitas.com), before applying my SEO workflow:
+PageSpeed Insights on [visitcivitas.com](https://visitcivitas.com), before and after applying my SEO workflow:
 
 <table>
   <tr>
@@ -64,7 +64,14 @@ PageSpeed Insights on [visitcivitas.com](https://visitcivitas.com), before apply
     <td><img src="docs/screenshots/pagespeed-desktop-2026-11-05.png" alt="PageSpeed desktop: Performance 60, Accessibility 95, Best Practices 100, SEO 100" width="100%" /></td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><sub><b>Before</b> · November 5, 2026 · <b>After</b>: coming soon</sub></td>
+    <td colspan="2" align="center"><sub><b>Before</b> · November 5, 2026</sub></td>
+  </tr>
+  <tr>
+    <td><img src="docs/screenshots/pagespeed-mobile-2026-11-06.png" alt="PageSpeed mobile: Performance 65, Accessibility 100, Best Practices 100, SEO 100" width="100%" /></td>
+    <td><img src="docs/screenshots/pagespeed-desktop-2026-11-06.png" alt="PageSpeed desktop: Performance 61, Accessibility 100, Best Practices 100, SEO 100" width="100%" /></td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center"><sub><b>After</b> · November 6, 2026 · accessibility to 100; performance is held back by the WebGL start-up cost (Total Blocking Time)</sub></td>
   </tr>
 </table>
 
