@@ -26,19 +26,6 @@ A visual wiki of world monuments. The home page is a 3D globe: click a landmark 
   </tr>
 </table>
 
-## Art direction
-
-**One night, one light per city.** Civitas owns navigation, data and the plaster models; each city owns its typeface, accent color, motif and atmosphere. The visitor should feel they changed places, never websites.
-
-<table>
-  <tr>
-    <td align="center" width="50%"><img src="docs/screenshots/desktop-athens.jpg" alt="The Parthenon page: title in GFS Didot, night blue background and terracotta accent with a Greek key motif" width="100%" /><br /><sub>Athens · GFS Didot, night blue, terracotta, Greek key</sub></td>
-    <td align="center" width="50%"><img src="docs/screenshots/desktop-paris.jpg" alt="The Eiffel Tower page: italic Bodoni Moda title, violet night background, champagne accent and the tower lit in amber" width="100%" /><br /><sub>Paris · Bodoni Moda italic, violet night, champagne, lattice</sub></td>
-  </tr>
-</table>
-
-Full system: [docs/ART-DIRECTION.md](docs/ART-DIRECTION.md) *(Spanish)*.
-
 ## How it's built
 
 **Astro 5** (static + one serverless route) · **Three.js** with a custom render pipeline · **GSAP** ScrollTrigger · **Vue 3** island + nanostores · Sass · TypeScript · Vitest + Playwright · Umami · Vercel. Architecture: [docs/PLAN.md](docs/PLAN.md#arquitectura) *(Spanish)*.
