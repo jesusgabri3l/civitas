@@ -54,15 +54,18 @@ export interface AmbientPolicy {
   shootingStars: boolean;
   /** Seconds without interaction before ambient animation pauses (the engine then stops rendering). */
   idleSeconds: number;
+  /** false without a GPU (software WebGL): every frame is CPU work, so the globe skips its intro and ambient motion. */
+  motion: boolean;
 }
 
 export const MOBILE_IDLE_SECONDS = 20;
 export const DESKTOP_IDLE_SECONDS = 60;
 
-export function ambientPolicyFor(tier: QualityTier, mobile: boolean): AmbientPolicy {
-  if (tier === 'low') return { starDensity: 0.35, shootingStars: false, idleSeconds: MOBILE_IDLE_SECONDS };
-  if (mobile) return { starDensity: 0.45, shootingStars: false, idleSeconds: MOBILE_IDLE_SECONDS };
-  return { starDensity: tier === 'medium' ? 0.8 : 1, shootingStars: true, idleSeconds: DESKTOP_IDLE_SECONDS };
+export function ambientPolicyFor(tier: QualityTier, mobile: boolean, software = false): AmbientPolicy {
+  const motion = !software;
+  if (tier === 'low') return { starDensity: 0.35, shootingStars: false, idleSeconds: MOBILE_IDLE_SECONDS, motion };
+  if (mobile) return { starDensity: 0.45, shootingStars: false, idleSeconds: MOBILE_IDLE_SECONDS, motion };
+  return { starDensity: tier === 'medium' ? 0.8 : 1, shootingStars: true, idleSeconds: DESKTOP_IDLE_SECONDS, motion };
 }
 
 export function lowerTier(tier: QualityTier): QualityTier {

@@ -73,6 +73,8 @@ export class Engine {
   private readonly mobile: boolean;
   private readonly ambientIdleSeconds: number | undefined;
   private readonly tierLocked: boolean;
+  /** No GPU: WebGL runs on the CPU (SwiftShader and the like). */
+  private readonly software: boolean;
   /** Best tier the governor may climb back to: the detected one, lowered when a climb did not hold. */
   private tierCeiling: QualityTier;
   /** The last change was a climb: if it drops again, the ceiling stays below it. */
@@ -120,7 +122,8 @@ export class Engine {
     this.tierLocked = tierOverride !== undefined;
 
     this.renderer = new WebGLRenderer({ canvas, antialias: false, powerPreference: 'high-performance' });
-    const detected = isSoftwareRenderer(this.renderer.getContext()) ? 'low' : detectQualityTier(signals);
+    this.software = isSoftwareRenderer(this.renderer.getContext());
+    const detected = this.software ? 'low' : detectQualityTier(signals);
     this.tierCeiling = tierOverride ?? detected;
     // The intro is the heaviest stretch of the first load: on a phone it starts cheap and the real tier comes after it.
     if (this.mobile && !this.tierLocked && this.tierCeiling !== 'low') this.introRampTier = this.tierCeiling;
@@ -136,7 +139,7 @@ export class Engine {
       canvas,
       invalidate: () => this.invalidate(),
       ambient: () => {
-        const policy = ambientPolicyFor(this.introRampTier ?? this.quality.tier, this.mobile);
+        const policy = ambientPolicyFor(this.introRampTier ?? this.quality.tier, this.mobile, this.software);
         return this.ambientIdleSeconds === undefined ? policy : { ...policy, idleSeconds: this.ambientIdleSeconds };
       },
       tier: () => this.introRampTier ?? this.quality.tier,

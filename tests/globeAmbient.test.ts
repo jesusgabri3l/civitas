@@ -49,8 +49,13 @@ describe('ambient policy', () => {
 
   it('keeps the full sky on capable desktops', () => {
     const high = ambientPolicyFor('high', false);
-    expect(high).toEqual({ starDensity: 1, shootingStars: true, idleSeconds: DESKTOP_IDLE_SECONDS });
+    expect(high).toEqual({ starDensity: 1, shootingStars: true, idleSeconds: DESKTOP_IDLE_SECONDS, motion: true });
     expect(ambientPolicyFor('medium', false).starDensity).toBeLessThan(high.starDensity);
+  });
+
+  it('stills the globe without a GPU (software WebGL)', () => {
+    expect(ambientPolicyFor('low', true, true).motion).toBe(false);
+    expect(ambientPolicyFor('low', true).motion).toBe(true);
   });
 });
 

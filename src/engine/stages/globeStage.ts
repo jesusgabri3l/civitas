@@ -265,7 +265,7 @@ export function createStage(host: StageHost): Stage {
     }
     introPlayed = true;
     diveAmount = 0;
-    const instant = prefersReducedMotion();
+    const instant = prefersReducedMotion() || !host.ambient().motion;
     spinElapsed = instant ? SPIN_SECONDS : 0;
     dollyElapsed = instant ? DOLLY_SECONDS : 0;
     yaw = instant ? europeYaw : europeYaw - INTRO_SPIN;
@@ -383,7 +383,7 @@ export function createStage(host: StageHost): Stage {
 
     activate() {
       active = true;
-      ambientAllowed = !prefersReducedMotion();
+      ambientAllowed = !prefersReducedMotion() && host.ambient().motion;
       lastActivityAt = performance.now();
       introHeadStart = 0;
       ambientTime = 0;
