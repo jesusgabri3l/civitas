@@ -18,7 +18,7 @@ Antes del lanzamiento también hace falta **agrupar los hotspots del globo** (Eu
 | 7 | África (noreste) | Gran Pirámide | Guiza (Egipto) | Elegido |
 | 8 | África (oeste) | Gran Mezquita de Djenné | Djenné (Malí) | Elegido |
 | 9 | Asia (sur) | Taj Mahal | Agra (India) | Elegido |
-| 10 | Asia (este) | Ciudad Prohibida | Pekín | Elegido; enfoque propuesto: solo el eje central (abajo) |
+| 10 | Asia (este) | Ciudad Prohibida | Pekín | Elegido; enfoque aprobado: solo el eje central (abajo) |
 
 Por qué esta mezcla: EE. UU. queda en dos costas, Sudamérica va al sur para que México no quede pegado a EE. UU., y África y Asia tienen cada una dos puntos separados.
 
@@ -46,7 +46,7 @@ El problema es que su identidad es la montaña, y ART-DIRECTION prohíbe el pais
 
 El problema es que son unos 980 edificios en 72 hectáreas, imposible de modelar entera.
 
-**Propuesta:** modelar de verdad solo el **eje central**: la Puerta del Meridiano y el Salón de la Armonía Suprema sobre su terraza de mármol de tres niveles. El resto del complejo serían bloques bajos de yeso, solo la planta extruida, que se disuelven en la niebla. Es como las maquetas de museo que detallan el corazón y dejan el contexto en volumen.
+**Aprobado por Jesús el 2026-11-06:** modelar de verdad solo el **eje central**: la Puerta del Meridiano y el Salón de la Armonía Suprema sobre su terraza de mármol de tres niveles. El resto del complejo serían bloques bajos de yeso, solo la planta extruida, que se disuelven en la niebla. Es como las maquetas de museo que detallan el corazón y dejan el contexto en volumen.
 
 - La identidad está en los tejados curvos de doble alero (se modelan de verdad) y en los soportes **dougong**: ménsulas de madera encajadas sin clavos. Desarmarlas es el capítulo perfecto para "armar y desarmar".
 - Momentos posibles: los dougong separándose en explosión, o las figuras de cerámica en la arista del tejado.
