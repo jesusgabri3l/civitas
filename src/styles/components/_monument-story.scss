@@ -70,7 +70,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: calc(1.25rem + env(safe-area-inset-top)) max(#{$overlay-inset}, env(safe-area-inset-right)) 1.25rem;
+  padding: calc(#{$navbar-pad} + env(safe-area-inset-top)) max(#{$overlay-inset}, env(safe-area-inset-right)) $navbar-pad;
   pointer-events: none;
 
   // A soft fade of the ground behind the bar, so the chapters scroll away under it.
@@ -104,6 +104,7 @@
     display: flex;
     align-items: center;
     gap: 2rem;
+    min-height: $touch-target;
     // Each link on one line: "← Globe" broke in two once the language link joined the bar on phones.
     white-space: nowrap;
     pointer-events: auto;

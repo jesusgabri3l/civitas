@@ -28,7 +28,9 @@ $stacked-headline-top: max(4.25rem, 9vh, calc(env(safe-area-inset-top) + 3.75rem
 $stacked-headline-font: clamp(1.75rem, 3.4vw + 0.9rem, 4rem);
 
 // Top bar of a monument page (`components/monument-story`). The Civitas logo docks inside it (`components/overlay-brand`).
-$navbar-height: 3.75rem;
+// Monument top bar: one row of touch-target height between equal paddings; the docked logo centers on that row.
+$navbar-pad: 1.25rem;
+$navbar-height: $navbar-pad * 2 + $touch-target;
 $brand-docked-scale: 0.8;
 
 // Phones and narrow tablets: the monument page stacks (maquette above, text below).
