@@ -15,11 +15,7 @@ Spin a globe, pick a monument and scroll through its history while its scale mod
 
 ## Overview
 
-Civitas is a visual wiki of world monuments. The home page is a 3D globe: every hotspot is a landmark, and clicking one flies the camera down into its page. Each monument is shown as a **museum maquette under a single spotlight**, and its story is told in chapters tied to the scroll: the quarry, the construction, the disasters, the restorations, and an **Explore** mode at the end to orbit the model, switch between historical views and open a card for each piece.
-
-<img src="docs/screenshots/desktop-rome.jpg" alt="The Colosseum page on desktop: the COLOSSEVM title in Cinzel, a plaster model of the amphitheatre on a stone pedestal with Pompeian red debris, and the chapter timeline at the bottom" width="100%" />
-
-### On a phone
+A visual wiki of world monuments. The home page is a 3D globe: click a landmark and the camera flies down into its page, where the monument is a **museum maquette under a single spotlight** and its story (quarry, construction, disasters, restorations) plays out as you scroll. At the end, **Explore** lets you orbit the model, switch historical views and open a card for each piece. In English and Spanish.
 
 <table>
   <tr>
@@ -32,14 +28,7 @@ Civitas is a visual wiki of world monuments. The home page is a 3D globe: every 
 
 ## Art direction
 
-**One night, one light per city.** Civitas has two layers:
-
-| Layer | What it owns | Changes per city |
-| :-- | :-- | :-- |
-| **Civitas** (the hub) | Logo, navigation, timeline, coordinates, museum cards, page structure, plaster models, dark background | Never |
-| **The city** | Title typeface, accent color, background tint, decorative motif, light and atmosphere, one shareable "moment" | Always |
-
-Rule of thumb: *if it is navigation or data, it belongs to Civitas; if it is emotion or place, it belongs to the city.* The visitor should feel they changed places, never that they changed websites.
+**One night, one light per city.** Civitas owns navigation, data and the plaster models; each city owns its typeface, accent color, motif and atmosphere. The visitor should feel they changed places, never websites.
 
 <table>
   <tr>
@@ -48,58 +37,22 @@ Rule of thumb: *if it is navigation or data, it belongs to Civitas; if it is emo
   </tr>
 </table>
 
-The full system (tokens, page template, 3D rules and the checklist for adding a monument) lives in [docs/ART-DIRECTION.md](docs/ART-DIRECTION.md) *(Spanish)*.
+Full system: [docs/ART-DIRECTION.md](docs/ART-DIRECTION.md) *(Spanish)*.
 
-## Stack
+## How it's built
 
-| | |
-| :-- | :-- |
-| Framework | [Astro 5](https://astro.build) (static, one serverless route) |
-| 3D | [Three.js](https://threejs.org) r170 with a custom render pipeline |
-| Animation | [GSAP](https://gsap.com) + ScrollTrigger |
-| UI | Vue 3 island for the hub overlay, nanostores for state |
-| Styles | Sass (7-1 pattern) |
-| Language | TypeScript |
-| Tests | Vitest + a Playwright smoke test |
-| Analytics | [Umami](https://umami.is) (cookieless) |
-| Hosting | Vercel, auto-deploy on every push to `main` |
+**Astro 5** (static + one serverless route) · **Three.js** with a custom render pipeline · **GSAP** ScrollTrigger · **Vue 3** island + nanostores · Sass · TypeScript · Vitest + Playwright · Umami · Vercel. Architecture: [docs/PLAN.md](docs/PLAN.md#arquitectura) *(Spanish)*.
 
-Project structure and architecture: [docs/PLAN.md](docs/PLAN.md#arquitectura) *(Spanish)*.
-
-## How the 3D works
-
-- **Every model is code.** No imported meshes or scanned textures: each monument is built from Three.js primitives with real proportions, using `InstancedMesh` for anything repeated (columns, arches, girders).
-- **One look for everything.** A custom pipeline renders the scene, a G-buffer for ambient occlusion and ink outlines, and a final plaster pass with grain and vignette.
-- **Scroll drives the story.** GSAP ScrollTrigger maps each chapter to a camera pose and a model state, so scrolling literally takes the monument apart and puts it back together.
-- **Globe ↔ city trips.** The camera dives into the globe and a circular reveal fades into the city's own color. Navigation is client-side, but every route is also prerendered for SEO and direct links.
-
-## Engineering for performance
-
-A real-time 3D site lives or dies on its frame budget, so performance was designed in from the start, not patched at the end.
-
-**Loading and preloading**
-- **Monuments load before you click.** Opening a city's tooltip on the globe, or resting 200 ms on its row in the index, starts loading that monument, so the trip usually begins with the scene already prepared off screen.
-- **Each scene has a lifecycle:** `load → warm → activate → sleep → dispose`. Shaders are compiled during the warm-up, so the first frame never stutters, and scenes you leave release their GPU memory.
-- **Models are built in parts.** Model construction is async and yields to the main thread between groups of pieces, so hover, the index and scrolling stay responsive while a monument is built.
-
-**Rendering**
-- **Render on demand.** Nothing is drawn when nothing moves, and shadows are static, redrawn only when the model changes.
-- **Instancing and a draw-call budget** of about 10–20 calls per model; procedural textures are generated once, cached and shared between cities; the G-buffer uses half floats.
-
-**Adaptive quality**
-- Three tiers (`low`, `medium`, `high`) control shadows, MSAA, dust and pixel ratio. A governor watches real frame times: it drops a tier after ~2 s under 28 fps, jumps straight to `low` under 10 fps, and climbs back only after ~8 s above 55 fps, never above the tier detected for the device.
-- Software WebGL starts on `low`, the pixel ratio is adjusted when you change monitor or zoom, and **without WebGL the story still reads as plain text**.
-
-### Built for phones
-
-- Tested on a real iPhone 15, including **Low Power Mode**: Safari caps it at 30 fps, and the governor recognizes that cap instead of downgrading the scene.
-- The canvas uses large-viewport units (`100lvh`), so the iOS toolbar showing or hiding never shifts the globe hotspots.
-- Atmospheric gradients (like Rome's mist) are drawn in shaders, because canvas textures left visible blotches on iOS.
-- Touch-first UI: inputs at 16 px to avoid iOS auto-zoom, no autofocus on touch screens, and *back* goes straight to the globe.
+- **Every model is code.** No imported meshes: Three.js primitives with real proportions and `InstancedMesh` for anything repeated, within a budget of ~10–20 draw calls per model.
+- **One look for everything.** A G-buffer for ambient occlusion and ink outlines, then a plaster pass with grain and vignette.
+- **Scroll drives the story.** Each chapter maps to a camera pose and a model state, so scrolling takes the monument apart and puts it back together.
+- **Monuments load before you click.** Hovering a city starts loading it; scenes follow `load → warm → activate → sleep → dispose`, with shaders compiled off screen and GPU memory released on exit.
+- **Render on demand** with static shadows, and an **adaptive quality governor** that drops or raises the tier from real frame times.
+- **Built for phones.** Tested on an iPhone 15 in Low Power Mode, `100lvh` canvas so the iOS toolbar never shifts the hotspots, and without WebGL the story still reads as text.
 
 ### Measured
 
-Live site, Chrome on Intel integrated graphics, 1440 × 900, cold cache, median of 3 runs. The second set of columns repeats the test with the CPU slowed down 4× as a stand-in for a mid-range phone.
+Live site, Chrome on Intel integrated graphics, 1440 × 900, cold cache, median of 3 runs; *CPU 4×* stands in for a mid-range phone.
 
 | Page | Ready | FPS | Ready (CPU 4×) | FPS (CPU 4×) | Draw calls / frame |
 | :-- | --: | --: | --: | --: | --: |
@@ -108,15 +61,7 @@ Live site, Chrome on Intel integrated graphics, 1440 × 900, cold cache, median 
 | Rome | 1.1 s | 136 | 2.0 s | 118 | 33 |
 | Paris | 1.1 s | 136 | 1.9 s | 136 | 12 |
 
-*Ready* is from navigation to the first rendered scene. *FPS* counts frames actually rendered by the engine while dragging the globe or scrolling the story (144 is the monitor's limit); no run had a frame over 50 ms. Draw calls include every pass (scene, G-buffer and plaster). JavaScript per page: ~210–260 KB gzipped.
-
-## Suggest a monument
-
-Visitors can propose the next landmark from the index. To avoid running a full backend, the form posts to a **single serverless function** (`/api/suggest`, the only non-prerendered route on Vercel), which:
-
-1. Verifies a **Cloudflare Turnstile** token (no CAPTCHA puzzles for real people).
-2. Validates and sanitizes the fields.
-3. Appends a row to a **Google Sheet** through a service account, signing the JWT with Web Crypto (no `googleapis` dependency).
+*Ready* = navigation to first rendered scene; 144 fps is the monitor's limit; no frame over 50 ms. ~210–260 KB of gzipped JS per page.
 
 ## PageSpeed
 
@@ -136,25 +81,12 @@ PageSpeed Insights on [visitcivitas.com](https://visitcivitas.com), before apply
   </tr>
 </table>
 
-## Analytics
+## Also inside
 
-Umami runs only in production (`src/state/track.ts`). Besides page views, it receives:
-
-| Event | When it fires |
-| :-- | :-- |
-| `city_open` | A monument opens, with `from`: `globe`, `index` or `url` |
-| `chapter_reached` | First time a visitor reaches each chapter |
-| `explore_view` | A historical view is picked in Explore |
-| `piece_open` | A piece of the model is clicked to open its card |
-| `suggest_sent` | A monument suggestion is sent |
-
-## Languages
-
-The site is in English and Spanish. English lives at the root (`/rome`) and Spanish under `/es` (`/es/rome`), with reciprocal `hreflang`, a canonical per language and both versions in the sitemap. On the home page, visitors from Spain and Latin America are sent to `/es` by a Vercel middleware that reads their country; the **English | Español** switch overrides it and remembers the choice in a cookie. Fixed texts live in `src/i18n/ui.ts`; each city has its Spanish copy in `meta.ts` (`es`) and `story.es.ts`.
-
-## Adding a monument
-
-The atlas keeps growing. Every new monument follows the same checklist: propose two or three identities (typeface, color, motif, moment), write and fact-check a brief, build the model and its chapters in English and Spanish, and only then add its SEO. The checklist is in [docs/ART-DIRECTION.md §7](docs/ART-DIRECTION.md) *(Spanish)*, and new pages are indexed in the search automatically from the city registry.
+- **Suggest a monument:** one serverless function verifies Cloudflare Turnstile and appends to a Google Sheet, signing the service-account JWT with Web Crypto (no `googleapis`).
+- **Two languages:** English at the root and Spanish under `/es`, with `hreflang` and both versions in the sitemap. The home page sends visitors from Spain and Latin America to `/es`; the **English | Español** switch overrides it.
+- **Analytics:** cookieless Umami with events for city opens, chapters reached, Explore views, pieces opened and suggestions.
+- **Adding a monument** follows one checklist (identity, fact-checked brief, model, both languages, then SEO) in [docs/ART-DIRECTION.md §7](docs/ART-DIRECTION.md) *(Spanish)*.
 
 ## Development
 
@@ -169,9 +101,7 @@ npm run build     # builds the site into ./dist/
 npm run preview   # serves the build locally
 ```
 
-Everything except **Suggest a monument** works without configuration. For the form, copy `.env.example` to `.env.local` and fill in the Google service account; Cloudflare's [Turnstile test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) work on `localhost`.
-
-Other scripts: `npm run smoke` (headless Playwright smoke test, after a build), `npm run og` (regenerates the Open Graph images) and `npm run build:globe-data` (regenerates the globe coastlines from Natural Earth).
+Only **Suggest a monument** needs config: copy `.env.example` to `.env.local` ([Turnstile test keys](https://developers.cloudflare.com/turnstile/troubleshooting/testing/) work on `localhost`). Also: `npm run smoke`, `npm run og`, `npm run build:globe-data`.
 
 ## Author
 
