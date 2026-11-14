@@ -22,7 +22,7 @@ import {
 import { SKY_LAYER } from '../../../engine/render/LookPipeline';
 import { createRandom } from '../../../engine/utils/random';
 import { yieldToMain } from '../../../engine/utils/yieldToMain';
-import { createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
+import { applyExploreFocus, createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
 import { EiffelDrawing } from './EiffelDrawing';
 import {
   ACCENT,
@@ -113,6 +113,7 @@ const position = new Vector3();
 const scale = new Vector3();
 const color = new Color();
 const accent = new Color(ACCENT);
+const ground = new Color(PARIS_ENV.backdrop);
 const warm = new Color(LIGHTS.glow);
 const steady = new Color(LIGHTS.steady);
 const flash = new Color(LIGHTS.flash);
@@ -421,8 +422,8 @@ export class EiffelTower implements MonumentModel<ParisState> {
         color.copy(accent);
       } else {
         if (lit > 0) color.lerp(warm, LIGHTS.warmth * lit);
-        if (this.highlight && piece.part === this.highlight) color.lerp(accent, 0.5);
       }
+      if (this.highlight) applyExploreFocus(color, piece.part === this.highlight, accent, ground);
       this.barMesh.setColorAt(index, color);
     });
     this.barMesh.instanceMatrix.needsUpdate = true;

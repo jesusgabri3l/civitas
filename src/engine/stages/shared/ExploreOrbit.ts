@@ -9,7 +9,7 @@ const DRAG_SPEED = 0.2;
 const PARALLAX = { yaw: 0.7, pitch: 0.35 } as const;
 
 export interface OrbitLimits {
-  /** Degrees the Explore drag can turn the maquette around the chapter pose. */
+  /** Degrees the Explore drag can turn the maquette around the chapter pose; `Infinity` = a free full turn (the angle is never normalized while exploring, so it cannot jump). */
   yaw: number;
   pitchUp: number;
   pitchDown: number;
@@ -79,7 +79,12 @@ export class ExploreOrbit {
     if (this.exploring === exploring) return;
     this.exploring = exploring;
     this.pressed = null;
-    if (!exploring) this.dragYawGoal = this.dragPitchGoal = 0;
+    if (!exploring) {
+      // After a free full turn, come back by the short way: drop whole turns first (same pose), then ease to 0.
+      const turns = Math.round(this.dragYaw / 360) * 360;
+      this.dragYaw -= turns;
+      this.dragYawGoal = this.dragPitchGoal = 0;
+    }
     this.applyMode();
     this.options.onActivity();
   }

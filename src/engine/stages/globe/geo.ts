@@ -6,8 +6,29 @@ export { formatCoordinates, wrapLongitude } from './coordinates';
 export const GLOBE_FOV = 40;
 export const DEG = Math.PI / 180;
 
-/** Where the globe ends up facing: the middle of the three monuments. */
+/** The middle of the European monuments: the start when the visitor's region is unknown or is Europe. */
 export const EUROPE = { lat: 43, lon: 13 };
+
+/** Rough longitude of the visitor from the browser's time zone (its UTC offset x 15°; no permission, no service). Null if unknown. */
+export function longitudeFromTimeZone(timeZone?: string, date = new Date()): number | null {
+  if (!timeZone) return null;
+  try {
+    const name = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' }).formatToParts(date).find((part) => part.type === 'timeZoneName')?.value;
+    const match = name?.match(/^GMT(?:([+-])(\d{2}):(\d{2}))?$/);
+    if (!match) return null;
+    const hours = match[1] ? Number(match[2]) + Number(match[3]) / 60 : 0;
+    return wrapLongitude((match[1] === '-' ? -hours : hours) * 15);
+  } catch {
+    return null; // an unknown time zone throws
+  }
+}
+
+/** Where the globe starts: Europe or the monument nearest the visitor in longitude (then the auto rotation shows the rest). */
+export function startFocus(places: readonly { lat: number; lon: number }[], visitorLon: number | null): { lat: number; lon: number } {
+  if (visitorLon === null) return EUROPE;
+  const gap = (lon: number) => Math.abs(wrapLongitude(lon - visitorLon));
+  return [EUROPE, ...places].reduce((best, place) => (gap(place.lon) < gap(best.lon) ? place : best));
+}
 
 /**
  * 'stacked': headline on top (centered), a very large globe below, at every screen size.

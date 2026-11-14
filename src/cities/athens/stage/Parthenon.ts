@@ -15,8 +15,8 @@ import {
   Vector2,
   Vector3,
 } from 'three';
-import { createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
-import { ACCENT, BASE_Y, DRUMS, EXPLODE_LIFT, INTACT, PAINT, PARTHENON_MODEL, PLASTER, TINT, type AthensState } from './athensConfig';
+import { applyExploreFocus, createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
+import { ACCENT, ATHENS_ENV, BASE_Y, DRUMS, EXPLODE_LIFT, INTACT, PAINT, PARTHENON_MODEL, PLASTER, TINT, type AthensState } from './athensConfig';
 import { deriveDimensions } from './parthenonDimensions';
 import { createRandom } from '../../../engine/utils/random';
 import { yieldToMain } from '../../../engine/utils/yieldToMain';
@@ -106,6 +106,7 @@ const position = new Vector3();
 const scale = new Vector3();
 const color = new Color();
 const accent = new Color(ACCENT);
+const ground = new Color(ATHENS_ENV.backdrop);
 const paintColor = new Color();
 
 /**
@@ -413,8 +414,8 @@ export class Parthenon implements MonumentModel<AthensState> {
 
         color.setHex(piece.tint);
         if (piece.paint !== null && paint > 0) color.lerp(paintColor.setHex(piece.paint), paint);
-        if (this.highlight && piece.part === this.highlight) toAccent = Math.max(toAccent, 0.5);
         if (toAccent > 0) color.lerp(accent, toAccent);
+        if (this.highlight) applyExploreFocus(color, piece.part === this.highlight, accent, ground);
         mesh.setColorAt(index, color);
       });
       mesh.instanceMatrix.needsUpdate = true;

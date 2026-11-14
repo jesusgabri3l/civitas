@@ -16,6 +16,14 @@ const all = [hero, ...chapters];
 const lang = langFrom(Astro.currentLocale);
 const text = ui[lang].story;
 const globeHref = withLang(lang, '/');
+// Motif of the crown: seven rays fanned over a base line (viewBox 360 x 14).
+const crownRays = [-72, -48, -24, 0, 24, 48, 72]
+  .map((degrees) => {
+    const angle = (degrees * Math.PI) / 180;
+    const point = (radius: number) => `${(180 + radius * Math.sin(angle)).toFixed(1)} ${(13.5 - radius * Math.cos(angle)).toFixed(1)}`;
+    return `M${point(3)} L${point(12)}`;
+  })
+  .join(' ');
 // The selector reloads on the equivalent route (computed at click time by i18n/switch.ts); this href is the no-JS fallback.
 ---
 
@@ -52,6 +60,12 @@ const globeHref = withLang(lang, '/');
         <>
           <path d="M0 4.5 H360" />
           <path class="monument-chapter__motif-soft" d="M0 9.5 H360" />
+        </>
+      )}
+      {story.motif === 'crown-rays' && (
+        <>
+          <path d="M0 13.5 H360" />
+          <path d={crownRays} />
         </>
       )}
       {story.motif === 'truss' && (
@@ -114,11 +128,16 @@ const globeHref = withLang(lang, '/');
             </div>
             <div class="monument-explore__parts" role="group" aria-label={text.partsLabel}>
               {chapter.explore.parts.map((part) => (
-                <button type="button" class="monument-explore__part" data-explore-part={part.id} aria-pressed="false">
+                <button type="button" class="monument-explore__part" data-explore-part={part.id} data-explore-part-view={part.view} aria-pressed="false">
                   {part.name}
                 </button>
               ))}
             </div>
+            {chapter.explore.credit && (
+              <p class="monument-explore__credit">
+                <a href={chapter.explore.credit.href} target="_blank" rel="noopener noreferrer">{chapter.explore.credit.text}</a>
+              </p>
+            )}
             {chapter.explore.parts.map((part) => (
               <div class="monument-explore__card" data-explore-card={part.id} role="region" aria-label={part.name} hidden>
                 <p class="monument-explore__card-name">{part.name}</p>

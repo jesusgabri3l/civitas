@@ -7,6 +7,8 @@ import {
   MIN_HOTSPOT_SEPARATION_PX,
   fitDistance,
   formatCoordinates,
+  longitudeFromTimeZone,
+  startFocus,
   latLonToVector3,
   orientationFor,
   projectToScreen,
@@ -78,7 +80,10 @@ describe('hotspots at the settled Europe framing', () => {
     const { tilt, yaw } = orientationFor(EUROPE);
     const rotation = rotationMatrix(tilt, yaw);
 
-    const screens = cities.map(({ id, coordinates }) => ({
+    // Only the European monuments: the others are seen from their own start (startFocus) or by turning the globe.
+    const european = cities.filter(({ coordinates }) => Math.abs(wrapLongitude(coordinates.lon - EUROPE.lon)) <= 45);
+    expect(european.length).toBeGreaterThanOrEqual(3);
+    const screens = european.map(({ id, coordinates }) => ({
       id,
       ...projectToScreen(latLonToVector3(coordinates.lat, coordinates.lon), rotation, camera),
     }));
@@ -95,6 +100,28 @@ describe('hotspots at the settled Europe framing', () => {
     for (const [width, height] of viewports) {
       expect(settledDistance(width / height)).toBeLessThan(fitDistance(width / height));
     }
+  });
+});
+
+describe("start in the visitor's region", () => {
+  const winter = new Date('2026-01-15T12:00:00Z');
+
+  it('reads a rough longitude from the time zone', () => {
+    expect(longitudeFromTimeZone('America/New_York', winter)).toBe(-75);
+    expect(longitudeFromTimeZone('Europe/Madrid', winter)).toBe(15);
+    expect(longitudeFromTimeZone('Asia/Kolkata', winter)).toBe(82.5);
+    expect(longitudeFromTimeZone('UTC', winter)).toBe(0);
+    expect(longitudeFromTimeZone(undefined)).toBeNull();
+    expect(longitudeFromTimeZone('Not/AZone')).toBeNull();
+  });
+
+  it('turns to the monument nearest in longitude, Europe when unknown or European', () => {
+    const coordinates = cities.map((city) => city.coordinates);
+    const newYork = cities.find((city) => city.id === 'new-york')!.coordinates;
+    expect(startFocus(coordinates, null)).toBe(EUROPE);
+    expect(startFocus(coordinates, 15)).toBe(EUROPE);
+    expect(startFocus(coordinates, -75)).toBe(newYork);
+    expect(startFocus(coordinates, -90)).toBe(newYork);
   });
 });
 

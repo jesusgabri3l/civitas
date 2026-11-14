@@ -386,6 +386,19 @@
     color: var(--city-muted);
   }
 
+  &__credit {
+    @include chrome-mono;
+    margin: 0;
+    font-size: 0.7em;
+    opacity: 0.7;
+
+    a {
+      color: inherit;
+      text-decoration: underline;
+      text-underline-offset: 0.2em;
+    }
+  }
+
   &__views,
   &__parts {
     display: flex;

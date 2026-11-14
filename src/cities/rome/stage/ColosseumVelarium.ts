@@ -1,11 +1,12 @@
 import { BufferAttribute, BufferGeometry, Color, DoubleSide, Mesh, type MeshToonMaterial } from 'three';
-import { createToonPlaster } from '../../../engine/stages/shared/monument';
-import { ACCENT, COLOSSEUM_MODEL, PLASTER, TINT } from './romeConfig';
+import { applyExploreFocus, createToonPlaster } from '../../../engine/stages/shared/monument';
+import { ACCENT, COLOSSEUM_MODEL, PLASTER, ROME_ENV, TINT } from './romeConfig';
 
 const SEGMENTS = 96;
 const ROWS = 4;
 const accent = new Color(ACCENT);
 const cloth = new Color(TINT.awning);
+const ground = new Color(ROME_ENV.backdrop);
 
 /**
  * The velarium: the awning that shaded the seats. A ring of cloth hung from the masts of the attic that unfurls toward the arena
@@ -59,10 +60,10 @@ export class ColosseumVelarium {
     this.mesh.visible = open > 0.01;
   }
 
-  /** Explore: the awning takes the accent while its card is open. */
-  setHighlighted(highlighted: boolean) {
+  /** Explore: `true` while its card is open (the accent), `false` while another part is chosen (it sinks), `null` for nothing chosen. */
+  setFocus(chosen: boolean | null) {
     this.plaster.material.color.copy(cloth);
-    if (highlighted) this.plaster.material.color.lerp(accent, 0.5);
+    if (chosen !== null) applyExploreFocus(this.plaster.material.color, chosen, accent, ground);
   }
 
   dispose() {

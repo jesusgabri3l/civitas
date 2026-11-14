@@ -1,0 +1,41 @@
+import type { CityMeta } from '../types';
+
+/** New York: abyss green, verdigris. Libre Caslon Display is the letter of the colonial press (the Declaration's broadside, whose date the tablet carries). */
+export const meta = {
+  id: 'new-york',
+  path: '/new-york',
+  name: 'New York',
+  monument: 'Statue of Liberty',
+  // Provisional until phase C (SEO): title, description and og image are replaced after approval 3.
+  title: 'The Statue of Liberty in 3D — Civitas',
+  description: 'Explore the Statue of Liberty in interactive 3D: open her skin, see Eiffel’s skeleton and watch the copper turn green.',
+  ogImage: '/og/new-york.jpg',
+  ogImageAlt: 'The Statue of Liberty in New York Harbor, her copper turning green.',
+  intro: 'New York, a cold dawn over the harbor and Liberty.',
+  coordinates: { lat: 40.6892, lon: -74.0445 },
+  country: 'United States',
+  timeZone: 'America/New_York',
+  glimpse: 'The Statue of Liberty as a plaster maquette: her skin opened, her copper new and then green.',
+  date: '1886',
+  year: 1886,
+  region: 'Americas',
+  keywords: ['Liberty Enlightening the World', 'La Liberté éclairant le monde', 'Lady Liberty', 'Liberty Island', 'Estatua de la Libertad', 'NYC', 'Nueva York', 'USA', 'America'],
+  es: {
+    name: 'Nueva York',
+    monument: 'Estatua de la Libertad',
+    title: 'La Estatua de la Libertad en 3D — Civitas',
+    description: 'Explora la Estatua de la Libertad en 3D interactivo: abre su piel, mira el esqueleto de Eiffel y ve cómo el cobre se vuelve verde.',
+    ogImageAlt: 'La Estatua de la Libertad en el puerto de Nueva York, con su cobre volviéndose verde.',
+    intro: 'Nueva York, un amanecer frío sobre el puerto y la Libertad.',
+    country: 'Estados Unidos',
+    glimpse: 'La Estatua de la Libertad como maqueta de yeso: su piel abierta, su cobre nuevo y luego verde.',
+    date: '1886',
+  },
+  theme: {
+    ground: '#0b1716',
+    accent: '#5fbf9f',
+    accentStrong: '#7fd1b4',
+    fontDisplay: "'Libre Caslon Display', 'Cormorant Garamond', Georgia, 'Times New Roman', serif",
+    fontBody: "'Cormorant Garamond', Georgia, 'Times New Roman', serif",
+  },
+} as const satisfies CityMeta;

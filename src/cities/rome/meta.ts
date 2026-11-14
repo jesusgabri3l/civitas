@@ -6,7 +6,7 @@ export const meta = {
   path: '/rome',
   name: 'Rome',
   monument: 'Colosseum',
-  title: 'How the Colosseum Was Built, in Interactive 3D — Civitas',
+  title: 'The Colosseum in 3D — Civitas',
   description: 'Explore the Colosseum in interactive 3D: from the Tibur quarry to the games of AD 80, its full outer ring against the ruin of today.',
   ogImage: '/og/rome.jpg',
   ogImageAlt: 'The Colosseum in Rome in AD 80, its outer ring whole.',
@@ -22,7 +22,7 @@ export const meta = {
   es: {
     name: 'Roma',
     monument: 'Coliseo',
-    title: 'Cómo era el Coliseo romano antes, en 3D — Civitas',
+    title: 'El Coliseo en 3D — Civitas',
     description: 'Mira cómo era el Coliseo en 3D interactivo: de la cantera de Tibur a los juegos del año 80, su anillo completo frente a la ruina de hoy.',
     ogImageAlt: 'El Coliseo de Roma en el año 80 d. C., con su anillo exterior entero.',
     intro: 'Roma, un amanecer frío sobre el Coliseo.',

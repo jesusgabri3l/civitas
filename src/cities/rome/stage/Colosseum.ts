@@ -22,7 +22,7 @@ import {
 import { SKY_LAYER } from '../../../engine/render/LookPipeline';
 import { yieldToMain } from '../../../engine/utils/yieldToMain';
 import { createRandom, type RandomSource } from '../../../engine/utils/random';
-import { createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
+import { applyExploreFocus, createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
 import { ColosseumVelarium } from './ColosseumVelarium';
 import {
   ACCENT,
@@ -36,6 +36,7 @@ import {
   MIST,
   PLASTER,
   REST,
+  ROME_ENV,
   RUIN_REACH,
   TINT,
   type ColosseumState,
@@ -111,6 +112,7 @@ const quaternion = new Quaternion();
 const tilt = new Quaternion();
 const color = new Color();
 const accent = new Color(ACCENT);
+const ground = new Color(ROME_ENV.backdrop);
 
 /** Share of the exploded view a layer has reached: the upper layers leave first and come back last. */
 function layerExplode(layer: Layer, explode: number) {
@@ -504,14 +506,14 @@ export class Colosseum implements MonumentModel<ColosseumState> {
         if (piece.kind === 'debris') color.lerp(accent, 0.75);
         else if (piece.kind === 'buttress') color.lerp(accent, 0.9);
         else if (piece.edge) color.lerp(accent, 0.35 * smooth(0.2, 0.8, ruin));
-        if (this.highlight && piece.part === this.highlight) color.lerp(accent, 0.5);
+        if (this.highlight) applyExploreFocus(color, piece.part === this.highlight, accent, ground);
         mesh.setColorAt(index, color);
       });
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
     this.velarium.setOpen(velarium);
-    this.velarium.setHighlighted(this.highlight === 'attic');
+    this.velarium.setFocus(this.highlight ? this.highlight === 'attic' : null);
   }
 
   setHighlight(part: string | null) {

@@ -90,6 +90,17 @@ export function createToonPlaster(color: number, bands: readonly number[]) {
   };
 }
 
+/**
+ * Explore focus: while a part is chosen, the rest of the maquette sinks toward the ground color of the city (`dim`) and the chosen
+ * part goes almost to the accent (`part`). A model that already wears its accent (the green of Liberty) passes a lighter accent.
+ * With nothing chosen the models do not call this.
+ */
+export const EXPLORE_FOCUS = { dim: 0.38, part: 0.85 } as const;
+
+export function applyExploreFocus(color: Color, chosen: boolean, accent: Color, ground: Color) {
+  color.lerp(chosen ? accent : ground, chosen ? EXPLORE_FOCUS.part : EXPLORE_FOCUS.dim);
+}
+
 /** A maquette: its root and a pure function from the story state to the pose of every piece. */
 export interface MonumentModel<S> {
   readonly root: Object3D;
@@ -176,6 +187,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
   let goal = { ...definition.rest } as S;
   let chapterNow = 0;
   let exploreView: string | null = null;
+  let explorePart: string | null = null;
   const raycaster = new Raycaster();
   const pointer = new Vector2();
   const explore = definition.explore;
@@ -328,6 +340,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       Object.assign(now, goal);
       chapterNow = 0;
       exploreView = null;
+      explorePart = null;
       model?.setHighlight?.(null);
       model?.setState(now);
       orbit.reset();
@@ -389,17 +402,25 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
 
     setStory(chapter, t) {
       story.setProgress(chapter, t);
+      const exploring = Boolean(explore) && chapter === explore!.chapter;
+      // The focus of a chosen part lives only in Explore: scrolling back up to the story shows the model as the story tells it.
+      if (model && exploring !== (Boolean(explore) && chapterNow === explore!.chapter)) {
+        model.setHighlight?.(exploring ? explorePart : null);
+        model.setState(now);
+        if (shadowsOn) host.refreshShadows();
+      }
       chapterNow = chapter;
       inHero = chapter === 0;
-      orbit.setExploring(Boolean(explore) && chapter === explore!.chapter);
+      orbit.setExploring(exploring);
       goal = goalFor(chapter, t);
       wake();
     },
 
     setExplore(view, part) {
       exploreView = view;
+      explorePart = part;
       if (explore && chapterNow === explore.chapter) goal = goalFor(chapterNow, 1);
-      model?.setHighlight?.(part);
+      model?.setHighlight?.(explore && chapterNow === explore.chapter ? part : null);
       if (model) {
         model.setState(now);
         if (shadowsOn) host.refreshShadows();

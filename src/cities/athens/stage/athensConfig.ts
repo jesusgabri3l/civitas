@@ -148,7 +148,7 @@ export const finalStateFor = (chapter: number): AthensState => stateFor(chapter,
  */
 export const EXPLORE = {
   chapter: 6,
-  orbit: { yaw: 40, pitchUp: 14, pitchDown: 6 },
+  orbit: { yaw: Infinity, pitchUp: 14, pitchDown: 6 },
   views: {
     today: { ...INTACT, ruin: 1, elgin: 1, restore: 1 },
     built: { ...INTACT },

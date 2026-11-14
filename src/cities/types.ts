@@ -85,7 +85,10 @@ export interface StoryChapter {
 export interface ExploreContent {
   hint: string;
   views: { id: string; label: string }[];
-  parts: { id: string; name: string; text: string }[];
+  /** `view`: the view a part switches to when chosen (a part inside the maquette is only seen in that view). */
+  parts: { id: string; name: string; text: string; view?: string }[];
+  /** Attribution of a model made by someone else (CC BY): a short line with its link, shown at the foot of Explore. */
+  credit?: { text: string; href: string };
 }
 
 export interface StoryHero extends StoryChapter {
@@ -101,8 +104,8 @@ export interface MuseumLabel {
   lines: string[];
 }
 
-/** The fine graphic line under the hero title (docs/ART-DIRECTION.md §4): greek key, double rule, iron truss. */
-export type StoryMotif = 'greek-key' | 'double-rule' | 'truss';
+/** The fine graphic line under the hero title (docs/ART-DIRECTION.md §4): greek key, double rule, iron truss, the seven rays of a crown. */
+export type StoryMotif = 'greek-key' | 'double-rule' | 'truss' | 'crown-rays';
 
 export interface MonumentStory {
   /** Top bar: the city in English and in its own name and script (`cityLocalLang`: its language tag). */

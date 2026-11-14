@@ -18,6 +18,8 @@ export default defineConfig({
       include: [
         'three',
         'three/examples/jsm/geometries/RoundedBoxGeometry.js',
+        'three/examples/jsm/loaders/GLTFLoader.js',
+        'three/examples/jsm/libs/meshopt_decoder.module.js',
         'three/examples/jsm/postprocessing/Pass.js',
         'gsap',
         'gsap/ScrollTrigger',

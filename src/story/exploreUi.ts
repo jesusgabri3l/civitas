@@ -19,7 +19,9 @@ export function startExploreUi(): () => void {
     const part = target.closest<HTMLElement>('[data-explore-part]');
     if (part) {
       const id = part.dataset.explorePart || null;
-      $explorePart.set($explorePart.get() === id ? null : id);
+      const chosen = $explorePart.get() === id ? null : id;
+      $explorePart.set(chosen);
+      if (chosen && part.dataset.explorePartView) $exploreView.set(part.dataset.explorePartView);
       return;
     }
     if (target.closest('[data-explore-close]')) $explorePart.set(null);

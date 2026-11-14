@@ -32,7 +32,8 @@ import { GlobeControls } from './globe/GlobeControls';
 import { HotspotMarkers, MARKER_LIFT } from './globe/HotspotMarkers';
 import {
   DEG,
-  EUROPE,
+  longitudeFromTimeZone,
+  startFocus,
   REST_TILT_DEGREES,
   GLOBE_FOV,
   fitDistance,
@@ -113,14 +114,19 @@ export function createStage(host: StageHost): Stage {
   const glow = new Mesh(new PlaneGeometry(HALO_EXTENT * 2, HALO_EXTENT * 2), createGlowMaterial());
   glow.layers.set(SKY_LAYER);
   glow.frustumCulled = false;
-  const { tilt: europeTilt, yaw: europeYaw } = orientationFor(EUROPE);
+  const { tilt: startTilt, yaw: startYaw } = orientationFor(
+    startFocus(
+      cities.map(({ coordinates }) => coordinates),
+      longitudeFromTimeZone(Intl.DateTimeFormat().resolvedOptions().timeZone),
+    ),
+  );
   const hotspotPoints = new Map<string, Vector3>(
     cities.map(({ id, coordinates }) => [id, latLonToVector3(coordinates.lat, coordinates.lon).multiplyScalar(MARKER_LIFT)]),
   );
 
   let aspect = 1;
-  let yaw = europeYaw;
-  let tilt = europeTilt;
+  let yaw = startYaw;
+  let tilt = startTilt;
   let spinElapsed = SPIN_SECONDS;
   let dollyElapsed = DOLLY_SECONDS;
   let active = false;
@@ -268,9 +274,9 @@ export function createStage(host: StageHost): Stage {
     const instant = prefersReducedMotion() || !host.ambient().motion;
     spinElapsed = instant ? SPIN_SECONDS : 0;
     dollyElapsed = instant ? DOLLY_SECONDS : 0;
-    yaw = instant ? europeYaw : europeYaw - INTRO_SPIN;
+    yaw = instant ? startYaw : startYaw - INTRO_SPIN;
     look.exposure = instant ? DEFAULT_PLASTER.exposure : 0;
-    tilt = europeTilt;
+    tilt = startTilt;
     zoom.snapTo(instant ? restDistance() : introDistance());
   }
 
@@ -424,7 +430,7 @@ export function createStage(host: StageHost): Stage {
       let animating = false;
       if (spinElapsed < SPIN_SECONDS) {
         spinElapsed = Math.min(spinElapsed + deltaSeconds, SPIN_SECONDS);
-        yaw = europeYaw - INTRO_SPIN * (1 - easeOutCubic(spinElapsed / SPIN_SECONDS));
+        yaw = startYaw - INTRO_SPIN * (1 - easeOutCubic(spinElapsed / SPIN_SECONDS));
         animating = spinElapsed < SPIN_SECONDS;
         look.exposure = DEFAULT_PLASTER.exposure * easeInOut(Math.min(spinElapsed / INTRO_FADE_SECONDS, 1));
       }

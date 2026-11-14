@@ -78,6 +78,7 @@ Cada ciudad define exactamente esto, y nada más:
 | Atenas (Partenón) | GFS Didot (`ΠΑΡΘΕΝΩΝ`) | Azul noche `#0F1A2A` (suelo `#0B1420`) | Terracota `#C8673E` (figuras rojas) | Greca | Foco cenital cálido, polvo en el haz | El templo se arma y desarma; 1687; policromía |
 | Roma (Coliseo) | Cinzel (`COLOSSEVM`, V por U) | Pizarra fría `#141A22` (suelo `#10151C`) | Rojo pompeyano `#DB5F45` | Doble línea; capítulos en números romanos | Amanecer frío, neblina a ras de suelo | El anillo exterior completo frente a la ruina de hoy |
 | París (Torre Eiffel) | Bodoni Moda cursiva (`La Tour Eiffel`) | Noche violeta `#121022` (suelo `#0D0C19`) | Champaña `#E9C46A`; luces de la torre en ámbar | Enrejado en X | Noche con estrellas tenues; la torre es la fuente de luz | El centelleo a la hora en punto (`Intl`, Europe/Paris) |
+| Nueva York (Estatua de la Libertad) | Libre Caslon Display (`Liberty Enlightening the World`) | Verde abismo `#0B1716` (suelo `#081110`) | Verdigrís `#5FBF9F` (solo en el frente del cambio, el esqueleto y el pedestal al subir) | Los 7 rayos de la corona en abanico | Amanecer frío, bruma salina a ras de suelo; la antorcha da luz propia | La piel pasa del cobre nuevo de 1886 al verde de hoy, de abajo arriba |
 
 Cada fila sale de un brief aprobado (`docs/briefs/<ciudad>.md`); una ciudad nueva no entra a la tabla hasta la aprobación 1 de la sección 7.
 
@@ -143,6 +144,9 @@ opuesto. Contenido del sitio en inglés; datos históricos verificados con fuent
 - **Un foco cenital** con cono suave + relleno hemisférico tenue + contraluz frío muy leve. Haz visible y polvo solo dentro del haz.
 - **Fondo del color de la ciudad, sin muros ni horizonte**: el suelo se disuelve en la niebla del mismo color.
 - **El acento solo marca lo que la historia cambia**: piezas que se mueven, bordes rotos, piezas que faltan (contorno fantasma), escombros.
+- **Explore (aprobado 2026-11-06)**:
+  - Pieza elegida: el resto del modelo se atenúa hacia el fondo de la ciudad y la pieza va casi al acento pleno. Usar `EXPLORE_FOCUS` / `applyExploreFocus` de `monument.ts`; nunca un `lerp` propio al acento, que no contrasta si el modelo ya es del color del acento.
+  - Giro horizontal completo: `orbit.yaw: Infinity` en el config de la ciudad. Por eso el modelo y su escenografía tienen que verse bien también por detrás.
 
 ### Variaciones permitidas por monumento
 
@@ -150,7 +154,8 @@ opuesto. Contenido del sitio en inglés; datos históricos verificados con fuent
 - Un efecto atmosférico propio (neblina en Roma, estrellas y luces propias en París).
 - Más detalle donde la identidad lo pide (el enrejado de la Eiffel, los arcos del Coliseo).
 - **Terreno cuando el terreno es el monumento** (aprobado 2026-11-06 para Machu Picchu): maqueta topográfica de capas de yeso apiladas (curvas de nivel extruidas), cortada en el borde sobre el pedestal, sin horizonte ni vegetación. Nunca como fondo o paisaje alrededor.
-- Color histórico **solo como capítulo** (por ejemplo, la policromía del Partenón), nunca como estado normal.
+- Color histórico **solo como capítulo** (por ejemplo, la policromía del Partenón), nunca como estado normal. Excepción: el color de hoy cuando el color es la identidad (pátina verde de la Libertad).
+- **Figura humana esculpida e importada como GLB** (aprobado 2026-11-06 para la Estatua de la Libertad), con el mismo yeso y la misma tinta; todo lo demás, en código. Con licencia CC BY: crédito visible en la página (`explore.credit`) y en el brief.
 
 ### Nunca
 
