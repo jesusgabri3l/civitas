@@ -12,7 +12,7 @@ Antes del lanzamiento también hace falta **agrupar los hotspots del globo** (Eu
 | 1 | Europa | Partenón | Atenas | Hecho |
 | 2 | Europa | Coliseo | Roma | Hecho |
 | 3 | Europa | Torre Eiffel | París | Hecho |
-| 4 | EE. UU. (este) | Estatua de la Libertad | Nueva York | Brief aprobado; en construcción (`briefs/new-york.md`) |
+| 4 | EE. UU. (este) | Estatua de la Libertad | Nueva York | Construida y en `main` sin push (2026-11-14); falta aprobación 3 y SEO fase C (`briefs/new-york.md`) |
 | 5 | EE. UU. (oeste) | Golden Gate | San Francisco | Elegido |
 | 6 | Sudamérica | Machu Picchu | Cusco (Perú) | Elegido; maqueta topográfica aprobada (excepción en ART-DIRECTION §6) |
 | 7 | África (noreste) | Gran Pirámide | Guiza (Egipto) | Elegido |
