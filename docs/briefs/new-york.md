@@ -1,6 +1,6 @@
 # Brief: Estatua de la Libertad (Nueva York)
 
-Estado: `construido` (2026-11-06; aprobación 3 dada el 2026-11-14; SEO fase C hecha el 2026-11-14; hoy = el verde característico, casi el acento; ajustado por Jesús tras verlo: el tinte suave dejaba tres colores en el cambio)
+Estado: `publicado` (construido el 2026-11-06; aprobación 3, SEO fase C y publicación el 2026-11-14; hoy = el verde característico, casi el acento; ajustado por Jesús tras verlo: el tinte suave dejaba tres colores en el cambio)
 Aprobado por: Jesús (identidad A, con B como capítulo de construcción) · Fecha: 2026-11-06
 
 ## 1. Identidad (ART-DIRECTION §4)
