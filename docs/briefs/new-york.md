@@ -1,6 +1,6 @@
 # Brief: Estatua de la Libertad (Nueva York)
 
-Estado: `construido` (2026-11-06; pendiente la aprobación 3 de Jesús con `npm run dev`; hoy = el verde característico, casi el acento; ajustado por Jesús tras verlo: el tinte suave dejaba tres colores en el cambio)
+Estado: `construido` (2026-11-06; aprobación 3 dada el 2026-11-14; SEO fase C hecha el 2026-11-14; hoy = el verde característico, casi el acento; ajustado por Jesús tras verlo: el tinte suave dejaba tres colores en el cambio)
 Aprobado por: Jesús (identidad A, con B como capítulo de construcción) · Fecha: 2026-11-06
 
 ## 1. Identidad (ART-DIRECTION §4)
@@ -123,4 +123,4 @@ Nota: el "título de la página" es el titular grande de la historia (como `COLO
 
 ## 9. SEO
 
-Fase C, después de la aprobación 3. `meta.ts` lleva title, description y `ogImage` provisionales.
+Hecha el 2026-11-14 (aprobación 3 dada ese día). Búsqueda principal: el color original (hueco en Google, solo blogs; en español poco contenido de autoridad); secundaria: cómo se construyó. Title: "The Statue of Liberty in 3D — Civitas" / "La Estatua de la Libertad en 3D — Civitas". Description en `meta.ts` (en/es). OG: pátina a mitad de camino (capítulo 5, t 0,5). Notas en `.seo/keywords.md`, `.seo/serp-notes.md` y `.seo/changelog.md`.

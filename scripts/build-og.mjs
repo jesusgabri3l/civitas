@@ -1,8 +1,8 @@
 // Share images (Open Graph): a 1200x630 JPEG of each page in its shareable moment, saved to public/og/<id>.jpg.
-// Serves `dist/` with `astro preview`, opens each page in a headless Chromium (software WebGL, like the smoke test), puts the
+// Serves the static build (.vercel/output/static, the Vercel adapter has no preview) with serve, opens each page in a headless Chromium (software WebGL, like the smoke test), puts the
 // maquette in its moment, hides the page chrome and lays the monument name and "Civitas" over it, in the face and accent of the city.
 //
-// Usage: npm run build && npm run og && npm run build   (the second build copies the new JPEGs into dist/)
+// Usage: npm run build && npm run og && npm run build   (the second build copies the new JPEGs into the output)
 // The cities come from the folders of src/cities/; each one needs its moment in MOMENTS (without it, the first screen of the page).
 import { spawn } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, readFileSync } from 'node:fs';
@@ -22,6 +22,7 @@ const MOMENTS = {
   athens: { chapter: 6, view: 'painted' }, // Explore, Painted
   rome: { chapter: 3 }, // AD 80, the games
   paris: { chapter: 6, view: 'sparkle' }, // Explore, Sparkle (forced)
+  'new-york': { chapter: 5, t: 0.5 }, // Patina halfway: the green climbing over the new copper
 };
 const HOME = { name: 'Civitas', kicker: 'The world’s monuments', display: "'Fraunces', Georgia, serif", weight: 600, accent: '#e8a33d', atTop: true };
 
@@ -112,11 +113,11 @@ async function shootCity(browser, id) {
   await page.waitForFunction(() => window.__civitas.state().kind === 'monument', undefined, { timeout: 90000 });
   const moment = MOMENTS[id];
   if (!moment) console.warn(`warn ${id}: no moment in MOMENTS, using the first screen`);
-  await page.evaluate(({ chapter, view }) => {
+  await page.evaluate(({ chapter, t, view }) => {
     const { engine } = window.__civitas;
-    engine.setStory(chapter, 1);
+    engine.setStory(chapter, t);
     if (view) engine.setExplore(view, null);
-  }, { chapter: moment?.chapter ?? 0, view: moment?.view ?? null });
+  }, { chapter: moment?.chapter ?? 0, t: moment?.t ?? 1, view: moment?.view ?? null });
   // The sparkle never stops flashing, so for it only the camera is awaited.
   await untilStill(page, { frames: moment?.view !== 'sparkle' });
   const look = await page.evaluate(() => {
@@ -148,10 +149,10 @@ async function shootHome(browser) {
 }
 
 async function main() {
-  if (!existsSync(join(root, 'dist', 'index.html'))) throw new Error('No dist/ yet: run `npm run build` first.');
+  if (!existsSync(join(root, '.vercel', 'output', 'static', 'index.html'))) throw new Error('No .vercel/output/static yet: run `npm run build` first.');
   const executablePath = findChromium();
   if (!executablePath) throw new Error('Playwright Chromium not found. Install it with: npx playwright-core install chromium');
-  const server = spawn('npx', ['astro', 'preview', '--port', String(port)], { cwd: root, shell: true, stdio: 'ignore' });
+  const server = spawn('npx', ['serve@14.2.4', '.vercel/output/static', '-l', String(port)], { cwd: root, shell: true, stdio: 'ignore' });
   const browser = await chromium.launch({ executablePath, args: GL_ARGS });
   try {
     await waitForServer(`${base}/`);
