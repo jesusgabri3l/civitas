@@ -25,7 +25,7 @@
 }
 
 @mixin focus-ring {
-  outline: 2px solid var(--focus, var(--accent));
+  outline: 2px solid $color-amber; // --focus/--accent never existed: the var() made the outline invalid, so no ring at all
   outline-offset: 2px;
 }
 

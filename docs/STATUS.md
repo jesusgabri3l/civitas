@@ -45,3 +45,4 @@ Fecha: 4 de noviembre de 2026. Fases en [PLAN.md](PLAN.md); diseño en [ART-DIRE
 - Español: middleware y textos validados por Jesús (2026-11-06). Opcional: tests de `/es` en router y buscador.
 - Rendimiento y SEO: fase 5 del workflow de SEO **cerrada el 2026-11-06** (PSI 75/74, a11y 100; detalle en `seo-workflow/PLAN.md`). Solo queda la medición de prod del 2026-11-30. No proponerlo aquí. Referencia local (31 oct 2026, CPU 6x y Slow 4G): globo listo en 3,5 s, Roma en 4,7 s; JS gzip: globo ~213 KB (three 131 KB), ciudad ~250 KB.
 - `npm run smoke` necesita Chromium de Playwright instalado localmente.
+- **Accesibilidad compartida (2026-11-15, probado por Jesús)**: anillo de foco ámbar real (el mixin `focus-ring` apuntaba a variables inexistentes y no pintaba nada), subrayado de la nav de la escena como `box-shadow` y logo del globo sin aria-label. Site-audit local: crawl 0, axe 0 y foco visible en las 10 páginas. Detalle en `.seo/changelog.md`.

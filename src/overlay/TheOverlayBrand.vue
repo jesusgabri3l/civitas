@@ -21,14 +21,13 @@ const arriving = computed(() => travelling.value && toGlobe.value);
   <a
     :class="['the-overlay-brand', { 'the-overlay-brand--docked': docked, 'the-overlay-brand--hidden': hidden, 'the-overlay-brand--arriving': arriving }]"
     :href="withLang(lang, '/')"
-    :aria-label="docked ? text.brand.label : `Civitas, ${text.brand.tagline}`"
+    :aria-label="docked ? text.brand.label : undefined"
     :inert="hidden || undefined"
   >
     <span class="the-overlay-brand__name">Civitas</span><svg class="the-overlay-brand__globe" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
       <circle cx="8" cy="8" r="6.5" />
       <ellipse cx="8" cy="8" rx="2.6" ry="6.5" />
       <path d="M2 5.6h12M2 10.4h12" />
-    </svg>
-    <span v-if="!docked" class="the-overlay-brand__tagline">{{ text.brand.tagline }}</span>
+    </svg>{{ ' ' }}<span v-if="!docked" class="the-overlay-brand__tagline">{{ text.brand.tagline }}</span>
   </a>
 </template>

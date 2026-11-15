@@ -94,13 +94,13 @@
   &__nav a {
     @include label-mono;
     @include text-halo;
-    padding: 0.5rem 0.25rem;
-    border-bottom: 1px solid transparent;
+    // The extra 1px stands where the old transparent border was; the line is a shadow so focus checkers see it.
+    padding: 0.5rem 0.25rem calc(0.5rem + 1px);
     text-decoration: none;
 
     &:hover,
     &:focus-visible {
-      border-bottom-color: $color-amber;
+      box-shadow: inset 0 -1px 0 $color-amber;
       outline: none;
     }
   }
