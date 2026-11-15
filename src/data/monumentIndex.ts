@@ -31,12 +31,11 @@ interface SoonTexts {
 
 const soon: readonly (SoonTexts & { year: number; region: Region; keywords: readonly string[]; es: SoonTexts })[] = [
   { monument: 'Great Pyramid', place: 'Giza, Egypt', date: 'c. 2560 BC', year: -2560, region: 'Africa', keywords: ['Khufu', 'Cheops', 'Egypt', 'Pyramids of Giza'], es: { monument: 'Gran Pirámide', place: 'Guiza, Egipto', date: 'h. 2560 a. C.' } },
-  { monument: 'Al-Khazneh', place: 'Petra, Jordan', date: '1st c. AD', year: 1, region: 'Asia', keywords: ['The Treasury', 'Nabataean', 'Rose City'], es: { monument: 'Al-Khazneh (El Tesoro)', place: 'Petra, Jordania', date: 'siglo I d. C.' } },
-  { monument: 'Hagia Sophia', place: 'Istanbul, Türkiye', date: 'AD 537', year: 537, region: 'Europe', keywords: ['Ayasofya', 'Constantinople', 'Byzantine', 'Turkey'], es: { monument: 'Santa Sofía', place: 'Estambul, Turquía', date: '537 d. C.' } },
-  { monument: 'El Castillo', place: 'Chichén Itzá, Mexico', date: '9th–12th c.', year: 900, region: 'Americas', keywords: ['Kukulcán', 'Kukulkan', 'Maya', 'Temple of Kukulcan'], es: { monument: 'El Castillo', place: 'Chichén Itzá, México', date: 'siglos IX–XII' } },
   { monument: 'Forbidden City', place: 'Beijing, China', date: '1420', year: 1420, region: 'Asia', keywords: ['Gugong', '故宫', 'Imperial Palace', 'Ming'], es: { monument: 'Ciudad Prohibida', place: 'Pekín, China', date: '1420' } },
   { monument: 'Machu Picchu', place: 'Cusco, Peru', date: 'c. 1450', year: 1450, region: 'Americas', keywords: ['Inca', 'Machu Pikchu'], es: { monument: 'Machu Picchu', place: 'Cusco, Perú', date: 'h. 1450' } },
   { monument: 'Taj Mahal', place: 'Agra, India', date: '1653', year: 1653, region: 'Asia', keywords: ['Mughal', 'Mausoleum', 'Shah Jahan'], es: { monument: 'Taj Mahal', place: 'Agra, India', date: '1653' } },
+  { monument: 'Great Mosque of Djenné', place: 'Djenné, Mali', date: '1907', year: 1907, region: 'Africa', keywords: ['Djenne', 'Mud mosque', 'Sudano-Sahelian', 'Crépissage'], es: { monument: 'Gran Mezquita de Djenné', place: 'Djenné, Malí', date: '1907' } },
+  { monument: 'Golden Gate Bridge', place: 'San Francisco, USA', date: '1937', year: 1937, region: 'Americas', keywords: ['Golden Gate', 'International Orange', 'Suspension bridge', 'California'], es: { monument: 'Puente Golden Gate', place: 'San Francisco, EE. UU.', date: '1937' } },
 ];
 
 function buildIndex(lang: Lang): readonly MonumentIndexEntry[] {
