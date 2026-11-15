@@ -1,6 +1,6 @@
 // The sculpted figure of the Statue of Liberty (public/models/liberty.glb): flattening it, sharing its triangles out into layers and measuring them for the section.
 // Pure math over arrays and `three` only (no project imports), so `scripts/check-liberty-glb.mjs` can run it in Node with no browser.
-import { Matrix3, type BufferGeometry, type Mesh, type Object3D } from 'three';
+import { Matrix3, type BufferGeometry, type Matrix4, type Mesh, type Object3D } from 'three';
 
 /** Parts of the figure that can be lit by hand in Explore (`skin` is everything else); the order is the id stored per vertex. */
 export const PART_NAMES = ['skin', 'crown', 'tablet', 'torch'] as const;
@@ -14,25 +14,35 @@ export interface FlatFigure {
 /** Joins every mesh under `root` into one non-indexed set of triangles (what the cells are cut from). */
 export function flattenScene(root: Object3D): FlatFigure {
   root.updateMatrixWorld(true);
-  const positions: number[] = [];
-  const normals: number[] = [];
-  const normalMatrix = new Matrix3();
+  const parts: { geometry: BufferGeometry; matrix: Matrix4 }[] = [];
+  let total = 0;
   root.traverse((object) => {
     const mesh = object as Mesh;
     if (!mesh.isMesh) return;
     const source = mesh.geometry as BufferGeometry;
     const geometry = source.index ? source.toNonIndexed() : source;
+    if (!geometry.getAttribute('normal')) throw new Error('liberty.glb: the mesh has no normals');
+    parts.push({ geometry, matrix: mesh.matrixWorld });
+    total += geometry.getAttribute('position').count;
+  });
+  if (total === 0 || total % 3 !== 0) throw new Error('liberty.glb: no triangles found');
+  const positions = new Float32Array(total * 3);
+  const normals = new Float32Array(total * 3);
+  const normalMatrix = new Matrix3();
+  let at = 0;
+  for (const { geometry, matrix } of parts) {
     const position = geometry.getAttribute('position');
     const normal = geometry.getAttribute('normal');
-    if (!normal) throw new Error('liberty.glb: the mesh has no normals');
-    normalMatrix.getNormalMatrix(mesh.matrixWorld);
-    const e = mesh.matrixWorld.elements;
+    normalMatrix.getNormalMatrix(matrix);
+    const e = matrix.elements;
     const n = normalMatrix.elements;
-    for (let index = 0; index < position.count; index++) {
+    for (let index = 0; index < position.count; index++, at += 3) {
       const x = position.getX(index);
       const y = position.getY(index);
       const z = position.getZ(index);
-      positions.push(e[0] * x + e[4] * y + e[8] * z + e[12], e[1] * x + e[5] * y + e[9] * z + e[13], e[2] * x + e[6] * y + e[10] * z + e[14]);
+      positions[at] = e[0] * x + e[4] * y + e[8] * z + e[12];
+      positions[at + 1] = e[1] * x + e[5] * y + e[9] * z + e[13];
+      positions[at + 2] = e[2] * x + e[6] * y + e[10] * z + e[14];
       const nx = normal.getX(index);
       const ny = normal.getY(index);
       const nz = normal.getZ(index);
@@ -40,12 +50,13 @@ export function flattenScene(root: Object3D): FlatFigure {
       const ty = n[1] * nx + n[4] * ny + n[7] * nz;
       const tz = n[2] * nx + n[5] * ny + n[8] * nz;
       const length = Math.hypot(tx, ty, tz) || 1;
-      normals.push(tx / length, ty / length, tz / length);
+      normals[at] = tx / length;
+      normals[at + 1] = ty / length;
+      normals[at + 2] = tz / length;
     }
-  });
-  if (positions.length === 0 || positions.length % 9 !== 0) throw new Error('liberty.glb: no triangles found');
+  }
   faceOutward(positions, normals);
-  return { positions: Float32Array.from(positions), normals: Float32Array.from(normals) };
+  return { positions, normals };
 }
 
 /** The figure without the triangles whose centroid is at `fromY` or above. */
@@ -71,20 +82,37 @@ export function dropAbove(figure: FlatFigure, fromY: number): FlatFigure {
 export function sliceStraight(figure: FlatFigure, cuts: Pick<FigureCuts, 'rings' | 'bodyTop' | 'arm'>): FlatFigure {
   const planes: [number, number][] = Array.from({ length: cuts.rings }, (_, k) => [1, ((k + 1) * cuts.bodyTop) / cuts.rings]);
   planes.push([1, cuts.arm.minY], [1, cuts.arm.splitY], [0, cuts.arm.maxX]);
-  let positions: ArrayLike<number> = figure.positions;
-  let normals: ArrayLike<number> = figure.normals;
+  let positions = figure.positions;
+  let normals = figure.normals;
   for (const [axis, value] of planes) {
-    const outP: number[] = [];
-    const outN: number[] = [];
+    const side = (v: number) => {
+      const d = v - value;
+      return Math.abs(d) < 1e-6 ? 0 : d;
+    };
+    const crosses = (at: number) => {
+      const d0 = side(positions[at + axis]);
+      const d1 = side(positions[at + 3 + axis]);
+      const d2 = side(positions[at + 6 + axis]);
+      return Math.min(d0, d1, d2) < 0 && Math.max(d0, d1, d2) > 0;
+    };
+    let crossing = 0;
+    for (let at = 0; at < positions.length; at += 9) if (crosses(at)) crossing++;
+    // A triangle that crosses the plane becomes at most three.
+    const outP = new Float32Array(positions.length + crossing * 18);
+    const outN = new Float32Array(positions.length + crossing * 18);
+    let out = 0;
+    const push = (v: number[]) => {
+      outP[out] = v[0], outP[out + 1] = v[1], outP[out + 2] = v[2];
+      outN[out] = v[3], outN[out + 1] = v[4], outN[out + 2] = v[5];
+      out += 3;
+    };
     for (let at = 0; at < positions.length; at += 9) {
-      const d = [0, 1, 2].map((c) => {
-        const v = positions[at + c * 3 + axis] - value;
-        return Math.abs(v) < 1e-6 ? 0 : v;
-      });
-      if (!(Math.min(...d) < 0 && Math.max(...d) > 0)) {
-        for (let k = 0; k < 9; k++) outP.push(positions[at + k]), outN.push(normals[at + k]);
+      if (!crosses(at)) {
+        for (let k = 0; k < 9; k++) outP[out + k] = positions[at + k], outN[out + k] = normals[at + k];
+        out += 9;
         continue;
       }
+      const d = [0, 1, 2].map((c) => side(positions[at + c * 3 + axis]));
       // Sutherland-Hodgman into the polygon below and the one above, then fans (winding kept).
       const below: number[][] = [];
       const above: number[][] = [];
@@ -108,16 +136,21 @@ export function sliceStraight(figure: FlatFigure, cuts: Pick<FigureCuts, 'rings'
       }
       for (const polygon of [below, above]) {
         for (let k = 1; k + 1 < polygon.length; k++) {
-          for (const v of [polygon[0], polygon[k], polygon[k + 1]]) outP.push(v[0], v[1], v[2]), outN.push(v[3], v[4], v[5]);
+          push(polygon[0]);
+          push(polygon[k]);
+          push(polygon[k + 1]);
         }
       }
     }
-    positions = outP;
-    normals = outN;
+    positions = outP.subarray(0, out);
+    normals = outN.subarray(0, out);
   }
+  // Compact copies (the views above still hold the worst-case buffers).
+  const finalPositions = positions.slice();
+  const finalNormals = normals.slice();
   // A sliver of a cut can wind against its interpolated normals.
-  faceOutward(positions as number[], normals as number[]);
-  return { positions: Float32Array.from(positions), normals: Float32Array.from(normals) };
+  faceOutward(finalPositions, finalNormals);
+  return { positions: finalPositions, normals: finalNormals };
 }
 
 /**
@@ -285,7 +318,8 @@ export function splitIntoCells(figure: FlatFigure, cuts: FigureCuts): FigureCell
 
   // The same vertices in 16 sectors per meter: the near side of the skin in each direction.
   const SECTORS = 16;
-  const cells: number[][] = Array.from({ length: bins.length * SECTORS }, () => []);
+  const binCount = bins.length;
+  const cells: number[][] = Array.from({ length: binCount * SECTORS }, () => []);
   const sectorOf = (angle: number) => ((Math.round((angle / (Math.PI * 2)) * SECTORS) % SECTORS) + SECTORS) % SECTORS;
   for (let vertex = 0; vertex < count; vertex++) {
     if (!body[vertex]) continue;
@@ -298,10 +332,10 @@ export function splitIntoCells(figure: FlatFigure, cuts: FigureCuts): FigureCell
   const near = cells.map((list) => (list.length ? list.sort((a, b) => a - b)[Math.floor(list.length * 0.1)] : 0));
   const insideAt = (y: number, angle: number) => {
     const sector = sectorOf(angle);
-    const bin = Math.round(Math.min(bins.length - 1, Math.max(0, y)));
+    const bin = Math.round(Math.min(binCount - 1, Math.max(0, y)));
     // Nearest meter with skin in that direction (the small base and the neck have few vertices).
-    for (let step = 0; step < bins.length; step++) {
-      for (const at of [bin - step, bin + step]) if (at >= 0 && at < bins.length && near[at * SECTORS + sector]) return near[at * SECTORS + sector];
+    for (let step = 0; step < binCount; step++) {
+      for (const at of [bin - step, bin + step]) if (at >= 0 && at < binCount && near[at * SECTORS + sector]) return near[at * SECTORS + sector];
     }
     return radiusAt(y);
   };
@@ -318,13 +352,34 @@ function armPieces(positions: Float32Array, fromY: number, topY: number): Uint8A
     while (parent[a] !== a) a = parent[a] = parent[parent[a]];
     return a;
   };
-  const corners = new Map<string, number>();
+  // Corners are matched on a grid of `step` meters (0.1 mm, coarser only if the extents would not fit one safe integer key).
+  const lo = [Infinity, Infinity, Infinity];
+  const hi = [-Infinity, -Infinity, -Infinity];
+  for (let t = 0; t < triangles; t++) {
+    const at = t * 9;
+    if ((positions[at + 1] + positions[at + 4] + positions[at + 7]) / 3 < fromY) continue;
+    for (let c = 0; c < 9; c++) {
+      const value = positions[at + c];
+      const axis = c % 3;
+      if (value < lo[axis]) lo[axis] = value;
+      if (value > hi[axis]) hi[axis] = value;
+    }
+  }
+  let step = 1e-4;
+  const cellsOn = (axis: number) => Math.round((hi[axis] - lo[axis]) / step) + 1;
+  while (cellsOn(0) * cellsOn(1) * cellsOn(2) > 2 ** 52) step *= 2;
+  const ny = cellsOn(1);
+  const nz = cellsOn(2);
+  const corners = new Map<number, number>();
   for (let t = 0; t < triangles; t++) {
     const at = t * 9;
     if ((positions[at + 1] + positions[at + 4] + positions[at + 7]) / 3 < fromY) continue;
     parent[t] = t;
     for (let c = at; c < at + 9; c += 3) {
-      const key = `${positions[c].toFixed(4)},${positions[c + 1].toFixed(4)},${positions[c + 2].toFixed(4)}`;
+      const qx = Math.round((positions[c] - lo[0]) / step);
+      const qy = Math.round((positions[c + 1] - lo[1]) / step);
+      const qz = Math.round((positions[c + 2] - lo[2]) / step);
+      const key = (qx * ny + qy) * nz + qz;
       const other = corners.get(key);
       if (other === undefined) corners.set(key, t);
       else parent[root(t)] = root(other);
@@ -339,4 +394,33 @@ function armPieces(positions: Float32Array, fromY: number, topY: number): Uint8A
   }
   for (let t = 0; t < triangles; t++) if (parent[t] >= 0 && top.get(root(t))! >= topY) result[t] = 1;
   return result;
+}
+
+/**
+ * Reorders the triangles from the deepest to the shallowest (positions and normals returned, the arrays of `cells` replaced), so the
+ * section is just where a `drawRange` starts: the triangles removed are always the first ones.
+ */
+export function sortByDepth(figure: FlatFigure, cells: FigureCells): FlatFigure {
+  const depth = cells.triangleDepth;
+  const order = Uint32Array.from({ length: depth.length }, (_, index) => index).sort((a, b) => depth[b] - depth[a]);
+  const positions = new Float32Array(figure.positions.length);
+  const normals = new Float32Array(figure.normals.length);
+  const vertexGroup = new Uint16Array(cells.vertexGroup.length);
+  const vertexPart = new Uint8Array(cells.vertexPart.length);
+  const triangleDepth = new Float32Array(depth.length);
+  order.forEach((from, to) => {
+    for (let k = 0; k < 9; k++) {
+      positions[to * 9 + k] = figure.positions[from * 9 + k];
+      normals[to * 9 + k] = figure.normals[from * 9 + k];
+    }
+    for (let k = 0; k < 3; k++) {
+      vertexGroup[to * 3 + k] = cells.vertexGroup[from * 3 + k];
+      vertexPart[to * 3 + k] = cells.vertexPart[from * 3 + k];
+    }
+    triangleDepth[to] = depth[from];
+  });
+  cells.vertexGroup = vertexGroup;
+  cells.vertexPart = vertexPart;
+  cells.triangleDepth = triangleDepth;
+  return { positions, normals };
 }

@@ -155,7 +155,8 @@ const SETTLED = 0.001;
 
 const toRadians = (degrees: number) => (degrees * Math.PI) / 180;
 const toDegrees = (radians: number) => (radians * 180) / Math.PI;
-const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+let reducedQuery: MediaQueryList | undefined;
+const prefersReducedMotion = () => (reducedQuery ??= window.matchMedia('(prefers-reduced-motion: reduce)')).matches;
 
 /**
  * The stage of a monument page: the maquette on its pedestal under the spot. The scroll moves the camera (`track`) and the state of

@@ -7,7 +7,6 @@ import {
   DoubleSide,
   DynamicDrawUsage,
   ExtrudeGeometry,
-  Float32BufferAttribute,
   Group,
   InstancedMesh,
   LatheGeometry,
@@ -32,7 +31,7 @@ import { SKY_LAYER } from '../../../engine/render/LookPipeline';
 import { yieldToMain } from '../../../engine/utils/yieldToMain';
 import { applyExploreFocus, createToonPlaster, type MonumentModel } from '../../../engine/stages/shared/monument';
 import { CUT_FACING, figureBaseY, riseY } from './libertyStates';
-import { dropAbove, flattenScene, PART_NAMES, sliceStraight, splitIntoCells, type CellGroup, type FigureCells, type FlatFigure } from './libertyFigure';
+import { dropAbove, flattenScene, PART_NAMES, sliceStraight, sortByDepth, splitIntoCells, type CellGroup, type FigureCells, type FlatFigure } from './libertyFigure';
 import {
   ACCENT,
   BASE_Y,
@@ -84,6 +83,8 @@ function layerExplode(layer: Layer, explode: number) {
 /** Height of the emissive flame (the sculpted one it replaces was ~2.4 m), and how deep its foot sits in the cup. */
 const FLAME_HEIGHT = 2.4;
 const FLAME_SINK = 0.3;
+/** The skin color is computed once per slice of height (this many over the figure), not once per vertex. */
+const SKIN_BINS = 2048;
 
 /** Loads the sculpted figure (meshopt-compressed GLB). Nothing is written anywhere but the returned arrays, so a stale load cannot touch a newer one. */
 async function loadFigure(): Promise<FlatFigure> {
@@ -190,17 +191,34 @@ export class StatueOfLiberty implements MonumentModel<LibertyState> {
   private readonly groups: readonly CellGroup[];
   private readonly vertexGroup: Uint16Array;
   private readonly vertexPart: Uint8Array;
+  /** Slice of height (0..SKIN_BINS-1) of every vertex, and the height of the first one and of each step. */
+  private readonly vertexBin: Uint16Array;
+  private readonly binMinY: number;
+  private readonly binHeight: number;
+  private readonly toneTable = new Float32Array(PART_NAMES.length * SKIN_BINS * 3);
+  /** Slices whose color changed in the current repaint (the table still holds the last one while it is compared). */
+  private readonly dirtyBins = new Uint8Array(SKIN_BINS);
+  /** Vertices grouped by slice (CSR): the ones of slice `b` are binVertices[binStart[b] .. binStart[b + 1]). */
+  private readonly binStart = new Uint32Array(SKIN_BINS + 1);
+  private readonly binVertices: Uint32Array;
+  private readonly lift = {} as Record<Layer, number>;
   private readonly tip: readonly [number, number, number];
   /** Foot of the flame: the centre of the cup. */
   private readonly flameBase = new Vector3();
-  private readonly groupOffsets: Float32Array;
-  private readonly lastOffsets: Float32Array;
+  /** Vertical offset of every group (the figure only moves up and down). */
+  private readonly groupOffsetY: Float32Array;
   private readonly cells: FigureCells;
   private readonly flat: FlatFigure;
   private state: LibertyState = { ...REST };
   private highlight: LibertyPart | null = null;
-  private paintKey = '';
+  /** What the pieces were last placed or painted with (NaN / undefined: never). */
+  private appliedHighlight: LibertyPart | null | undefined;
+  private paintedCopper = Number.NaN;
+  private paintedHighlight: LibertyPart | null | undefined;
   private lastSweep = Number.NaN;
+  private readonly lastStone = { pedestal: Number.NaN, highlight: undefined as LibertyPart | null | undefined };
+  private readonly lastIronPlace = { explode: Number.NaN };
+  private readonly lastIronColor = { skin: Number.NaN, highlight: undefined as LibertyPart | null | undefined };
 
   private constructor(flat: FlatFigure, cells: FigureCells) {
     this.root.name = 'statue-of-liberty';
@@ -213,23 +231,40 @@ export class StatueOfLiberty implements MonumentModel<LibertyState> {
     this.tip = cells.tip;
     // The tip is the rim of the cup (the sculpted flame is dropped): the flame stands upright on the centre of its top half meter.
     let near = 0;
+    let minY = Infinity;
+    let maxY = -Infinity;
     for (let at = 0; at < flat.positions.length; at += 3) {
-      if (this.tip[1] - flat.positions[at + 1] > 0.5) continue;
+      const y = flat.positions[at + 1];
+      if (y < minY) minY = y;
+      if (y > maxY) maxY = y;
+      if (this.tip[1] - y > 0.5) continue;
       this.flameBase.x += flat.positions[at];
       this.flameBase.z += flat.positions[at + 2];
       near++;
     }
     this.flameBase.divideScalar(near);
     this.flameBase.y = this.tip[1] - FLAME_SINK;
-    this.groupOffsets = new Float32Array(cells.groups.length * 3);
-    this.lastOffsets = new Float32Array(cells.groups.length * 3).fill(Number.NaN);
+    this.binMinY = minY;
+    this.binHeight = (maxY - minY) / (SKIN_BINS - 1) || 1;
+    this.vertexBin = new Uint16Array(flat.positions.length / 3);
+    for (let vertex = 0; vertex < this.vertexBin.length; vertex++) {
+      this.vertexBin[vertex] = Math.round((flat.positions[vertex * 3 + 1] - minY) / this.binHeight);
+    }
+    const { binStart } = this;
+    for (let vertex = 0; vertex < this.vertexBin.length; vertex++) binStart[this.vertexBin[vertex] + 1]++;
+    for (let bin = 0; bin < SKIN_BINS; bin++) binStart[bin + 1] += binStart[bin];
+    this.binVertices = new Uint32Array(this.vertexBin.length);
+    const fill = binStart.slice(0, SKIN_BINS);
+    for (let vertex = 0; vertex < this.vertexBin.length; vertex++) this.binVertices[fill[this.vertexBin[vertex]]++] = vertex;
+    this.groupOffsetY = new Float32Array(cells.groups.length).fill(Number.NaN);
   }
 
   /** Builds in slices (the figure from the file, the cells, fort and skeleton, then meshes), handing the main thread back between them. */
   static async create() {
     const flat = await loadFigure();
     await yieldToMain();
-    const model = new StatueOfLiberty(flat, splitIntoCells(flat, { ...FIGURE.cuts, facing: CUT_FACING }));
+    const cells = splitIntoCells(flat, { ...FIGURE.cuts, facing: CUT_FACING });
+    const model = new StatueOfLiberty(sortByDepth(flat, cells), cells);
     await yieldToMain();
     model.buildFort();
     model.buildSkeleton();
@@ -331,7 +366,7 @@ export class StatueOfLiberty implements MonumentModel<LibertyState> {
     const colors = new BufferAttribute(new Float32Array(this.flat.positions.length).fill(1), 3);
     colors.setUsage(DynamicDrawUsage);
     geometry.setAttribute('position', positions);
-    geometry.setAttribute('normal', new Float32BufferAttribute(this.flat.normals, 3));
+    geometry.setAttribute('normal', new BufferAttribute(this.flat.normals, 3));
     geometry.setAttribute('color', colors);
     // Fixed bounds: the exploded view reaches far above the rest pose, and picking tests the sphere first.
     geometry.boundingSphere = bounds.clone();
@@ -396,16 +431,26 @@ export class StatueOfLiberty implements MonumentModel<LibertyState> {
 
   /** Places and colors every piece for a story state. Call it on the frames where the state moves. */
   setState(state: LibertyState) {
+    let unchanged = true;
+    for (const key in state) {
+      if (state[key as keyof LibertyState] === this.state[key as keyof LibertyState]) continue;
+      unchanged = false;
+      break;
+    }
+    if (unchanged && this.appliedHighlight === this.highlight) return;
+    this.appliedHighlight = this.highlight;
     this.state = { ...state };
     const { skin, explode, pedestal, torch } = state;
     const baseY = figureBaseY(pedestal);
-    const lift = {} as Record<Layer, number>;
+    const lift = this.lift;
     for (const layer of LAYER_ORDER) lift[layer] = EXPLODE_LIFT[layer] * layerExplode(layer, explode);
     lift.iron = 0;
 
     this.placeStone(pedestal);
-    this.placeIron(skin, explode, baseY, lift);
-    this.placeStatue(skin, baseY, lift);
+    this.skinMesh.position.y = baseY;
+    this.ironMesh.position.y = baseY;
+    this.placeIron(skin, explode, lift);
+    this.placeStatue(skin, lift);
     this.placeTorch(torch, baseY + lift.torch);
     this.fortMaterial.color.set(PLASTER.color).multiply(fortTint);
     if (this.highlight) applyExploreFocus(this.fortMaterial.color, this.highlight === 'fort', focusAccent, ground);
@@ -413,9 +458,13 @@ export class StatueOfLiberty implements MonumentModel<LibertyState> {
 
   private placeStone(pedestal: number) {
     this.stoneMesh.visible = pedestal > 0.001;
+    if (pedestal === this.lastStone.pedestal && this.highlight === this.lastStone.highlight) return;
+    this.lastStone.pedestal = pedestal;
+    this.lastStone.highlight = this.highlight;
     // The pedestal rises over the fort: accent while it moves, stone when it stands.
     const moving = 0.55 * Math.sin(Math.PI * pedestal);
-    PEDESTAL_PIECES.forEach((piece, index) => {
+    for (let index = 0; index < PEDESTAL_PIECES.length; index++) {
+      const piece = PEDESTAL_PIECES[index];
       const y0 = riseY(piece.y0, pedestal);
       const y1 = riseY(piece.y1, pedestal);
       position.set(piece.x, (y0 + y1) / 2, piece.z);
@@ -425,80 +474,117 @@ export class StatueOfLiberty implements MonumentModel<LibertyState> {
       stoneColor.set(piece.tint).lerp(accent, moving);
       if (this.highlight) applyExploreFocus(stoneColor, this.highlight === 'pedestal', focusAccent, ground);
       this.stoneMesh.setColorAt(index, stoneColor);
-    });
+    }
     this.stoneMesh.instanceMatrix.needsUpdate = true;
     if (this.stoneMesh.instanceColor) this.stoneMesh.instanceColor.needsUpdate = true;
   }
 
-  private placeIron(skin: number, explode: number, baseY: number, lift: Record<Layer, number>) {
+  private placeIron(skin: number, explode: number, lift: Record<Layer, number>) {
     // The skeleton shows only through the section of chapter 1; between the parted layers it read as a bare iron tower.
     this.ironMesh.visible = skin > 0.01;
+    // The height of the pedestal is the position of the mesh: the matrices only change with the explode.
+    if (explode !== this.lastIronPlace.explode) {
+      this.lastIronPlace.explode = explode;
+      for (let index = 0; index < this.iron.length; index++) {
+        const piece = this.iron[index];
+        position.copy(piece.position);
+        position.y += lift[piece.layer];
+        matrix.compose(position, piece.quaternion, piece.scale);
+        this.ironMesh.setMatrixAt(index, matrix);
+      }
+      this.ironMesh.instanceMatrix.needsUpdate = true;
+    }
+    if (skin === this.lastIronColor.skin && this.highlight === this.lastIronColor.highlight) return;
+    this.lastIronColor.skin = skin;
+    this.lastIronColor.highlight = this.highlight;
     stoneColor.set(TINT.iron).lerp(accent, 0.55 * smooth(0, 0.5, skin));
     if (this.highlight) applyExploreFocus(stoneColor, this.highlight === 'pylon', focusAccent, ground);
-    this.iron.forEach((piece, index) => {
-      position.copy(piece.position);
-      position.y += baseY + lift[piece.layer];
-      matrix.compose(position, piece.quaternion, piece.scale);
-      this.ironMesh.setMatrixAt(index, matrix);
-      this.ironMesh.setColorAt(index, stoneColor);
-    });
-    this.ironMesh.instanceMatrix.needsUpdate = true;
+    for (let index = 0; index < this.iron.length; index++) this.ironMesh.setColorAt(index, stoneColor);
     if (this.ironMesh.instanceColor) this.ironMesh.instanceColor.needsUpdate = true;
   }
 
   /**
-   * Moves every vertex of the figure by the offset of its layer (exploded view) and applies the section: triangles whose centroid is
-   * past the sweeping plane collapse to a point (zero area), so the ink, the shadow and the G-buffer pass skip them with no clipping
-   * planes. Whole triangles go or stay: the edge is stable and no half-open sheet is ever left.
+   * Moves every vertex of the figure up by the offset of its layer (exploded view) and applies the section: the triangles are sorted
+   * from the deepest, so the ones past the sweeping plane are always the first ones and `drawRange` skips them (the ink, the shadow
+   * and the G-buffer pass too, with no clipping planes and no buffer upload). Whole triangles go or stay: the edge is stable and no
+   * half-open sheet is ever left.
    */
-  private placeStatue(skin: number, baseY: number, lift: Record<Layer, number>) {
-    const offsets = this.groupOffsets;
-    let moved = false;
-    this.groups.forEach((group, index) => {
-      offsets[index * 3 + 1] = baseY + lift[group.layer as Layer];
-      if (offsets[index * 3 + 1] !== this.lastOffsets[index * 3 + 1]) moved = true;
-    });
-    // The plane comes from the front (`reach`) to the axis (0).
-    const sweep = this.cells.reach * (1 - skin);
-    if (sweep !== this.lastSweep) moved = true;
-
+  private placeStatue(skin: number, lift: Record<Layer, number>) {
     const geometry = this.skinMesh.geometry;
-    const base = this.basePositions;
-    const count = this.vertexGroup.length;
-    // Skips the ~60k vertices when nothing moved (a change of copper alone, for example).
+    const offsetY = this.groupOffsetY;
+    let moved = false;
+    for (let index = 0; index < this.groups.length; index++) {
+      const y = lift[this.groups[index].layer as Layer];
+      if (y === offsetY[index]) continue;
+      offsetY[index] = y;
+      moved = true;
+    }
+    // Skips the ~60k vertices unless the layers moved (the pedestal moves the mesh, not the vertices).
     if (moved) {
       const positions = geometry.getAttribute('position') as BufferAttribute;
-      const depth = this.cells.triangleDepth;
-      for (let triangle = 0; triangle < count; triangle += 3) {
-        const gone = depth[triangle / 3] > sweep;
-        for (let corner = 0; corner < 3; corner++) {
-          const vertex = triangle + corner;
-          // A removed triangle puts its three corners on its first one.
-          const source = gone ? triangle : vertex;
-          const at = vertex * 3;
-          const from = source * 3;
-          const group = this.vertexGroup[source] * 3;
-          positions.array[at] = base[from] + offsets[group];
-          positions.array[at + 1] = base[from + 1] + offsets[group + 1];
-          positions.array[at + 2] = base[from + 2] + offsets[group + 2];
-        }
-      }
+      const array = positions.array as Float32Array;
+      const base = this.basePositions;
+      const groupOf = this.vertexGroup;
+      for (let vertex = 0, at = 1; vertex < groupOf.length; vertex++, at += 3) array[at] = base[at] + offsetY[groupOf[vertex]];
       positions.needsUpdate = true;
-      this.lastOffsets.set(offsets);
-      this.lastSweep = sweep;
     }
 
-    // Colors depend only on the rest height, the part and the color change: repaint just when those change.
-    const key = `${this.state.copper}|${this.highlight}`;
-    if (key === this.paintKey) return;
-    this.paintKey = key;
+    // The plane comes from the front (`reach`) to the axis (0): the first triangle that is not past it, found in the sorted depths.
+    const sweep = this.cells.reach * (1 - skin);
+    if (sweep !== this.lastSweep) {
+      this.lastSweep = sweep;
+      const depth = this.cells.triangleDepth;
+      let low = 0;
+      let high = depth.length;
+      while (low < high) {
+        const middle = (low + high) >> 1;
+        if (depth[middle] > sweep) low = middle + 1;
+        else high = middle;
+      }
+      geometry.setDrawRange(low * 3, Infinity);
+    }
+    this.paintStatue(geometry);
+  }
+
+  /** Colors depend only on the height, the part and the color change: repaint just when the copper or the highlight change. */
+  private paintStatue(geometry: BufferGeometry) {
+    const { copper } = this.state;
+    if (copper === this.paintedCopper && this.highlight === this.paintedHighlight) return;
+    const full = this.highlight !== this.paintedHighlight || Number.isNaN(this.paintedCopper);
+    this.paintedCopper = copper;
+    this.paintedHighlight = this.highlight;
+    // One color per slice of height (and per part, only with a card open), then the vertices just read the table.
+    const table = this.toneTable;
+    const { dirtyBins } = this;
+    dirtyBins.fill(0);
+    const parts = this.highlight ? PART_NAMES.length : 1;
+    for (let part = 0; part < parts; part++) {
+      for (let bin = 0; bin < SKIN_BINS; bin++) {
+        this.skinTone(this.binMinY + bin * this.binHeight, part, tone);
+        const at = (part * SKIN_BINS + bin) * 3;
+        if (tone.r !== table[at] || tone.g !== table[at + 1] || tone.b !== table[at + 2]) dirtyBins[bin] = 1;
+        table[at] = tone.r;
+        table[at + 1] = tone.g;
+        table[at + 2] = tone.b;
+      }
+    }
+    const partStride = this.highlight ? SKIN_BINS : 0;
     const colors = geometry.getAttribute('color') as BufferAttribute;
-    for (let vertex = 0; vertex < count; vertex++) {
+    const array = colors.array as Float32Array;
+    const { vertexBin, vertexPart, binStart, binVertices } = this;
+    const paint = (vertex: number) => {
+      const from = (vertexPart[vertex] * partStride + vertexBin[vertex]) * 3;
       const at = vertex * 3;
-      this.skinTone(base[at + 1], this.vertexPart[vertex], tone);
-      colors.array[at] = tone.r;
-      colors.array[at + 1] = tone.g;
-      colors.array[at + 2] = tone.b;
+      array[at] = table[from];
+      array[at + 1] = table[from + 1];
+      array[at + 2] = table[from + 2];
+    };
+    if (full) for (let vertex = 0; vertex < vertexBin.length; vertex++) paint(vertex);
+    else {
+      for (let bin = 0; bin < SKIN_BINS; bin++) {
+        if (!dirtyBins[bin]) continue;
+        for (let at = binStart[bin]; at < binStart[bin + 1]; at++) paint(binVertices[at]);
+      }
     }
     colors.needsUpdate = true;
   }
