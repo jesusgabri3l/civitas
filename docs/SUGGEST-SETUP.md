@@ -49,7 +49,7 @@ npx vercel env add GOOGLE_SHEET_ID
 
 ## 5. Probar en local
 
-- `npm run dev` ya sirve `/api/suggest` leyendo `.env.local`. Abre el índice → Suggest a monument, envía y mira la fila en el Sheet.
+- `npm run dev` ya sirve `/api/suggest` leyendo `.env.local`. Toca "Suggest a monument" (esquina del hub, bajo el idioma), envía y mira la fila en el Sheet.
 - `npx vercel dev` reproduce el entorno de Vercel (pide `vercel link` la primera vez y usa las variables de Vercel).
 
 Respuestas del endpoint: 200 enviado (también si el honeypot venía lleno, sin guardar), 400 datos inválidos o captcha fallido, 500 error de Google o variables que faltan (el detalle sale en la consola del servidor).

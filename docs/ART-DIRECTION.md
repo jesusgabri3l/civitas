@@ -56,7 +56,8 @@ Fuentes con `@fontsource` (OFL, self-host). Cada fuente de ciudad se importa y p
 
 - Logo arriba a la izquierda: "Civitas" + icono del globo en ámbar; debajo, en mono pequeño, "The interactive atlas of monuments" (se oculta en pantallas angostas y en el logo acoplado de las ciudades).
 - Titular centrado arriba en Fraunces 600; subtítulo mono en ámbar.
-- Botón **Index · N monuments** (sin atajo de teclado) arriba a la derecha: panel lateral con buscador, filtros por región y lista cronológica. Incluye "Suggest a monument".
+- Botón **Index · N monuments** (sin atajo de teclado) arriba a la derecha: panel lateral con buscador, filtros por región y lista cronológica.
+- **Suggest a monument** en la misma columna, bajo el selector de idioma: texto ámbar en escritorio, círculo con "+" y borde ámbar en pantallas angostas. Abre el panel directo en el formulario, sin flecha de atrás; desde el estado vacío del buscador se abre con flecha de vuelta a la lista.
 - Controles (Drag / Scroll / Click) como lista discreta abajo a la izquierda, sin pastillas: el globo queda libre para interactuar.
 - Coordenadas en vivo abajo a la derecha.
 - Tooltip de ciudad: tarjeta oscura sutil (`rgba(ink, .78)`, desenfoque, borde al 14 %) para que no se pierda sobre el globo claro.
@@ -114,7 +115,7 @@ Todas las páginas de monumento comparten la misma estructura. Solo cambian los 
 |---|---|
 | Escritorio (alto ≥ 800 px) | Texto a la izquierda, maqueta a la derecha (`framingX` del entorno). Un degradado suave del fondo detrás de la columna de texto. |
 | Laptop (alto < 800 px; < 672 px aún más compacto) | Ritmo más apretado (`--story-top`, `--story-bottom`, `--story-gap`), tipografía que escala con el menor entre ancho y alto, línea de tiempo solo con años, ficha del museo más pequeña (se oculta por debajo de 672 px). Cada capítulo cabe en un viewport. |
-| Teléfono y tablet vertical (≤ 48rem) | La cámara sube la maqueta a la mitad superior; el texto empieza en `46svh` sobre el fondo de la ciudad; línea de tiempo solo con puntos (44 px de toque); sin ficha del museo. |
+| Teléfono y tablet vertical (≤ 48rem **o** pantalla vertical, `aspect ≤ 1`: iPad, Surface; mixins `narrow`/`wide` en `_mixins.scss`, mismo corte que la cámara de `monument.ts`) | La cámara sube la maqueta a la mitad superior; el texto empieza en `46svh` sobre el fondo de la ciudad; línea de tiempo solo con puntos (44 px de toque); sin ficha del museo. |
 | Explore | El texto queda fijo entre la barra y la línea de tiempo y hace scroll interno si no cabe. |
 
 Las cámaras de cada capítulo (`KEYS` en `<ciudad>Config.ts`) deben dejar la maqueta a la derecha sin pasar bajo el texto: revisarlas al menos en 1440×900, 1366×768 y 390×844.
