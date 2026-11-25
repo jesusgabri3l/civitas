@@ -104,7 +104,8 @@ export function applyExploreFocus(color: Color, chosen: boolean, accent: Color, 
 /** A maquette: its root and a pure function from the story state to the pose of every piece. */
 export interface MonumentModel<S> {
   readonly root: Object3D;
-  setState(state: S): void;
+  /** Returns `false` when only colors changed (the shadows do not need a refresh); anything else (void) means the shape may have moved. */
+  setState(state: S): void | boolean;
   /** Explore chapter: the part under the ray (its card id) or null. */
   pick?(raycaster: Raycaster): string | null;
   /** Explore chapter: tints the pieces of a part (null = none). Applied on the next `setState`. */
@@ -258,8 +259,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       moving = true;
     }
     if (moving) {
-      model.setState(now);
-      if (shadowsOn) host.refreshShadows();
+      if (model.setState(now) !== false && shadowsOn) host.refreshShadows();
     }
     return moving;
   }
@@ -407,8 +407,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       // The focus of a chosen part lives only in Explore: scrolling back up to the story shows the model as the story tells it.
       if (model && exploring !== (Boolean(explore) && chapterNow === explore!.chapter)) {
         model.setHighlight?.(exploring ? explorePart : null);
-        model.setState(now);
-        if (shadowsOn) host.refreshShadows();
+        if (model.setState(now) !== false && shadowsOn) host.refreshShadows();
       }
       chapterNow = chapter;
       inHero = chapter === 0;
@@ -422,10 +421,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       explorePart = part;
       if (explore && chapterNow === explore.chapter) goal = goalFor(chapterNow, 1);
       model?.setHighlight?.(explore && chapterNow === explore.chapter ? part : null);
-      if (model) {
-        model.setState(now);
-        if (shadowsOn) host.refreshShadows();
-      }
+      if (model && model.setState(now) !== false && shadowsOn) host.refreshShadows();
       wake();
     },
 

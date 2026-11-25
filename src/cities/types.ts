@@ -104,8 +104,8 @@ export interface MuseumLabel {
   lines: string[];
 }
 
-/** The fine graphic line under the hero title (docs/ART-DIRECTION.md §4): greek key, double rule, iron truss, the seven rays of a crown. */
-export type StoryMotif = 'greek-key' | 'double-rule' | 'truss' | 'crown-rays';
+/** The fine graphic line under the hero title (docs/ART-DIRECTION.md §4): greek key, double rule, iron truss, the seven rays of a crown, the cable of a bridge between two towers. */
+export type StoryMotif = 'greek-key' | 'double-rule' | 'truss' | 'crown-rays' | 'catenary';
 
 export interface MonumentStory {
   /** Top bar: the city in English and in its own name and script (`cityLocalLang`: its language tag). */

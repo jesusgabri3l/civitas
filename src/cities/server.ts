@@ -13,12 +13,15 @@ import { story as parisStoryEs } from './paris/story.es';
 import { fontPreloads as romeFonts } from './rome/fonts';
 import { story as romeStory } from './rome/story';
 import { story as romeStoryEs } from './rome/story.es';
+import { fontPreloads as sanFranciscoFonts } from './san-francisco/fonts';
+import { story as sanFranciscoStory } from './san-francisco/story';
+import { story as sanFranciscoStoryEs } from './san-francisco/story.es';
 import type { MonumentStory } from './types';
 
 /** The story of each monument that has its page built, per language. A city without one shows its stage alone. */
 export const monumentStories: Record<Lang, Partial<Record<DestinationId, MonumentStory>>> = {
-  en: { athens: athensStory, rome: romeStory, paris: parisStory, 'new-york': newYorkStory },
-  es: { athens: athensStoryEs, rome: romeStoryEs, paris: parisStoryEs, 'new-york': newYorkStoryEs },
+  en: { athens: athensStory, rome: romeStory, paris: parisStory, 'new-york': newYorkStory, 'san-francisco': sanFranciscoStory },
+  es: { athens: athensStoryEs, rome: romeStoryEs, paris: parisStoryEs, 'new-york': newYorkStoryEs, 'san-francisco': sanFranciscoStoryEs },
 };
 
 /** Fonts to preload on the page of each city (all their CSS is imported here, so SPA navigation finds them ready). */
@@ -27,4 +30,5 @@ export const fontPreloads: Record<DestinationId, string[]> = {
   rome: romeFonts,
   paris: parisFonts,
   'new-york': newYorkFonts,
+  'san-francisco': sanFranciscoFonts,
 };

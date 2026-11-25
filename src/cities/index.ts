@@ -5,6 +5,7 @@ import { meta as athens } from './athens/meta';
 import { meta as newYork } from './new-york/meta';
 import { meta as paris } from './paris/meta';
 import { meta as rome } from './rome/meta';
+import { meta as sanFrancisco } from './san-francisco/meta';
 
 /**
  * Registry of the cities, safe for the client (only the light `meta` of each one). To add a city: its folder in `cities/<id>/`
@@ -12,7 +13,7 @@ import { meta as rome } from './rome/meta';
  * The index search picks it up from `cities`:
  * drop its row from `soon` in data/monumentIndex.ts and give its meta `keywords` (tests/monumentIndex.test.ts checks it). The order is the one of the globe list and the nav.
  */
-export const cities = [athens, rome, paris, newYork] as const;
+export const cities = [athens, rome, paris, newYork, sanFrancisco] as const;
 
 export type DestinationId = (typeof cities)[number]['id'];
 
@@ -22,6 +23,7 @@ export const cityStageLoaders: Omit<StageLoaders, 'globe'> = {
   rome: () => import('./rome/stage/romeStage'),
   paris: () => import('./paris/stage/parisStage'),
   'new-york': () => import('./new-york/stage/newYorkStage'),
+  'san-francisco': () => import('./san-francisco/stage/sanFranciscoStage'),
 };
 
 /** A registered city, with every optional field of `CityMeta` and its id narrowed. */

@@ -23,6 +23,7 @@ const MOMENTS = {
   rome: { chapter: 3 }, // AD 80, the games
   paris: { chapter: 6, view: 'sparkle' }, // Explore, Sparkle (forced)
   'new-york': { chapter: 5, t: 0.5 }, // Patina halfway: the green climbing over the new copper
+  'san-francisco': { chapter: 6 }, // Explore: the whole orange bridge
 };
 const HOME = { name: 'Civitas', kicker: 'The world’s monuments', display: "'Fraunces', Georgia, serif", weight: 600, accent: '#e8a33d', atTop: true };
 

@@ -35,7 +35,6 @@ const soon: readonly (SoonTexts & { year: number; region: Region; keywords: read
   { monument: 'Machu Picchu', place: 'Cusco, Peru', date: 'c. 1450', year: 1450, region: 'Americas', keywords: ['Inca', 'Machu Pikchu'], es: { monument: 'Machu Picchu', place: 'Cusco, Perú', date: 'h. 1450' } },
   { monument: 'Taj Mahal', place: 'Agra, India', date: '1653', year: 1653, region: 'Asia', keywords: ['Mughal', 'Mausoleum', 'Shah Jahan'], es: { monument: 'Taj Mahal', place: 'Agra, India', date: '1653' } },
   { monument: 'Great Mosque of Djenné', place: 'Djenné, Mali', date: '1907', year: 1907, region: 'Africa', keywords: ['Djenne', 'Mud mosque', 'Sudano-Sahelian', 'Crépissage'], es: { monument: 'Gran Mezquita de Djenné', place: 'Djenné, Malí', date: '1907' } },
-  { monument: 'Golden Gate Bridge', place: 'San Francisco, USA', date: '1937', year: 1937, region: 'Americas', keywords: ['Golden Gate', 'International Orange', 'Suspension bridge', 'California'], es: { monument: 'Puente Golden Gate', place: 'San Francisco, EE. UU.', date: '1937' } },
 ];
 
 function buildIndex(lang: Lang): readonly MonumentIndexEntry[] {
