@@ -20,11 +20,16 @@ const { lang, text } = useUi();
 const monumentIndex = monumentIndexFor(lang);
 const open = ref(false);
 const suggesting = ref(false);
+// Opened from the hub's Suggest button: no way back to the list.
+const suggestOnly = ref(false);
 const query = ref('');
 const region = ref<Region | null>(null);
 const activeIndex = ref(0);
 const search = ref<HTMLInputElement | null>(null);
 const trigger = ref<HTMLButtonElement | null>(null);
+// The button that opened the panel (Index or Suggest) gets the focus back on close.
+let opener: HTMLButtonElement | null = null;
+const suggestLabel = text.index.suggest.replace(/\s*→$/, '');
 const pad = (n: number) => String(n).padStart(2, '0');
 const openCount = monumentIndex.filter((entry) => entry.destination).length;
 const results = computed(() => searchMonuments(query.value, region.value, lang));
@@ -78,19 +83,27 @@ function onSearchKeydown(event: KeyboardEvent) {
 
 const panel = ref<HTMLElement | null>(null);
 
-async function show() {
+async function show(from: HTMLButtonElement | null = trigger.value) {
+  opener = from;
   hideTooltip();
   open.value = true;
   await nextTick();
   // Touch: focusing the search would pop the keyboard over the list; the panel takes the focus instead.
-  if (window.matchMedia('(pointer: fine)').matches) search.value?.focus();
+  if (search.value && window.matchMedia('(pointer: fine)').matches) search.value.focus();
   else panel.value?.focus();
+}
+
+function openSuggest(event: MouseEvent) {
+  suggesting.value = true;
+  suggestOnly.value = true;
+  show(event.currentTarget as HTMLButtonElement);
 }
 
 function close() {
   open.value = false;
   suggesting.value = false;
-  trigger.value?.focus();
+  suggestOnly.value = false;
+  opener?.focus();
 }
 
 async function visit(city: DestinationId) {
@@ -102,7 +115,7 @@ async function visit(city: DestinationId) {
 
 function onKeydown(event: KeyboardEvent) {
   if (event.key === 'Escape' && open.value) {
-    if (suggesting.value) suggesting.value = false;
+    if (suggesting.value && !suggestOnly.value) suggesting.value = false;
     else close();
   }
 }
@@ -122,6 +135,10 @@ onBeforeUnmount(() => {
       <span>{{ text.index.trigger(monumentIndex.length) }}</span>
     </button>
     <TheOverlayLang />
+    <button type="button" class="the-overlay-index__suggest" :aria-label="suggestLabel" aria-haspopup="dialog" @click="openSuggest">
+      <svg viewBox="0 0 14 14" aria-hidden="true" focusable="false"><path d="M7 2v10M2 7h10" /></svg>
+      <span>{{ text.index.suggest }}</span>
+    </button>
   </div>
 
   <Transition name="the-overlay-index">
@@ -205,12 +222,12 @@ onBeforeUnmount(() => {
             <p class="the-overlay-index__empty-title">{{ text.index.emptyTitle }}</p>
             <p class="the-overlay-index__empty-text">{{ text.index.emptyText }}</p>
             <button type="button" class="the-overlay-index__empty-clear" @click="clearFilters">{{ text.index.clear }}</button>
+            <button type="button" class="the-overlay-index__empty-clear" @click="suggesting = true">{{ text.index.suggest }}</button>
           </div>
 
-          <button type="button" class="the-overlay-index__suggest" @click="suggesting = true">{{ text.index.suggest }}</button>
         </template>
 
-        <TheOverlaySuggest v-else @back="suggesting = false" @close="close" />
+        <TheOverlaySuggest v-else :can-go-back="!suggestOnly" @back="suggesting = false" @close="close" />
       </aside>
     </div>
   </Transition>

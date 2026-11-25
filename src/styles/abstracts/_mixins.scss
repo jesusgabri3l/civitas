@@ -18,8 +18,17 @@
   text-rendering: optimizeLegibility;
 }
 
+// Phones and portrait tablets (iPad, Surface in portrait): the stacked layout. Same cut as the camera in monument.ts (aspect < 1
+// lifts the maquette to the top), so text and maquette never disagree.
 @mixin narrow {
-  @media (max-width: $breakpoint-narrow) {
+  @media (max-width: $breakpoint-narrow), (max-aspect-ratio: 1/1) {
+    @content;
+  }
+}
+
+// The opposite of `narrow`: text column on the left, maquette on the right.
+@mixin wide {
+  @media (min-width: #{$breakpoint-narrow + 0.01}) and (min-aspect-ratio: 10001/10000) {
     @content;
   }
 }

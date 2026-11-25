@@ -7,6 +7,8 @@ import { useUi } from './useUi';
  * "Suggest a monument", inside the index panel. POST /api/suggest (JSON) → the server checks Turnstile and appends a row to a Google Sheet.
  * `website` is the honeypot: hidden from people, bots tend to fill it.
  */
+// `canGoBack`: false when opened straight from the hub (there is no list behind it).
+defineProps<{ canGoBack: boolean }>();
 defineEmits<{ back: []; close: [] }>();
 const { text } = useUi();
 const t = text.suggest;
@@ -111,7 +113,7 @@ onBeforeUnmount(() => widgetId && turnstile()?.remove(widgetId));
 <template>
   <div v-if="status === 'sent'" class="the-overlay-suggest">
     <header class="the-overlay-index__head">
-      <button type="button" class="the-overlay-index__close" :aria-label="t.back" @click="$emit('back')">←</button>
+      <button v-if="canGoBack" type="button" class="the-overlay-index__close" :aria-label="t.back" @click="$emit('back')">←</button>
       <h2 id="the-overlay-index-title" class="the-overlay-index__title">{{ t.title }}</h2>
       <button type="button" class="the-overlay-index__close" :aria-label="t.close" @click="$emit('close')">×</button>
     </header>
@@ -120,7 +122,7 @@ onBeforeUnmount(() => widgetId && turnstile()?.remove(widgetId));
 
   <form v-else class="the-overlay-suggest" novalidate @submit.prevent="send">
     <header class="the-overlay-index__head">
-      <button type="button" class="the-overlay-index__close" :aria-label="t.back" @click="$emit('back')">←</button>
+      <button v-if="canGoBack" type="button" class="the-overlay-index__close" :aria-label="t.back" @click="$emit('back')">←</button>
       <h2 id="the-overlay-index-title" class="the-overlay-index__title">{{ t.title }}</h2>
       <button type="button" class="the-overlay-index__close" :aria-label="t.close" @click="$emit('close')">×</button>
     </header>

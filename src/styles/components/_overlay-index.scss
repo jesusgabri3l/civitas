@@ -84,6 +84,61 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
   }
 }
 
+// "Suggest a monument": amber text under the language switch (the hub's CTA color); narrow screens: a round "+" with an amber rim.
+.the-overlay-index__suggest {
+  @include label-mono;
+  @include text-halo;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: $touch-target;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: $color-amber;
+  letter-spacing: 0.18em;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: none;
+
+  svg {
+    display: none;
+    width: 0.875rem;
+    height: 0.875rem;
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 1.4;
+  }
+
+  &:hover span {
+    text-decoration: underline 1px;
+    text-underline-offset: 0.3em;
+  }
+
+  &:focus-visible {
+    outline: 1px solid $color-amber;
+    outline-offset: 2px;
+  }
+}
+
+@media (max-aspect-ratio: 6/5) {
+  .the-overlay-index__suggest {
+    width: $touch-target;
+    border: 1px solid rgba($color-amber, 0.5);
+    border-radius: 999px;
+    background: rgba($color-ink, 0.55);
+    backdrop-filter: blur(6px);
+
+    svg {
+      display: block;
+    }
+
+    span {
+      display: none;
+    }
+  }
+}
+
 // Language selector (English | Español): under the trigger, same width. Narrow screens: only the other code (EN/ES), round, above
 // the icon-only trigger.
 .the-overlay-lang {
@@ -373,18 +428,6 @@ $brand-line: 1.12 * 0.5; // same as overlay-brand: the trigger lines up with the
 
   &__empty-clear {
     @include label-mono;
-    min-height: $touch-target;
-    padding: 0;
-    border: 0;
-    background: none;
-    color: $color-amber;
-    letter-spacing: 0.18em;
-    cursor: pointer;
-  }
-
-  &__suggest {
-    @include label-mono;
-    align-self: flex-start;
     min-height: $touch-target;
     padding: 0;
     border: 0;

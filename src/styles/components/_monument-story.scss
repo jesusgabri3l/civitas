@@ -27,17 +27,17 @@
   color: var(--city-text);
 
   // Laptops (wide but short): tighter rhythm, the timeline shows years only.
-  @media (min-width: #{$breakpoint-narrow + 0.01}) and (max-height: 50rem) {
+  @include wide { @media (max-height: 50rem) {
     --story-top: 5.25rem;
     --story-bottom: 6.25rem;
     --story-gap: 0.9rem;
-  }
+  } }
 
-  @media (min-width: #{$breakpoint-narrow + 0.01}) and (max-height: 42rem) {
+  @include wide { @media (max-height: 42rem) {
     --story-top: 4.5rem;
     --story-bottom: 5.5rem;
     --story-gap: 0.7rem;
-  }
+  } }
 
   // Phones and portrait tablets: the maquette takes the top of the screen, the text sits below it, the timeline is dots only.
   @include narrow {
@@ -95,7 +95,11 @@
     @include chrome-mono;
   }
 
+  // Centered on the viewport, not between the logo and the (wider) nav.
   &__city {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
     margin: 0;
     color: var(--city-muted);
   }
@@ -131,10 +135,14 @@
     }
   }
 
-  @include narrow {
+  // Below ~1024 px the centered name runs into "← Globe" (the nav is far wider than the logo), so it goes.
+  @media (max-width: 64rem) {
     &__city {
       display: none;
     }
+  }
+
+  @include narrow {
 
     &__nav {
       gap: 1rem;
@@ -184,7 +192,7 @@
   }
 
   // Wide screens: a soft fade of the ground behind the text column, so a maquette that reaches under the text never fights it.
-  @media (min-width: #{$breakpoint-narrow + 0.01}) {
+  @include wide {
     background: linear-gradient(
       90deg,
       color-mix(in srgb, var(--city-ground) 82%, transparent) 0,
@@ -650,13 +658,13 @@
   }
 
   // Laptops: years only, closer to the edge.
-  @media (min-width: #{$breakpoint-narrow + 0.01}) and (max-height: 50rem) {
+  @include wide { @media (max-height: 50rem) {
     bottom: max(1.5rem, env(safe-area-inset-bottom));
 
     &__name {
       display: none;
     }
-  }
+  } }
 
   // Phones: dots only (the kicker of each chapter says where you are); each dot keeps a 44px tap area.
   @include narrow {

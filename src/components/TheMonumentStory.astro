@@ -29,7 +29,7 @@ const crownRays = [-72, -48, -24, 0, 24, 48, 72]
 
 <header class="monument-bar" data-story-chrome>
   <span class="monument-bar__brand-space" aria-hidden="true"></span>
-  <p class="monument-bar__city">{story.city} · <span lang={story.cityLocalLang}>{story.cityLocal}</span></p>
+  <p class="monument-bar__city" lang={story.cityLocalLang}>{story.cityLocal}</p>
   <nav class="monument-bar__nav" aria-label={text.page}>
     <a href={globeHref}>{text.globe}</a>
     <a href={`#chapter-${chapters[chapters.length - 1].id}`} data-scroll-to={all.length - 1}>{text.explore}</a>
