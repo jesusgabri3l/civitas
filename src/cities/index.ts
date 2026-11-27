@@ -2,6 +2,7 @@ import type { StageLoaders } from '../engine/stage/Stage';
 import { DEFAULT_LANG, withLang, type Lang } from '../i18n/lang';
 import type { CityMeta } from './types';
 import { meta as athens } from './athens/meta';
+import { meta as giza } from './giza/meta';
 import { meta as newYork } from './new-york/meta';
 import { meta as paris } from './paris/meta';
 import { meta as rome } from './rome/meta';
@@ -13,7 +14,7 @@ import { meta as sanFrancisco } from './san-francisco/meta';
  * The index search picks it up from `cities`:
  * drop its row from `soon` in data/monumentIndex.ts and give its meta `keywords` (tests/monumentIndex.test.ts checks it). The order is the one of the globe list and the nav.
  */
-export const cities = [athens, rome, paris, newYork, sanFrancisco] as const;
+export const cities = [athens, rome, paris, newYork, sanFrancisco, giza] as const;
 
 export type DestinationId = (typeof cities)[number]['id'];
 
@@ -24,6 +25,7 @@ export const cityStageLoaders: Omit<StageLoaders, 'globe'> = {
   paris: () => import('./paris/stage/parisStage'),
   'new-york': () => import('./new-york/stage/newYorkStage'),
   'san-francisco': () => import('./san-francisco/stage/sanFranciscoStage'),
+  giza: () => import('./giza/stage/gizaStage'),
 };
 
 /** A registered city, with every optional field of `CityMeta` and its id narrowed. */

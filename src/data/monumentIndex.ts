@@ -30,7 +30,6 @@ interface SoonTexts {
 }
 
 const soon: readonly (SoonTexts & { year: number; region: Region; keywords: readonly string[]; es: SoonTexts })[] = [
-  { monument: 'Great Pyramid', place: 'Giza, Egypt', date: 'c. 2560 BC', year: -2560, region: 'Africa', keywords: ['Khufu', 'Cheops', 'Egypt', 'Pyramids of Giza'], es: { monument: 'Gran Pirámide', place: 'Guiza, Egipto', date: 'h. 2560 a. C.' } },
   { monument: 'Forbidden City', place: 'Beijing, China', date: '1420', year: 1420, region: 'Asia', keywords: ['Gugong', '故宫', 'Imperial Palace', 'Ming'], es: { monument: 'Ciudad Prohibida', place: 'Pekín, China', date: '1420' } },
   { monument: 'Machu Picchu', place: 'Cusco, Peru', date: 'c. 1450', year: 1450, region: 'Americas', keywords: ['Inca', 'Machu Pikchu'], es: { monument: 'Machu Picchu', place: 'Cusco, Perú', date: 'h. 1450' } },
   { monument: 'Taj Mahal', place: 'Agra, India', date: '1653', year: 1653, region: 'Asia', keywords: ['Mughal', 'Mausoleum', 'Shah Jahan'], es: { monument: 'Taj Mahal', place: 'Agra, India', date: '1653' } },

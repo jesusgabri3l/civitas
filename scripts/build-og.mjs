@@ -24,6 +24,7 @@ const MOMENTS = {
   paris: { chapter: 6, view: 'sparkle' }, // Explore, Sparkle (forced)
   'new-york': { chapter: 5, t: 0.5 }, // Patina halfway: the green climbing over the new copper
   'san-francisco': { chapter: 6 }, // Explore: the whole orange bridge
+  giza: { chapter: 3, t: 1 }, // The casing closed, smooth and white
 };
 const HOME = { name: 'Civitas', kicker: 'The world’s monuments', display: "'Fraunces', Georgia, serif", weight: 600, accent: '#e8a33d', atTop: true };
 

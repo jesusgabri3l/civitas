@@ -1,6 +1,6 @@
 # Monumentos para el lanzamiento
 
-Decisión del 2026-11-06: Civitas se lanza con **10 monumentos repartidos por el mundo**, no antes. Hechos: Atenas, Roma, París, Nueva York y San Francisco (5 de 10).
+Decisión del 2026-11-06: Civitas se lanza con **10 monumentos repartidos por el mundo**, no antes. Hechos: Atenas, Roma, París, Nueva York, San Francisco y Guiza (6 de 10).
 Cada uno sigue el checklist de `ART-DIRECTION.md` §7: identidad y brief aprobados por Jesús antes de escribir código.
 
 Antes del lanzamiento también hace falta **agrupar los hotspots del globo** (Europa ya tiene 3 ciudades juntas). Ver `STATUS.md`.
@@ -14,8 +14,8 @@ Antes del lanzamiento también hace falta **agrupar los hotspots del globo** (Eu
 | 3 | Europa | Torre Eiffel | París | Hecho |
 | 4 | EE. UU. (este) | Estatua de la Libertad | Nueva York | Hecho (publicada el 2026-11-14) |
 | 5 | EE. UU. (oeste) | Golden Gate | San Francisco | Hecho (publicado el 2026-11-24) |
-| 6 | Sudamérica | Machu Picchu | Cusco (Perú) | Elegido; maqueta topográfica aprobada (excepción en ART-DIRECTION §6) |
-| 7 | África (noreste) | Gran Pirámide | Guiza (Egipto) | Elegido |
+| 6 | África (noreste) | Gran Pirámide | Guiza (Egipto) | Hecho (publicado el 2026-11-27; `docs/briefs/giza.md`) |
+| 7 | Sudamérica | Machu Picchu | Cusco (Perú) | Elegido; maqueta topográfica aprobada (excepción en ART-DIRECTION §6) |
 | 8 | África (oeste) | Gran Mezquita de Djenné | Djenné (Malí) | Elegido |
 | 9 | Asia (sur) | Taj Mahal | Agra (India) | Elegido |
 | 10 | Asia (este) | Ciudad Prohibida | Pekín | Elegido; enfoque aprobado: solo el eje central (abajo) |

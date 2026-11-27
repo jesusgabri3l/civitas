@@ -27,7 +27,7 @@ import { ContactShadow } from './ContactShadow';
 import { Exhibit } from './Exhibit';
 import { ExploreOrbit, type OrbitLimits } from './ExploreOrbit';
 import { getSoftPoolCookie } from './proceduralSurfaces';
-import { StoryCamera, type CameraTrack } from './StoryCamera';
+import { StoryCamera, type CameraKey, type CameraTrack } from './StoryCamera';
 
 /**
  * Everything around a maquette (docs/ART-DIRECTION.md §6): ground, fog, pedestal, one overhead spot with its beam and dust, fill and
@@ -133,9 +133,10 @@ export interface MonumentDefinition<S extends Record<string, number>> {
   finalStateFor(chapter: number): S;
   /**
    * The Explore chapter (the last one): drag to turn the maquette within `orbit`, tap a part, and `views` the visitor can switch
-   * between (named states; their ids are the ones of the page's view buttons).
+   * between (named states; their ids are the ones of the page's view buttons). `focus`: optional close shots for small parts
+   * (by part id): choosing one eases the camera there, letting it go eases back to the orbit.
    */
-  explore?: { chapter: number; orbit: OrbitLimits; views: Record<string, S> };
+  explore?: { chapter: number; orbit: OrbitLimits; views: Record<string, S>; focus?: Record<string, CameraKey> };
 }
 
 const BUDGETS: Record<QualityTier, { shadowMapSize: number; shadows: boolean; dust: number }> = {
@@ -190,6 +191,9 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
   let chapterNow = 0;
   let exploreView: string | null = null;
   let explorePart: string | null = null;
+  /** 0 = the orbit, 1 = the close shot of the chosen part (`explore.focus`). The shot itself eases too, so going from one part to another glides. */
+  let zoom = 0;
+  const focusShot = { position: new Vector3(), target: new Vector3(), fov: 0 };
   const raycaster = new Raycaster();
   const pointer = new Vector2();
   const explore = definition.explore;
@@ -217,6 +221,28 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
     if (part) host.select(part);
   }
 
+  /** Eases `zoom` toward the close shot of the chosen part, or back out. Returns true while it moves. */
+  function updateZoom(deltaSeconds: number): boolean {
+    const shot = explore?.focus && explorePart && chapterNow === explore.chapter ? explore.focus[explorePart] : undefined;
+    const k = prefersReducedMotion() ? 1 : 1 - Math.exp(-4 * deltaSeconds);
+    let moving = false;
+    if (shot) {
+      // From the orbit it goes straight to the shot (the zoom does the easing); between parts the shot glides.
+      const glide = zoom === 0 ? 1 : k;
+      scratch.set(...shot.position);
+      moving = focusShot.position.distanceToSquared(scratch) > SETTLED || Math.abs(focusShot.fov - shot.fov) > SETTLED;
+      focusShot.position.lerp(scratch, glide);
+      focusShot.target.lerp(scratch.set(...shot.target), glide);
+      focusShot.fov += (shot.fov - focusShot.fov) * glide;
+    }
+    const want = shot ? 1 : 0;
+    if (zoom !== want) {
+      zoom = Math.abs(want - zoom) < SETTLED ? want : zoom + (want - zoom) * k;
+      moving = true;
+    }
+    return moving;
+  }
+
   function wake() {
     lastActivityAt = performance.now();
     host.invalidate();
@@ -235,10 +261,17 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       target.y + distance * Math.sin(elevation),
       target.z + distance * Math.cos(elevation) * Math.sin(azimuth),
     );
+    let fov = shot.fov;
+    if (zoom > 0) {
+      const ease = zoom * zoom * (3 - 2 * zoom);
+      camera.position.lerp(focusShot.position, ease);
+      target.lerp(focusShot.target, ease);
+      fov += (focusShot.fov - fov) * ease;
+    }
     camera.lookAt(target);
     // Tall screens widen the view; wide ones shift the image right (text on the left), tall ones lift it (text below).
     const boost = aspect < 1 ? Math.min(1.9, 0.85 / aspect) : 1;
-    camera.fov = toDegrees(2 * Math.atan(Math.tan(toRadians(shot.fov) / 2) * boost));
+    camera.fov = toDegrees(2 * Math.atan(Math.tan(toRadians(fov) / 2) * boost));
     const offsetX = aspect > 1.25 ? env.framingX : 0;
     const offsetY = aspect < 1 ? 0.2 : 0;
     if (offsetX === 0 && offsetY === 0) camera.clearViewOffset();
@@ -342,6 +375,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       chapterNow = 0;
       exploreView = null;
       explorePart = null;
+      zoom = 0;
       model?.setHighlight?.(null);
       model?.setState(now);
       orbit.reset();
@@ -364,6 +398,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
       const storyMoving = story.update(deltaSeconds, !prefersReducedMotion());
       const orbitMoving = orbit.update(deltaSeconds);
       const stateMoving = updateState(deltaSeconds);
+      const zoomMoving = updateZoom(deltaSeconds);
       const modelMoving = model?.update?.(deltaSeconds) ?? false;
       const idleSeconds = (performance.now() - lastActivityAt) / 1000;
       const ambient = !prefersReducedMotion() && idleSeconds < host.ambient().idleSeconds;
@@ -372,7 +407,7 @@ export function createMonumentStage<S extends Record<string, number>>(host: Stag
         dust?.setTime(time);
       }
       placeCamera();
-      return storyMoving || orbitMoving || stateMoving || modelMoving || ambient;
+      return storyMoving || orbitMoving || stateMoving || zoomMoving || modelMoving || ambient;
     },
 
     resize(nextAspect) {
